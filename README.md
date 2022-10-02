@@ -10,10 +10,16 @@ Livox has a completely different shooting pattern than the commonly used rotatin
 
 ## 📰 NEWS!!! 📰: BETA-release (only for testing the pipeline)
 
-We release a python-package supported on macOS, Windows, and Linux to test the KISS-ICP pipeline. To get started just run
+We release a python-package supported on **macOS**, **Windows**, and **Linux** to test the KISS-ICP pipeline. To get started just run
 
 ```sh
 pip install kiss-icp
+```
+
+If you also want to use the *optional* visualizer, yo need to install Open3D or
+
+```sh
+pip install "kiss-icp[all]"
 ```
 
 Next follow the instructions on how to run the system by typing:
