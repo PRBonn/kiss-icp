@@ -7,27 +7,31 @@ and different shooting patterns. The automotive example stems from the MulRan da
 and the segway robot used in the NCLT dataset show a high acceleration motion profile. The handheld solid-state LiDAR of LOAM
 Livox has a completely different shooting pattern than the commonly used rotating mechanical LiDAR._
 
+## 📰 NEWS!!! 📰: Preprint version of the paper now available on [arXiv](https://arxiv.org/pdf/2209.15397.pdf)
+
+Please keep in mind that this publication is under review and might change in the future, stay tnned for the final version.
 
 ## 📰 NEWS!!! 📰: BETA-release (only for testing the pipeline)
 
-We release a python-package supported on **macOS**, **Windows**, and **Linux** to test the KISS-ICP pipeline. To get started just run
+We released a python-package supported on **macOS**, **Windows**, and **Linux** to test the KISS-ICP pipeline. The entire source code will be available after the review process of the paper is finished.
+
+To get started, just run
 
 ```sh
 pip install kiss-icp
 ```
 
-If you also want to use the *optional* visualizer, yo need to install Open3D or
+If you also want to use the *(optional)* visualizer, you need to install Open3D or
 
 ```sh
 pip install "kiss-icp[all]"
 ```
 
-Next follow the instructions on how to run the system by typing:
+Next, follow the instructions on how to run the system by typing:
 
 ```sh
 kiss_icp_pipeline --help
 ```
-
 
 This should print the following help message:
 ![out](https://user-images.githubusercontent.com/21349875/193282970-25a400aa-ebcd-487a-b839-faa04eeca5b9.png)
