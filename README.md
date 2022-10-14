@@ -4,7 +4,7 @@
 _Point cloud maps (blue) generated online by our proposed odometry pipeline on different datasets with the same set of parameters.
 We depict the latest scan in yellow. The scans are recorded using different sensors with different point densities, different orientations,
 and different shooting patterns. The automotive example stems from the MulRan dataset. The drone of the Voxgraph dataset
-and the segway robot used in the NCLT dataset show a high acceleration motion profile. The handheld solid-state LiDAR of LOAM
+and the segway robot used in the NCLT dataset show a high acceleration motion profile. The handheld mechanical LiDAR of LOAM
 Livox has a completely different shooting pattern than the commonly used rotating mechanical LiDAR._
 
 ## 📰 NEWS!!! 📰: Preprint version of the paper now available on [arXiv](https://arxiv.org/pdf/2209.15397.pdf)
