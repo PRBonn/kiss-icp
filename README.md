@@ -43,13 +43,33 @@ This should print the following help message:
 
 
 ## Teaser Video 
+
 https://user-images.githubusercontent.com/38326482/189950820-030fd9e4-406b-4d14-8171-43b134344223.mp4
 
 
 ## Authors
+
 - Ignacio Vizzo 
 - Tiziano Guadagnino 
 - Benedikt Mersch 
 - Louis Wiesmann 
 - Jens Behley 
 - Cyrill Stachniss
+
+## Citation
+
+
+If you use this library for any academic work, please cite our original [paper](https://arxiv.org/pdf/2209.15397.pdf).
+
+```bibtex
+@article{vizzo2022arxiv,
+  author    = {Vizzo, Ignacio and Guadagnino, Tiziano and Mersch, Benedikt and Wiesmann, Louis and Behley, Jens and Stachniss, Cyrill},
+  title     = {{KISS-ICP: In Defense of Point-to-Point ICP -- Simple, Accurate, and Robust Registration If Done the Right Way}},
+  journal   = {arXiv preprint},
+  eprint    = {2209.15397v1},
+  doi       = {10.48550/ARXIV.2209.15397},
+  url       = {https://arxiv.org/pdf/2209.15397.pdf},
+  year      = {2022},
+  codeurl   = {https://github.com/PRBonn/kiss-icp},
+}
+```

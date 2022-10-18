@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+preferred-citation:
+  title: "KISS-ICP: In Defense of Point-to-Point ICP -- Simple, Accurate, and Robust Registration If Done the Right Way"
+  doi: "10.48550/ARXIV.2209.15397"
+  year: "2022"
+  type: article
+  journal: "arXiv preprint"
+  url: https://arxiv.org/pdf/2209.15397.pdf
+  authors:
+    - family-names: Vizzo
+      given-names: Ignacio
+    - family-names: Guadagnino
+      given-names: Tiziano
+    - family-names: Mersch 
+      given-names: Benedikt 
+    - family-names: Wiesmann 
+      given-names: Louis 
+    - family-names: Behley
+      given-names: Jens
+    - family-names: Stachniss
+      given-names: Cyrill
+
