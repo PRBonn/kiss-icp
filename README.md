@@ -4,7 +4,7 @@
 ![windows](https://img.shields.io/badge/windows-333333?style=flat&logo=windows&logocolor=blue)
 ![macos](https://img.shields.io/badge/-macos-333333?style=flat&logo=apple)
 
-![overview](https://user-images.githubusercontent.com/21349875/190433899-a917d7a4-23b1-4247-8291-ae000e9e7871.png)
+![overview](https://user-images.githubusercontent.com/21349875/211829074-474bec08-0129-4e34-85e7-62265e44a7de.png)
 
 _Point cloud maps (blue) generated online by our proposed odometry pipeline on different datasets with the same set of parameters.
 We depict the latest scan in yellow. The scans are recorded using different sensors with different point densities, different orientations,
