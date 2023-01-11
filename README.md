@@ -1,8 +1,8 @@
 # KISS-ICP: In Defense of Point-to-Point ICP – Simple, Accurate, and Robust Registration If Done the Right Way
 
-![Ubuntu](https://img.shields.io/badge/Ubuntu-333333?style=flat&logo=ubuntu)
-![Windows](https://img.shields.io/badge/Windows-333333?style=flat&logo=windows&logoColor=blue)
-![macOS](https://img.shields.io/badge/-macOS-333333?style=flat&logo=apple)
+![ubuntu](https://img.shields.io/badge/ubuntu-333333?style=flat&logo=ubuntu)
+![windows](https://img.shields.io/badge/windows-333333?style=flat&logo=windows&logocolor=blue)
+![macos](https://img.shields.io/badge/-macos-333333?style=flat&logo=apple)
 
 ![overview](https://user-images.githubusercontent.com/21349875/190433899-a917d7a4-23b1-4247-8291-ae000e9e7871.png)
 
@@ -12,13 +12,13 @@ and different shooting patterns. The automotive example stems from the MulRan da
 and the segway robot used in the NCLT dataset show a high acceleration motion profile. The handheld mechanical LiDAR of LOAM
 Livox has a completely different shooting pattern than the commonly used rotating mechanical LiDAR._
 
-## 📰 NEWS!!! 📰: Preprint version of the paper now available on [arXiv](https://arxiv.org/pdf/2209.15397.pdf)
+## Install
 
-Please keep in mind that this publication is under review and might change in the future, stay tnned for the final version.
+We released a python-package supported on
+![macos](https://img.shields.io/badge/-macos-333333?style=flat&logo=apple),
+![windows](https://img.shields.io/badge/windows-333333?style=flat&logo=windows&logocolor=blue), and
+![ubuntu](https://img.shields.io/badge/ubuntu-333333?style=flat&logo=ubuntu).
 
-## 📰 NEWS!!! 📰: BETA-release (only for testing the pipeline)
-
-We released a python-package supported on **macOS**, **Windows**, and **Linux** to test the KISS-ICP pipeline. The entire source code will be available after the review process of the paper is finished.
 
 To get started, just run
 
@@ -26,7 +26,7 @@ To get started, just run
 pip install kiss-icp
 ```
 
-If you also want to use the *(optional)* visualizer, you need to install Open3D or
+If you also want to install all the *(optional)* dependencies, like Open3D for running the visualizer:
 
 ```sh
 pip install "kiss-icp[all]"
@@ -40,6 +40,33 @@ kiss_icp_pipeline --help
 
 This should print the following help message:
 ![out](https://user-images.githubusercontent.com/21349875/193282970-25a400aa-ebcd-487a-b839-faa04eeca5b9.png)
+
+
+## Install (developer mode)
+
+If you plan to modify the code then you need to setup the dev dependencies, luckilly, the only real
+requirements are a modern C++ compiler and the `pip` package manager, nothing else!, in Ubuntu-based
+sytems this can be done with:
+
+```sh
+sudo apt install g++ python3-pip
+```
+
+After that you can clone the code and install the python api:
+```sh
+git clone https://github.com/PRBonn/kiss-icp.git
+cd kiss-icp
+pip install --verbose .
+```
+
+## Install (expert mode)
+
+If you want to have more controll over the build, you should then install `cmake`, ,`ninja`, `tbb`,
+`Eigen`, and `pybind11` as extra dependencies in your system, the ubuntu-way of doing this is:
+
+```sh
+sudo apt install build-essential libeigen3-dev libtbb-dev pybind11-dev ninja-build
+```
 
 
 ## Teaser Video 
@@ -57,7 +84,6 @@ https://user-images.githubusercontent.com/38326482/189950820-030fd9e4-406b-4d14-
 - Cyrill Stachniss
 
 ## Citation
-
 
 If you use this library for any academic work, please cite our original [paper](https://arxiv.org/pdf/2209.15397.pdf).
 

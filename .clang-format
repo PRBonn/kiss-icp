@@ -1,0 +1,8 @@
+BasedOnStyle: Google
+UseTab: Never
+IndentWidth: 4
+AccessModifierOffset: -4
+ColumnLimit: 100
+BinPackParameters: false
+SortIncludes: true
+Standard: c++17

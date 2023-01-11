@@ -1,0 +1,72 @@
+# MIT License
+#
+# Copyright (c) 2022 Ignacio Vizzo, Tiziano Guadagnino, Benedikt Mersch, Cyrill
+# Stachniss.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+stages:
+  - build
+  - deploy
+cache:
+  paths:
+    - .cache/pip
+
+pip_package:
+  image: python:3.8
+  stage: build
+  script:
+    - VERBOSE=1 pip install --verbose .
+    - kiss_icp_pipeline --version
+
+#----- deployment stage ----------------------------------------------------------------------------
+cibuildwheel:
+  stage: deploy
+  image: python:3.8
+  rules:
+    - if: $CI_COMMIT_TAG
+  services:
+    - name: docker:dind
+      entrypoint: ["env", "-u", "DOCKER_HOST"]
+      command: ["dockerd-entrypoint.sh"]
+  variables:
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: ""
+  script:
+    - curl -sSL https://get.docker.com/ | sh
+    - python -m pip install pipx
+    - pipx run cibuildwheel --output-dir wheelhouse
+  artifacts:
+    paths:
+      - wheelhouse/
+
+pypi:
+  stage: deploy
+  image: python:3.8
+  needs: ["cibuildwheel"]
+  rules:
+    - if: $CI_COMMIT_TAG
+  variables:
+    TWINE_PASSWORD: "${PYPI_ACCESS_TOKEN}"
+    TWINE_USERNAME: "__token__"
+  script:
+    - rm -rf dist && mkdir -p dist/ && mv wheelhouse/*.whl dist/
+    - python -m pip install pipx
+    - pipx run build --sdist
+    - pipx run twine upload --verbose dist/*

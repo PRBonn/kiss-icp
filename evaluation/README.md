@@ -9,10 +9,10 @@ much effort.
 local machine. If you want to see the results of these experiments you can click on any click below
 or directly access the already runned notebooks [here](https://nbviewer.org/github/nachovizzo/kiss-icp/tree/main/evaluation/)
 
-- [KITTI Odometry](https://github.com/nachovizzo/kiss-icp/blob/main/evaluation/kitti.ipynb)
-- [KITTI RAW Odometry (no motion compensation applied)](https://github.com/nachovizzo/kiss-icp/blob/main/evaluation/kitti_raw.ipynb)
-- [Newer College Dataset](https://github.com/nachovizzo/kiss-icp/blob/main/evaluation/newer_college.ipynb)
-- [MulRan Dataset](https://github.com/nachovizzo/kiss-icp/blob/main/evaluation/mulran.ipynb)
+- [KITTI Odometry](https://nbviewer.org/github/nachovizzo/kiss-icp/blob/main/evaluation/kitti.ipynb)
+- [KITTI RAW Odometry (no motion compensation applied)](https://nbviewer.org/github/nachovizzo/kiss-icp/blob/main/evaluation/kitti_raw.ipynb)
+- [Newer College Dataset](https://nbviewer.org/github/nachovizzo/kiss-icp/blob/main/evaluation/newer_college.ipynb)
+- [MulRan Dataset](https://nbviewer.org/github/nachovizzo/kiss-icp/blob/main/evaluation/mulran.ipynb)
 
 ## Where is the NCLT dataset?
 
