@@ -43,7 +43,7 @@ class GenericDataset:
                     if any(fn.endswith(ext) for ext in supported_file_extensions())
                 ]
             ),
-            dtype=np.str,
+            dtype=str,
         )
         if len(self.scan_files) == 0:
             raise ValueError(f"Tried to read point cloud files in {self.scans_dir} but none found")
