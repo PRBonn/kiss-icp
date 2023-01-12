@@ -34,7 +34,7 @@ class NCLTDataset:
         self.sequence_id = os.path.basename(data_dir)
         self.sequence_dir = os.path.join(os.path.realpath(data_dir), "")
         self.scans_dir = os.path.join(self.sequence_dir, "velodyne_sync")
-        scan_files = np.array(sorted(os.listdir(str(self.scans_dir))), dtype=np.str)
+        scan_files = np.array(sorted(os.listdir(str(self.scans_dir))), dtype=str)
         poses_file = os.path.realpath(
             os.path.join(
                 self.sequence_dir,
