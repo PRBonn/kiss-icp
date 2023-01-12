@@ -56,7 +56,10 @@ class RosbagDataset:
         self.topic = topic
         self.check_for_topics()
         self.n_scans = self.bag.topics[self.topic].msgcount
-        self.msgs = self.bag.messages()
+
+        # limit connections to selected topic
+        connections = [x for x in self.bag.connections if x.topic == topic]
+        self.msgs = self.bag.messages(connections=connections)
 
         # Visualization Options
         self.use_global_visualizer = True
