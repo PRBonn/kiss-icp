@@ -99,3 +99,8 @@ If you use this library for any academic work, please cite our original [paper](
   codeurl   = {https://github.com/PRBonn/kiss-icp},
 }
 ```
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=PRBonn/kiss-icp&type=Date)](https://star-history.com/#PRBonn/kiss-icp&Date)
+

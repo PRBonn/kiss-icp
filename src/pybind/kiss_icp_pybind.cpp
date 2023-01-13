@@ -34,7 +34,7 @@
 #include "kiss_icp/Map.hpp"
 #include "kiss_icp/Preprocessing.hpp"
 #include "kiss_icp/VoxelHashMap.hpp"
-#include "metrics/metrics.hpp"
+#include "metrics/Metrics.hpp"
 #include "stl_vector_eigen.h"
 
 namespace py = pybind11;

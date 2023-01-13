@@ -59,9 +59,9 @@ def skbuild_isolated_context():
 
 with skbuild_isolated_context():
     setup(
-        packages=["kiss_icp"] if sys.argv[1] == "develop" else find_packages("src"),
-        package_dir={"": "src"},
-        cmake_install_dir="src/kiss_icp/pybind/",
+        packages=["kiss_icp"] if sys.argv[1] == "develop" else find_packages("src/python"),
+        package_dir={"": "src/python"},
+        cmake_install_dir="src/python/kiss_icp/pybind/",
         cmake_args=["-DBUILD_PYTHON_BINDINGS:BOOL=ON"],
         entry_points={"console_scripts": ["kiss_icp_pipeline=kiss_icp.tools.cmd:run"]},
         include_package_data=False,

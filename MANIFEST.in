@@ -1,8 +1,8 @@
-recursive-include src/kiss_icp *.py
-recursive-include src/kiss_icp *.yaml
-recursive-include src/kiss_icp *.cpp
-recursive-include src/kiss_icp *.hpp
-recursive-include src/kiss_icp *.h
+recursive-include src *.py
+recursive-include src *.yaml
+recursive-include src *.cpp
+recursive-include src *.hpp
+recursive-include src *.h
 global-include CMakeLists.txt
 global-include LICENSE
 global-include *.cmake

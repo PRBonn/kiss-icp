@@ -20,6 +20,10 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-pybind11_add_module(kiss_icp_pybind MODULE kiss_icp_pybind.cpp)
-target_link_libraries(kiss_icp_pybind PRIVATE kiss_icp metrics)
-install(TARGETS kiss_icp_pybind DESTINATION .)
+add_library(metrics STATIC)
+add_library(kiss_icp::metrics ALIAS metrics)
+target_sources(metrics PRIVATE Metrics.cpp)
+target_include_directories(
+  metrics PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
+                                                     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+target_link_libraries(metrics PUBLIC Eigen3::Eigen)

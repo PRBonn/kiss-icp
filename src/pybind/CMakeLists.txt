@@ -20,9 +20,32 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-add_library(kiss_icp Registration.cpp Deskew.cpp VoxelHashMap.cpp Preprocessing.cpp)
-target_include_directories(
-  kiss_icp PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>)
-target_link_libraries(kiss_icp Eigen3::Eigen tsl::robin_map TBB::tbb)
-target_compile_features(kiss_icp PRIVATE cxx_std_17)
+
+# Simply ignore the warnings when using scikit-build as the build system
+if(${SKBUILD})
+  set(ignore ${PYTHON_NumPy_INCLUDE_DIRS})
+  set(ignore ${Python3_EXECUTABLE})
+  set(ignore ${Python3_INCLUDE_DIR})
+  set(ignore ${Python3_LIBRARY})
+  set(ignore ${Python3_NumPy_INCLUDE_DIRS})
+  set(ignore ${Python_EXECUTABLE})
+  set(ignore ${Python_INCLUDE_DIR})
+  set(ignore ${Python_LIBRARY})
+  set(ignore ${Python_NumPy_INCLUDE_DIRS})
+  set(ignore ${Python3_FIND_REGISTRY})
+  set(ignore ${Python3_ROOT_DIR})
+  set(ignore ${Python_FIND_REGISTRY})
+  set(ignore ${Python_ROOT_DIR})
+endif()
+
+if(USE_SYSTEM_PYBIND11)
+  find_package(pybind11 QUIET)
+endif()
+if(NOT USE_SYSTEM_PYBIND11 OR NOT pybind11_FOUND)
+  set(USE_SYSTEM_PYBIND11 OFF)
+  include(${CMAKE_CURRENT_LIST_DIR}/pybind11/pybind11.cmake)
+endif()
+
+pybind11_add_module(kiss_icp_pybind MODULE kiss_icp_pybind.cpp)
+target_link_libraries(kiss_icp_pybind PRIVATE kiss_icp::kiss_icp kiss_icp::metrics)
+install(TARGETS kiss_icp_pybind DESTINATION .)

@@ -20,20 +20,12 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
-# Simply ignore the warnings when using scikit-build as the build system
-if(${SKBUILD})
-  set(ignore ${PYTHON_NumPy_INCLUDE_DIRS})
-  set(ignore ${Python3_EXECUTABLE})
-  set(ignore ${Python3_INCLUDE_DIR})
-  set(ignore ${Python3_LIBRARY})
-  set(ignore ${Python3_NumPy_INCLUDE_DIRS})
-  set(ignore ${Python_EXECUTABLE})
-  set(ignore ${Python_INCLUDE_DIR})
-  set(ignore ${Python_LIBRARY})
-  set(ignore ${Python_NumPy_INCLUDE_DIRS})
-  set(ignore ${Python3_FIND_REGISTRY})
-  set(ignore ${Python3_ROOT_DIR})
-  set(ignore ${Python_FIND_REGISTRY})
-  set(ignore ${Python_ROOT_DIR})
-endif()
+add_library(kiss_icp STATIC)
+add_library(kiss_icp::kiss_icp ALIAS kiss_icp)
+target_sources(kiss_icp PRIVATE Registration.cpp Deskew.cpp VoxelHashMap.cpp Preprocessing.cpp)
+target_compile_features(kiss_icp PRIVATE cxx_std_17)
+target_compile_options(kiss_icp PRIVATE -Wall -Wextra)
+target_include_directories(
+  kiss_icp PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
+                                                      $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+target_link_libraries(kiss_icp PUBLIC Eigen3::Eigen tsl::robin_map TBB::tbb)

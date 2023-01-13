@@ -21,28 +21,18 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 cmake_minimum_required(VERSION 3.16...3.24)
-project(kiss_icp VERSION 0.0.13 LANGUAGES CXX)
+project(kiss_icp VERSION 0.0.14 LANGUAGES CXX)
 
-# Setup build options
-option(USE_SYSTEM_EIGEN3 "Use system pre-installed eigen3" ON)
+# Set build options
 option(USE_SYSTEM_PYBIND11 "Use system pre-installed pybind11" ON)
-option(USE_SYSTEM_TBB "Use system pre-installed oneAPI/tbb" ON)
 option(BUILD_PYTHON_BINDINGS "Build the python module" OFF)
-mark_as_advanced(BUILD_PYTHON_BINDINGS)
 
 # Set build type
 set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_STANDARD 17)
 
-# Find Dependencies from the 3rdparty directory.
-include(3rdparty/find_dependencies.cmake)
-include(3rdparty/skbuild.cmake)
-
-add_subdirectory(src/kiss_icp/cpp)
+add_subdirectory(src/cpp)
 if(BUILD_PYTHON_BINDINGS)
-  add_subdirectory(src/kiss_icp/pybind)
+  add_subdirectory(src/pybind)
 endif()

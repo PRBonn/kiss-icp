@@ -63,8 +63,8 @@ struct VoxelBlock {
         points.emplace_back(point);
     }
 
-    [[nodiscard]] inline bool IsFull() const { return num_points_ == points.size(); }
-    [[nodiscard]] inline size_t size() const { return points.size(); }
+    inline bool IsFull() const { return static_cast<size_t>(num_points_) == points.size(); }
+    inline size_t size() const { return points.size(); }
 
     std::vector<Eigen::Vector3d> points;
     int num_points_{};

@@ -24,7 +24,6 @@
 
 #include <Eigen/Core>
 #include <algorithm>
-#include <iostream>
 #include <limits>
 #include <vector>
 
@@ -37,11 +36,11 @@ std::vector<Eigen::Vector3d> VoxelDownsample(const std::vector<Eigen::Vector3d> 
     for (const auto &point : frame) {
         const auto voxel = Voxel(point, voxel_size);
         if (grid.contains(voxel)) continue;
-        grid[voxel] = point;
+        grid.insert({voxel, point});
     }
     std::vector<Eigen::Vector3d> frame_dowsampled;
-    frame_dowsampled.reserve(frame.size());
-    for (const auto &[voxel, point] : grid) {
+    frame_dowsampled.reserve(grid.size());
+    for (const auto &[_, point] : grid) {
         frame_dowsampled.emplace_back(point);
     }
     return frame_dowsampled;

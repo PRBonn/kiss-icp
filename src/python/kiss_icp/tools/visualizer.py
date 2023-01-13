@@ -106,7 +106,6 @@ class RegistrationVisualizer(StubVisualizer):
             "\t[SPACE] to pause/start\n"
             "\t  [ESC] to exit\n"
             "\t    [N] to step\n"
-            "\t    [R] to toggle on/off the raw frame\n"
             "\t    [F] to toggle on/off the input cloud to the pipeline\n"
             "\t    [K] to toggle on/off the subsbampled frame\n"
             "\t    [M] to toggle on/off the local map\n"
