@@ -37,8 +37,6 @@ class TUMDataset:
             print(f'open3d is not installed on your system, run "pip install open3d"')
             exit(1)
 
-        # Hardcode the maximum range present on the dataset
-        self.max_range = 4.0
         self.data_dir = data_dir
         self.rgb_txt = os.path.join(self.data_dir, "rgb.txt")
         self.depth_txt = os.path.join(self.data_dir, "depth.txt")
