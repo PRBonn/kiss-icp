@@ -58,6 +58,9 @@ class OdometryPipeline:
 
         # Override defauls according to dataloader specification
         self.config.data.max_range = max_range if max_range else self.config.data.max_range
+        if self.config.data.max_range < self.config.data.min_range:
+            print("[WARNING] max_range is smaller than min_range, settng min_range to 0.0")
+            self.config.data.min_range = 0.0
 
         # Pipeline
         self.odometry = Odometry(config=self.config, deskew=deskew)
