@@ -23,7 +23,7 @@
 add_library(metrics STATIC)
 add_library(kiss_icp::metrics ALIAS metrics)
 target_sources(metrics PRIVATE Metrics.cpp)
-target_compile_features(kiss_icp PRIVATE cxx_std_11)
+target_compile_features(metrics PRIVATE cxx_std_11)
 target_include_directories(
   metrics PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
                                                      $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
