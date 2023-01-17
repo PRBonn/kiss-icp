@@ -31,6 +31,7 @@ import numpy as np
 
 YELLOW = np.array([1, 0.706, 0])
 RED = np.array([128, 0, 0]) / 255.0
+ORANGE = np.array([128, 128, 0]) / 255.0
 BLACK = np.array([0, 0, 0]) / 255.0
 BLUE = np.array([0.4, 0.5, 0.9])
 SPHERE_SIZE = 0.20
@@ -62,7 +63,8 @@ class RegistrationVisualizer(StubVisualizer):
         self.source = self.o3d.geometry.PointCloud()
         self.keypoints = self.o3d.geometry.PointCloud()
         self.target = self.o3d.geometry.PointCloud()
-        self.frames = []
+        self.trajectory = self.o3d.geometry.PointCloud()
+        self.trajectory_points = []
 
         # Initialize visualizer
         self.vis = self.o3d.visualization.VisualizerWithKeyCallback()
@@ -99,8 +101,9 @@ class RegistrationVisualizer(StubVisualizer):
         self.vis.add_geometry(self.source)
         self.vis.add_geometry(self.keypoints)
         self.vis.add_geometry(self.target)
+        self.vis.add_geometry(self.trajectory)
         self._set_black_background(self.vis)
-        self.vis.get_render_option().point_size = 1
+        self.vis.get_render_option().point_size = 3
         print(
             f"{w_name} initialized. Press:\n"
             "\t[SPACE] to pause/start\n"
@@ -173,7 +176,6 @@ class RegistrationVisualizer(StubVisualizer):
 
     def _toggle_view(self, vis):
         self.global_view = not self.global_view
-        self._trajectory_handle()
 
     def _center_viewpoint(self, vis):
         vis.reset_view_point(True)
@@ -182,16 +184,7 @@ class RegistrationVisualizer(StubVisualizer):
         if not self.global_view:
             return False
         self.render_trajectory = not self.render_trajectory
-        self._trajectory_handle()
         return False
-
-    def _trajectory_handle(self):
-        if self.render_trajectory and self.global_view:
-            for frame in self.frames:
-                self.vis.add_geometry(frame, reset_bounding_box=False)
-        else:
-            for frame in self.frames:
-                self.vis.remove_geometry(frame, reset_bounding_box=False)
 
     def _update_geometries(self, source, keypoints, target, pose):
         # Source hot frame
@@ -220,20 +213,21 @@ class RegistrationVisualizer(StubVisualizer):
                 self.target.transform(np.linalg.inv(pose))
         else:
             self.target.points = self.o3d.utility.Vector3dVector()
-
-        # Update always a list with all the trajectories
-        new_frame = self.o3d.geometry.TriangleMesh.create_sphere(SPHERE_SIZE)
-        new_frame.paint_uniform_color(BLUE)
-        new_frame.compute_vertex_normals()
-        new_frame.transform(pose)
-        self.frames.append(new_frame)
-        # Render trajectory, only if it make sense (global view)
-        if self.render_trajectory and self.global_view:
-            self.vis.add_geometry(self.frames[-1], reset_bounding_box=False)
+        
+        # Trajectory
+        self.trajectory_points.append(pose[:3, 3])
+        if self.render_trajectory:
+            self.trajectory.points = self.o3d.utility.Vector3dVector(self.trajectory_points)
+            self.trajectory.paint_uniform_color(ORANGE)
+            if not self.global_view:
+                self.trajectory.transform(np.linalg.inv(pose))
+        else:
+            self.trajectory.points = self.o3d.utility.Vector3dVector()
 
         self.vis.update_geometry(self.keypoints)
         self.vis.update_geometry(self.source)
         self.vis.update_geometry(self.target)
+        self.vis.update_geometry(self.trajectory)
         if self.reset_bounding_box:
             self.vis.reset_view_point(True)
             self.reset_bounding_box = False
