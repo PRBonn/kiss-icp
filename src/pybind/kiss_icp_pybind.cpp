@@ -72,8 +72,9 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
     // Floating functions, unrelated to the mapping class
     m.def("_voxel_down_sample", &VoxelDownsample, "frame"_a, "voxel_size"_a);
     // KITTI utils
-    m.def("_kitti_seq_error", &SeqError, "gt_poses"_a, "results_poses"_a);
-    m.def("_absolute_trajectory_error", &AbsoluteTrajectoryError, "gt_poses"_a, "results_poses"_a);
+    m.def("_kitti_seq_error", &metrics::SeqError, "gt_poses"_a, "results_poses"_a);
+    m.def("_absolute_trajectory_error", &metrics::AbsoluteTrajectoryError, "gt_poses"_a,
+          "results_poses"_a);
     // DeSkewScan
     m.def("_velocity_estimation", &VelocityEstimation, "start_pose"_a, "finish_pose"_a,
           "scan_duration"_a);

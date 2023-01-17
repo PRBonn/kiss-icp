@@ -47,6 +47,5 @@ if(NOT USE_SYSTEM_PYBIND11 OR NOT pybind11_FOUND)
 endif()
 
 pybind11_add_module(kiss_icp_pybind MODULE kiss_icp_pybind.cpp)
-target_compile_features(kiss_icp_pybind PRIVATE cxx_std_17)
 target_link_libraries(kiss_icp_pybind PRIVATE kiss_icp::kiss_icp kiss_icp::metrics)
 install(TARGETS kiss_icp_pybind DESTINATION .)

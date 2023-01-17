@@ -23,7 +23,7 @@
 add_library(kiss_icp STATIC)
 add_library(kiss_icp::kiss_icp ALIAS kiss_icp)
 target_sources(kiss_icp PRIVATE Registration.cpp Deskew.cpp VoxelHashMap.cpp Preprocessing.cpp)
-target_compile_features(kiss_icp PRIVATE cxx_std_17)
+target_compile_features(kiss_icp PUBLIC cxx_std_17)
 target_compile_options(kiss_icp PRIVATE -Wall -Wextra)
 target_include_directories(
   kiss_icp PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
