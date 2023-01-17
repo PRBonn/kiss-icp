@@ -69,12 +69,13 @@ class RosbagDataset:
 
         t_field = None
         for field in msg.fields:
-            if field.name == "t" or field.name == "timestamp":
+            if field.name == "t" or field.name == "timestamp" or field.name == "time":
                 t_field = field.name
         timestamps = np.ones(points.shape[0])
         if t_field:
             timestamps = np.array(list(self.pc2.read_points(msg, field_names=t_field)))
-            timestamps = timestamps / np.max(timestamps)
+            if t_field != "time":
+                timestamps = timestamps / np.max(timestamps)
         return points.astype(np.float64), timestamps
 
     def check_for_topics(self):
