@@ -77,6 +77,7 @@ class RosbagDataset:
             if t_field != "time":
                 timestamps = timestamps / np.max(timestamps)
                 "test"
+                "test2"
         return points.astype(np.float64), timestamps
 
     def check_for_topics(self):
