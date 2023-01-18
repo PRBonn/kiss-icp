@@ -20,7 +20,6 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-"""Original Implementation done by Federico Magistri"""
 import importlib
 import os
 from pathlib import Path
@@ -38,59 +37,23 @@ class TUMDataset:
             exit(1)
 
         self.data_dir = data_dir
-        self.rgb_txt = os.path.join(self.data_dir, "rgb.txt")
-        self.depth_txt = os.path.join(self.data_dir, "depth.txt")
         self.sequence_id = os.path.basename(data_dir)
-
-        # TODO(Nacho): Speed up this extra time consuming operation!
-        print("Running association, this will take some time...")
-        rgb_list = self.read_file_list(self.rgb_txt)
-        depth_list = self.read_file_list(self.depth_txt)
-        self.matches = self.associate(rgb_list, depth_list)
-        print("Done!")
-
+        
+        #Load depth frames
+        depth_list = self.read_file_list((self.data_dir/"depth.txt"))
+        self.depth_frames = list(depth_list.keys())
+        
+        # rgb single frame
+        rgb_path = os.path.join(self.data_dir, "rgb" , os.listdir(self.data_dir / "rgb")[0])
+        self.rgb_default_frame =  self.o3d.io.read_image(rgb_path)
+        
         # Load GT poses
-        print("Loading GT poses, this will also take some time!")
-        self.gt_list = self.read_gt_list(os.path.join(self.data_dir, "groundtruth.txt"))
-        # TODO(Nacho): Apply calibration here, since evluation is entierly broken
+        self.gt_list = self.read_file_list(os.path.join(self.data_dir, "groundtruth.txt"))
         self.gt_poses = self.load_poses()
         print("Done!")
 
     def __len__(self):
-        return len(self.matches)
-
-    def associate(self, first_keys, second_keys):
-        """Associate two dictionaries of (stamp,data). As the time stamps never match exactly, we
-        aim to find the closest match for every input tuple.
-
-        Input:
-        first_list -- first dictionary of (stamp,data) tuples
-        second_list -- second dictionary of (stamp,data) tuples
-        offset -- time offset between both dictionaries (e.g., to model the delay between the sensors)
-        max_difference -- search radius for candidate generation
-
-        Output:
-        matches -- list of matched tuples ((stamp1,data1),(stamp2,data2))
-        """
-        offset = 0.0
-        max_difference = 0.2
-        potential_matches = [
-            (abs(a - (b + offset)), a, b)
-            for a in first_keys.keys()
-            for a in first_keys.keys()
-            for b in second_keys.keys()
-            if abs(a - (b + offset)) < max_difference
-        ]
-        potential_matches.sort()
-        matches = []
-        for diff, a, b in potential_matches:
-            if a in first_keys and b in second_keys:
-                first_keys.pop(a)
-                second_keys.pop(b)
-                matches.append((a, b))
-
-        matches.sort()
-        return matches
+        return len(self.depth_frames)
 
     def find_closest_ts(self, ts):
         times = list(self.gt_list.keys())
@@ -110,7 +73,7 @@ class TUMDataset:
             return T
 
         poses = []
-        for _, depth_id in self.matches:
+        for depth_id in self.depth_frames:
             pose_timestamp = self.find_closest_ts(depth_id)
             pose = conver_to_homo(self.gt_list[pose_timestamp])
             poses.append(pose)
@@ -129,56 +92,21 @@ class TUMDataset:
         Output:
         dict -- dictionary of (stamp,data) tuples
         """
-        file = open(filename)
-        data = file.read()
-        lines = data.replace(",", " ").replace("\t", " ").split("\n")
-        # lines = lines[:100]
-        list = [
-            [v.strip() for v in line.split(" ") if v.strip() != ""]
-            for line in lines
-            if len(line) > 0 and line[0] != "#"
-        ]
-        list = [(float(l[0]), l[1:]) for l in list if len(l) > 1]
-        return dict(list)
-
-    def read_gt_list(self, filename):
-        """Reads a trajectory from a text file.
-
-        File format:
-        The file format is "stamp d1 d2 d3 ...", where stamp denotes the time stamp (to be matched)
-        and "d1 d2 d3.." is arbitary data (e.g., a 3D position and 3D orientation) associated to this timestamp.
-
-        Input:
-        filename -- File name
-
-        Output:
-        dict -- dictionary of (stamp,data) tuples
-        """
-        file = open(filename)
-        data = file.read()
-        lines = data.replace(",", " ").replace("\t", " ").split("\n")
-        # lines = lines[:100]
-        list = [
-            [v.strip() for v in line.split(" ") if v.strip() != ""]
-            for line in lines
-            if len(line) > 0 and line[0] != "#"
-        ]
-        list = [(float(l[0]), l[1:]) for l in list if len(l) > 1]
+        file_lines  = np.loadtxt(fname=filename, dtype=str, comments="#",delimiter=" ")
+        list = [(float(l[0]), l[1:]) for l in file_lines if len(l) > 1]
         return dict(list)
 
     def __getitem__(self, idx):
-        rgb_id, depth_id = self.matches[idx]
-        rgb_path = os.path.join(self.data_dir, "rgb", "{:.6f}".format(rgb_id) + ".png")
+        depth_id = self.depth_frames[idx]
         depth_path = os.path.join(self.data_dir, "depth", "{:.6f}".format(depth_id) + ".png")
-        color_raw = self.o3d.io.read_image(rgb_path)
         depth_raw = self.o3d.io.read_image(depth_path)
-        rgbd_image = self.o3d.geometry.RGBDImage.create_from_tum_format(color_raw, depth_raw)
+        rgbd_image = self.o3d.geometry.RGBDImage.create_from_tum_format(self.rgb_default_frame, depth_raw)
         pcd = self.o3d.geometry.PointCloud.create_from_rgbd_image(
             rgbd_image,
             self.o3d.camera.PinholeCameraIntrinsic(
                 self.o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault
             ),
         )
-        # TODO(Nacho): Make sure this transformation is also applied to the gt_poses
-        pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
+        pcd.transform([[0, 1, 0, 0], [1, 0, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
         return np.array(pcd.points, dtype=np.float64)
+
