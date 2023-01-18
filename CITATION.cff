@@ -1,11 +1,12 @@
 cff-version: 1.2.0
 preferred-citation:
-  title: "KISS-ICP: In Defense of Point-to-Point ICP -- Simple, Accurate, and Robust Registration If Done the Right Way"
-  doi: "10.48550/ARXIV.2209.15397"
-  year: "2022"
+  title: "KISS-ICP: In Defense of Point-to-Point ICP - Simple, Accurate, and Robust Registration If Done the Right Way"
+  doi: "10.1109/LRA.2023.3236571"
+  year: "2023"
   type: article
-  journal: "arXiv preprint"
-  url: https://arxiv.org/pdf/2209.15397.pdf
+  journal: "IEEE Robotics and Automation Letters (RA-L)"
+  url: https://www.ipb.uni-bonn.de/wp-content/papercite-data/pdf/vizzo2023ral.pdf
+  codeurl: https://github.com/PRBonn/kiss-icp
   authors:
     - family-names: Vizzo
       given-names: Ignacio
