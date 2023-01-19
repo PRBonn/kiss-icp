@@ -150,6 +150,13 @@ def kiss_icp_pipeline(
         help="[Optional] Specify if you want to start to process scans from a given starting point",
         rich_help_panel="Additional Options",
     ),
+    meta: Optional[Path] = typer.Option(
+        None,
+        "--meta",
+        exists=True,
+        help="[Optional] For Ouster PCAP dataloader, you need to specify a metadata json file",
+        rich_help_panel="Additional Options",
+    ),
     version: Optional[bool] = typer.Option(
         None,
         "--version",
@@ -165,6 +172,11 @@ def kiss_icp_pipeline(
 
     # Check if the main source is a bagfile, then automatically fallback to RosbagDataset
     dataloader = "rosbag" if data.is_file() and data.name.split(".")[-1] == "bag" else dataloader
+    # or to Ouster dataloader
+    dataloader = "ouster" if data.is_file() and data.name.split(".")[-1] == "pcap" else dataloader
+    if dataloader == "ouster" and meta is None:
+        print('You must specify a metadata file "--meta" for Ouster PCAP ')
+        raise typer.Exit(code=1)
 
     # Lazy-loading for faster CLI
     from kiss_icp.datasets import dataset_factory
@@ -177,6 +189,7 @@ def kiss_icp_pipeline(
             # Additional options
             sequence=sequence,
             topic=topic,
+            meta=meta,
         ),
         config=config,
         deskew=deskew,

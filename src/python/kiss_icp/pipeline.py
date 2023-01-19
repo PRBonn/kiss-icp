@@ -177,7 +177,7 @@ class OdometryPipeline:
 
     def _write_result_poses(self):
         self._save_poses(
-            filename=f"{self.results_dir}/{self._dataset.sequence_id}_poses",
+            filename=f"{self.results_dir}/{self.dataset_sequence}_poses",
             poses=self._calibrate_poses(self.poses),
             timestamps=self._get_frames_timestamps(),
         )
