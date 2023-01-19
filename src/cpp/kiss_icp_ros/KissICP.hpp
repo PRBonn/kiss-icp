@@ -32,13 +32,13 @@
 
 namespace kiss_icp {
 
-class KISS_ICP {
+class KissICP {
 public:
     using Vector3dVector = std::vector<Eigen::Vector3d>;
     using Vector3dVectorTuple = std::tuple<Vector3dVector, Vector3dVector>;
 
 public:
-    explicit KISS_ICP() {
+    explicit KissICP() {
         // refactor now
         local_map_ = VoxelHashMap(voxel_size_, max_range_, max_points_per_voxel_);
         adaptive_threshold_ = AdaptiveThreshold(initial_threshold_, min_motion_th_, max_range_);

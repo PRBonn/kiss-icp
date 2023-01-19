@@ -32,7 +32,7 @@
 
 namespace kiss_icp {
 
-KISS_ICP::Vector3dVectorTuple KISS_ICP::RegisterFrame(const std::vector<Eigen::Vector3d>& frame) {
+KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vector3d>& frame) {
     // # Apply motion compensation
     // frame = self.compensator.deskew_scan(frame, self.poses, timestamps)
 
@@ -64,26 +64,26 @@ KISS_ICP::Vector3dVectorTuple KISS_ICP::RegisterFrame(const std::vector<Eigen::V
     return {frame, source};
 }
 
-KISS_ICP::Vector3dVectorTuple KISS_ICP::Voxelize(const std::vector<Eigen::Vector3d>& frame) const {
+KissICP::Vector3dVectorTuple KissICP::Voxelize(const std::vector<Eigen::Vector3d>& frame) const {
     const auto frame_downsample = kiss_icp::VoxelDownsample(frame, voxel_size_ * 0.5);
     const auto source = kiss_icp::VoxelDownsample(frame_downsample, voxel_size_ * 1.5);
     return {source, frame_downsample};
 }
 
-double KISS_ICP::GetAdaptiveThreshold() {
+double KissICP::GetAdaptiveThreshold() {
     if (!HasMoved()) {
         return initial_threshold_;
     }
     return adaptive_threshold_.ComputeThreshold();
 }
 
-Eigen::Matrix4d KISS_ICP::GetPredictionModel() const {
+Eigen::Matrix4d KissICP::GetPredictionModel() const {
     const size_t N = poses_.size();
     if (N < 2) return Eigen::Matrix4d::Identity();
     return poses_[N - 2].inverse() * poses_[N - 1];
 }
 
-bool KISS_ICP::HasMoved() {
+bool KissICP::HasMoved() {
     if (poses_.empty()) return false;
     auto ComputeMotion = [&](const Eigen::Matrix4d& T1, const Eigen::Matrix4d& T2) {
         return ((T1.inverse() * T2).block<3, 1>(0, 3)).norm();
