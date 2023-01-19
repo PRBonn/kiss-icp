@@ -30,11 +30,11 @@
 #include <memory>
 #include <vector>
 
-#include "kiss_icp/Deskew.hpp"
-#include "kiss_icp/Map.hpp"
-#include "kiss_icp/Preprocessing.hpp"
-#include "kiss_icp/VoxelHashMap.hpp"
-#include "metrics/Metrics.hpp"
+#include "kiss_icp/core/Deskew.hpp"
+#include "kiss_icp/core/Preprocessing.hpp"
+#include "kiss_icp/core/Threshold.hpp"
+#include "kiss_icp/core/VoxelHashMap.hpp"
+#include "kiss_icp/metrics/Metrics.hpp"
 #include "stl_vector_eigen.h"
 
 namespace py = pybind11;
@@ -48,26 +48,35 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
         m, "_Vector3dVector", "std::vector<Eigen::Vector3d>",
         py::py_array_to_vectors_double<Eigen::Vector3d>);
 
-    using MapType = Map<VoxelHashMap>;
-    py::class_<MapType> internal_map(m, "_VoxelHashMap", "Don't use this");
+    // Map representation
+    py::class_<VoxelHashMap> internal_map(m, "_VoxelHashMap", "Don't use this");
     internal_map
         .def(py::init<double, double, int>(), "voxel_size"_a, "max_distance"_a,
              "max_points_per_voxel"_a)
-        .def("_clear", &MapType::Clear)
-        .def("_empty", &MapType::Empty)
-        .def("_add_points",
-             py::overload_cast<const MapType::Vector3dVector&, const Eigen::Vector3d&>(
-                 &MapType::AddPoints),
+        .def("_clear", &VoxelHashMap::Clear)
+        .def("_empty", &VoxelHashMap::Empty)
+        .def("_update",
+             py::overload_cast<const VoxelHashMap::Vector3dVector&, const Eigen::Vector3d&>(
+                 &VoxelHashMap::Update),
              "points"_a, "origin"_a)
-        .def("_add_points",
-             py::overload_cast<const MapType::Vector3dVector&, const Eigen::Matrix4d&>(
-                 &MapType::AddPoints),
+        .def("_update",
+             py::overload_cast<const VoxelHashMap::Vector3dVector&, const Eigen::Matrix4d&>(
+                 &VoxelHashMap::Update),
              "points"_a, "pose"_a)
-        .def("_point_cloud", &MapType::Pointcloud)
-        .def("_get_correspondences", &MapType::GetCorrespondences, "points"_a,
+        .def("_point_cloud", &VoxelHashMap::Pointcloud)
+        .def("_get_correspondences", &VoxelHashMap::GetCorrespondences, "points"_a,
              "max_correspondance_distance"_a)
-        .def("_register_point_cloud", &MapType::RegisterPoinCloud, "points"_a, "initial_guess"_a,
-             "max_correspondance_distance"_a, "kernel"_a);
+        .def("_register_point_cloud", &VoxelHashMap::RegisterPoinCloud, "points"_a,
+             "initial_guess"_a, "max_correspondance_distance"_a, "kernel"_a);
+
+    // AdaptiveThreshold bindings
+    py::class_<AdaptiveThreshold> adaptive_threshold(m, "_AdaptiveThreshold", "Don't use this");
+    adaptive_threshold
+        .def(py::init<double, double, double>(), "initial_threshold"_a, "min_motion_th"_a,
+             "max_range"_a)
+        .def("_compute_threshold", &AdaptiveThreshold::ComputeThreshold)
+        .def("_update_model_deviation", &AdaptiveThreshold::UpdateModelDeviation,
+             "model_deviation"_a);
 
     // Floating functions, unrelated to the mapping class
     m.def("_voxel_down_sample", &VoxelDownsample, "frame"_a, "voxel_size"_a);

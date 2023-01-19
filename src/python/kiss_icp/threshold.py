@@ -20,23 +20,39 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-include(ExternalProject)
+import numpy as np
 
-ExternalProject_Add(
-  external_eigen
-  PREFIX eigen
-  URL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.bz2
-  URL_HASH
-    SHA256=b4c198460eba6f28d34894e3a5710998818515104d6e74e5cc331ce31e46e626
-  UPDATE_COMMAND ""
-  CONFIGURE_COMMAND ""
-  BUILD_COMMAND ""
-  INSTALL_COMMAND "")
+from kiss_icp.config import KISSConfig
+from kiss_icp.pybind import kiss_icp_pybind
 
-ExternalProject_Get_Property(external_eigen SOURCE_DIR)
-add_library(libEigenHelper INTERFACE)
-add_dependencies(libEigenHelper external_eigen)
-target_include_directories(libEigenHelper SYSTEM
-                           INTERFACE $<BUILD_INTERFACE:${SOURCE_DIR}>)
-set_property(TARGET libEigenHelper PROPERTY EXPORT_NAME Eigen3::Eigen)
-add_library(Eigen3::Eigen ALIAS libEigenHelper)
+
+def get_threshold_estimator(config: KISSConfig):
+    if hasattr(config.adaptive_threshold, "fixed_threshold"):
+        return FixedThreshold(config.adaptive_threshold.fixed_threshold)
+    return AdaptiveThreshold(config)
+
+
+class FixedThreshold:
+    def __init__(self, fixed_threshold: float):
+        self.fixed_threshold = fixed_threshold
+
+    def get_threshold(self):
+        return self.fixed_threshold
+
+    def update_model_deviation(self, model_deviation):
+        pass
+
+
+class AdaptiveThreshold:
+    def __init__(self, config: KISSConfig):
+        self._estimator = kiss_icp_pybind._AdaptiveThreshold(
+            initial_threshold=config.adaptive_threshold.initial_threshold,
+            min_motion_th=config.adaptive_threshold.min_motion_th,
+            max_range=config.data.max_range,
+        )
+
+    def get_threshold(self):
+        return self._estimator._compute_threshold()
+
+    def update_model_deviation(self, model_deviation: np.ndarray):
+        self._estimator._update_model_deviation(model_deviation=model_deviation)

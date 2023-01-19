@@ -20,24 +20,8 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-include(FetchContent)
-
-FetchContent_Declare(
-  tessil
-  URL https://github.com/Tessil/robin-map/archive/refs/tags/v1.0.1.tar.gz)
-if(NOT tessil_POPULATED)
-  set(BUILD_TESTING OFF)
-  FetchContent_Populate(tessil)
-  add_library(robin_map INTERFACE)
-  add_library(tsl::robin_map ALIAS robin_map)
-  target_include_directories(
-    robin_map INTERFACE "$<BUILD_INTERFACE:${tessil_SOURCE_DIR}/include>")
-  list(
-    APPEND
-    headers
-    "${tessil_SOURCE_DIR}/include/tsl/robin_growth_policy.h"
-    "${tessil_SOURCE_DIR}/include/tsl/robin_hash.h"
-    "${tessil_SOURCE_DIR}/include/tsl/robin_map.h"
-    "${tessil_SOURCE_DIR}/include/tsl/robin_set.h")
-  target_sources(robin_map INTERFACE "$<BUILD_INTERFACE:${headers}>")
-endif()
+add_library(core STATIC)
+add_library(kiss_icp::core ALIAS core)
+target_sources(core PRIVATE Registration.cpp Deskew.cpp VoxelHashMap.cpp Preprocessing.cpp Threshold.cpp)
+target_link_libraries(core PUBLIC Eigen3::Eigen tsl::robin_map TBB::tbb)
+set_global_target_properties(core)

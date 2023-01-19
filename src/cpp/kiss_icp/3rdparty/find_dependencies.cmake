@@ -20,20 +20,33 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-cmake_minimum_required(VERSION 3.20...3.24)
-project(kiss_icp VERSION 0.1.0 LANGUAGES CXX)
 
-# Setup build options
-option(USE_SYSTEM_EIGEN3 "Use system pre-installed eigen3" ON)
-option(USE_SYSTEM_TBB "Use system pre-installed oneAPI/tbb" ON)
+# Silence timestamp warning
+if(CMAKE_VERSION VERSION_GREATER 3.24)
+  cmake_policy(SET CMP0135 OLD)
+endif()
 
-# Set build type (repeat here for C++ only consumers)
-set(CMAKE_BUILD_TYPE Release)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+# CMake arguments for configuring ExternalProjects.
+set(ExternalProject_CMAKE_ARGS
+    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+    -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON)
 
-include(3rdparty/find_dependencies.cmake)
-include(cmake/CompilerOptions.cmake)
+# tsl_robin is fast to fetch, don't ask for system-wise installation
+include(${CMAKE_CURRENT_LIST_DIR}/tsl_robin/tsl_robin.cmake)
 
-add_subdirectory(metrics)
-add_subdirectory(core)
+if(USE_SYSTEM_EIGEN3)
+  find_package(Eigen3 QUIET NO_MODULE)
+endif()
+if(NOT USE_SYSTEM_EIGEN3 OR NOT EIGEN3_FOUND)
+  set(USE_SYSTEM_EIGEN3 OFF)
+  include(${CMAKE_CURRENT_LIST_DIR}/eigen/eigen.cmake)
+endif()
+
+# tbb needs to be statically linked, so, also do it always :)
+if(USE_SYSTEM_TBB)
+  find_package(TBB QUIET NO_MODULE)
+endif()
+if(NOT USE_SYSTEM_TBB OR NOT TBB_FOUND)
+  set(USE_SYSTEM_TBB OFF)
+  include(${CMAKE_CURRENT_LIST_DIR}/tbb/tbb.cmake)
+endif()

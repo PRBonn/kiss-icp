@@ -20,19 +20,25 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-cmake_minimum_required(VERSION 3.16...3.24)
-project(kiss_icp VERSION 0.0.14 LANGUAGES CXX)
+cmake_minimum_required(VERSION 3.20...3.24)
+project(kiss_icp VERSION 0.1.0 LANGUAGES CXX)
 
 # Set build options
-option(USE_SYSTEM_PYBIND11 "Use system pre-installed pybind11" ON)
 option(BUILD_PYTHON_BINDINGS "Build the python module" OFF)
+option(BUILD_ROS_WRAPPER "Build the ROS wrapper module" OFF)
 
 # Set build type
 set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-add_subdirectory(src/cpp)
+# Build always core library
+add_subdirectory(src/cpp/kiss_icp)
+
 if(BUILD_PYTHON_BINDINGS)
-  add_subdirectory(src/pybind)
+  add_subdirectory(src/cpp/kiss_icp_pybind)
+endif()
+
+if(BUILD_ROS_WRAPPER)
+  add_subdirectory(src/cpp/kiss_icp_ros)
 endif()
