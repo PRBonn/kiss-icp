@@ -26,6 +26,10 @@ from kiss_icp.config import KISSConfig
 from kiss_icp.pybind import kiss_icp_pybind
 
 
+def get_motion_compensator(config: KISSConfig):
+    return MotionCompensator(config) if config.data.deskew else StubCompensator()
+
+
 class StubCompensator:
     def deskew_scan(self, frame, poses, timestamps):
         return frame

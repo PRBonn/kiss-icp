@@ -20,11 +20,19 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import numpy as np
 from typing import Tuple
 
-import numpy as np
-
+from kiss_icp.config import KISSConfig
 from kiss_icp.pybind import kiss_icp_pybind
+
+
+def get_voxel_hash_map(config: KISSConfig):
+    return VoxelHashMap(
+        voxel_size=config.mapping.voxel_size,
+        max_distance=config.data.max_range,
+        max_points_per_voxel=config.mapping.max_points_per_voxel,
+    )
 
 
 class VoxelHashMap:
@@ -41,14 +49,14 @@ class VoxelHashMap:
     def empty(self):
         return self._internal_map._empty()
 
-    def add_points(self, points: np.ndarray, pose: np.ndarray = np.eye(4)):
+    def update(self, points: np.ndarray, pose: np.ndarray = np.eye(4)):
         """Add points to the inernal map representaion.
 
         The origin is needed to remove the far away poitns
 
         TODO(NACHO): Use similar overload API as we did for VDBFusion
         """
-        self._internal_map._add_points(kiss_icp_pybind._Vector3dVector(points), pose)
+        self._internal_map._update(kiss_icp_pybind._Vector3dVector(points), pose)
 
     def point_cloud(self) -> np.ndarray:
         """Return the internal representaion as a np.array (pointcloud)."""

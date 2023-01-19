@@ -20,20 +20,30 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-cmake_minimum_required(VERSION 3.20...3.24)
-project(kiss_icp VERSION 0.1.0 LANGUAGES CXX)
+# TODO(Nacho): Use mainstream repo from OneAPI instead of my own fork
+include(ExternalProject)
 
-# Setup build options
-option(USE_SYSTEM_EIGEN3 "Use system pre-installed eigen3" ON)
-option(USE_SYSTEM_TBB "Use system pre-installed oneAPI/tbb" ON)
+ExternalProject_Add(
+  external_tbb
+  PREFIX tbb
+  URL https://github.com/nachovizzo/tbb/archive/refs/tags/tbbstatic.tar.gz
+  URL_HASH SHA256=db5ede77c4bd10ad12fab11ed38b7e8cf80aba85db16a57514073c383e6c8630
+  UPDATE_COMMAND ""
+  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+             ${ExternalProject_CMAKE_ARGS}
+             ${ExternalProject_CMAKE_CXX_FLAGS}
+             # custom flags
+             -DTBB_BUILD_TBBMALLOC=ON
+             -DTBB_BUILD_SHARED=OFF
+             -DTBB_BUILD_STATIC=ON
+             -DTBB_BUILD_TESTS=OFF)
 
-# Set build type (repeat here for C++ only consumers)
-set(CMAKE_BUILD_TYPE Release)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
-include(3rdparty/find_dependencies.cmake)
-include(cmake/CompilerOptions.cmake)
-
-add_subdirectory(metrics)
-add_subdirectory(core)
+# Simulate importing TBB::tbb for OpenVDBHelper target
+ExternalProject_Get_Property(external_tbb INSTALL_DIR)
+set(TBB_ROOT ${INSTALL_DIR} CACHE INTERNAL "TBB_ROOT Install directory")
+add_library(TBBHelper INTERFACE)
+add_dependencies(TBBHelper external_tbb)
+target_include_directories(TBBHelper INTERFACE ${INSTALL_DIR}/include)
+target_link_directories(TBBHelper INTERFACE ${INSTALL_DIR}/lib)
+target_link_libraries(TBBHelper INTERFACE tbb)
+add_library(TBB::tbb ALIAS TBBHelper)

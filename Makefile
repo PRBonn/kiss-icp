@@ -14,4 +14,4 @@ docker-push:
 	@docker push gitlab.ipb.uni-bonn.de:4567/ipb-team/ipb-tools/kiss_icp
 
 license:
-	@addlicense -f LICENSE -v -ignore **/*.yaml -v .
+	@addlicense -f LICENSE -ignore **/*.yaml -v .

@@ -41,6 +41,7 @@ class KISSConfig:
         lidar_frequency: float = 10.0
         max_range: float = 100.0
         min_range: float = 0.0
+        deskew: bool = False
 
     @dataclass
     class mapping:

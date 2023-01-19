@@ -26,10 +26,11 @@ from kiss_icp.config import KISSConfig
 from kiss_icp.pybind import kiss_icp_pybind
 
 
-class Stubcessor:
-    def __init__(self):
-        pass
+def get_preprocessor(config: KISSConfig):
+    return Preprocessor(config) if config.data.preprocess else Stubcessor()
 
+
+class Stubcessor:
     def __call__(self, frame: np.ndarray):
         return frame
 

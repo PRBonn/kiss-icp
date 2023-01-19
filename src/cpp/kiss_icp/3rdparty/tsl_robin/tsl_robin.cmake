@@ -20,20 +20,17 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-cmake_minimum_required(VERSION 3.20...3.24)
-project(kiss_icp VERSION 0.1.0 LANGUAGES CXX)
+include(FetchContent)
 
-# Setup build options
-option(USE_SYSTEM_EIGEN3 "Use system pre-installed eigen3" ON)
-option(USE_SYSTEM_TBB "Use system pre-installed oneAPI/tbb" ON)
-
-# Set build type (repeat here for C++ only consumers)
-set(CMAKE_BUILD_TYPE Release)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
-include(3rdparty/find_dependencies.cmake)
-include(cmake/CompilerOptions.cmake)
-
-add_subdirectory(metrics)
-add_subdirectory(core)
+FetchContent_Declare(tessil URL https://github.com/Tessil/robin-map/archive/refs/tags/v1.0.1.tar.gz)
+if(NOT tessil_POPULATED)
+  set(BUILD_TESTING OFF)
+  FetchContent_Populate(tessil)
+  add_library(robin_map INTERFACE)
+  add_library(tsl::robin_map ALIAS robin_map)
+  target_include_directories(robin_map INTERFACE "$<BUILD_INTERFACE:${tessil_SOURCE_DIR}/include>")
+  list(APPEND headers "${tessil_SOURCE_DIR}/include/tsl/robin_growth_policy.h"
+       "${tessil_SOURCE_DIR}/include/tsl/robin_hash.h" "${tessil_SOURCE_DIR}/include/tsl/robin_map.h"
+       "${tessil_SOURCE_DIR}/include/tsl/robin_set.h")
+  target_sources(robin_map INTERFACE "$<BUILD_INTERFACE:${headers}>")
+endif()

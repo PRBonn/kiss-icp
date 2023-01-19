@@ -1,2 +1,4 @@
+enable_markup: false
+line_width: 120
 format:
   max_subgroups_hwrap: 5
