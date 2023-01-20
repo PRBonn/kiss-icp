@@ -27,6 +27,7 @@ import time
 from typing import List, Optional
 
 import numpy as np
+from pyquaternion import Quaternion
 
 from kiss_icp.config import KISSConfig, load_config, write_config
 from kiss_icp.metrics import absolute_trajectory_error, sequence_error
@@ -117,6 +118,18 @@ class OdometryPipeline:
 
         np.savetxt(fname=f"{filename}_kitti.txt", X=_to_kitti_format(poses))
 
+    @staticmethod
+    def save_poses_tum_format(filename: str, poses: List[np.ndarray], time_stamps: List[float]):
+        def _to_tum_format(poses: np.ndarray, time_stamps) -> np.ndarray:
+            tum_data = []
+            for idx in range(len(poses)):
+                qw, qx, qy, qz = Quaternion(matrix=poses[idx]).elements
+                x, y, z = poses[idx][:3, -1].flatten()
+                tum_data.append([time_stamps[idx], x, y, z, qx, qy, qz, qw])
+            return np.array(tum_data)
+
+        np.savetxt(fname=f"{filename}_tum.txt", X=_to_tum_format(poses, time_stamps))
+
     def _calibrate_poses(self, poses):
         return (
             self._dataset.apply_calibration(poses)
@@ -124,14 +137,30 @@ class OdometryPipeline:
             else poses
         )
 
-    def _save_poses(self, filename: str, poses: List[np.ndarray]):
+    def _get_time_stamps(self):
+        return (
+            self._dataset.get_time_stamps()
+            if hasattr(self._dataset, "get_time_stamps")
+            else list(range(len(self.poses)))
+        )
+
+    def _get_gt_time_stamps(self):
+        return (
+            self._dataset.get_gt_time_stamps()
+            if hasattr(self._dataset, "get_gt_time_stamps")
+            else list(range(len(self.gt_poses)))
+        )
+
+    def _save_poses(self, filename: str, poses: List[np.ndarray], time_stamps):
         np.save(filename, poses)
         self.save_poses_kitti_format(filename, poses)
+        self.save_poses_tum_format(filename, poses, time_stamps)
 
     def _write_result_poses(self):
         self._save_poses(
             filename=f"{self.results_dir}/{self._dataset.sequence_id}_poses",
             poses=self._calibrate_poses(self.poses),
+            time_stamps=self._get_time_stamps(),
         )
 
     def _write_gt_poses(self):
@@ -140,6 +169,7 @@ class OdometryPipeline:
         self._save_poses(
             filename=f"{self.results_dir}/{self._dataset.sequence_id}_gt",
             poses=self._calibrate_poses(self.gt_poses),
+            time_stamps=self._get_gt_time_stamps(),
         )
 
     def _run_evaluation(self):
