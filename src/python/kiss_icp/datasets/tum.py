@@ -38,15 +38,15 @@ class TUMDataset:
 
         self.data_dir = data_dir
         self.sequence_id = os.path.basename(data_dir)
-        
-        #Load depth frames
-        depth_list = self.read_file_list((self.data_dir/"depth.txt"))
-        self.depth_frames = list(depth_list.keys())
-        
+
+        # Load depth frames
+        self.depth_list = self.read_file_list((self.data_dir / "depth.txt"))
+        self.depth_frames = list(self.depth_list.keys())
+
         # rgb single frame
-        rgb_path = os.path.join(self.data_dir, "rgb" , os.listdir(self.data_dir / "rgb")[0])
-        self.rgb_default_frame =  self.o3d.io.read_image(rgb_path)
-        
+        rgb_path = os.path.join(self.data_dir, "rgb", os.listdir(self.data_dir / "rgb")[0])
+        self.rgb_default_frame = self.o3d.io.read_image(rgb_path)
+
         # Load GT poses
         self.gt_list = self.read_file_list(os.path.join(self.data_dir, "groundtruth.txt"))
         self.gt_poses = self.load_poses()
@@ -79,6 +79,12 @@ class TUMDataset:
             poses.append(pose)
         return np.asarray(poses)
 
+    def get_time_stamps(self):
+        return list(self.depth_list.keys())
+
+    def get_gt_time_stamps(self):
+        return list(self.gt_list.keys())
+
     def read_file_list(self, filename):
         """Reads a trajectory from a text file.
 
@@ -92,7 +98,7 @@ class TUMDataset:
         Output:
         dict -- dictionary of (stamp,data) tuples
         """
-        file_lines  = np.loadtxt(fname=filename, dtype=str, comments="#",delimiter=" ")
+        file_lines = np.loadtxt(fname=filename, dtype=str, comments="#", delimiter=" ")
         list = [(float(l[0]), l[1:]) for l in file_lines if len(l) > 1]
         return dict(list)
 
@@ -100,7 +106,9 @@ class TUMDataset:
         depth_id = self.depth_frames[idx]
         depth_path = os.path.join(self.data_dir, "depth", "{:.6f}".format(depth_id) + ".png")
         depth_raw = self.o3d.io.read_image(depth_path)
-        rgbd_image = self.o3d.geometry.RGBDImage.create_from_tum_format(self.rgb_default_frame, depth_raw)
+        rgbd_image = self.o3d.geometry.RGBDImage.create_from_tum_format(
+            self.rgb_default_frame, depth_raw
+        )
         pcd = self.o3d.geometry.PointCloud.create_from_rgbd_image(
             rgbd_image,
             self.o3d.camera.PinholeCameraIntrinsic(
@@ -109,4 +117,3 @@ class TUMDataset:
         )
         pcd.transform([[0, 1, 0, 0], [1, 0, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
         return np.array(pcd.points, dtype=np.float64)
-
