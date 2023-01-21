@@ -5,7 +5,7 @@ import numpy as np
 
 
 class OusterDataloader:
-    """Ouster PCAP dataloader"""
+    """Ouster pcap dataloader"""
 
     def __init__(
         self,
@@ -59,10 +59,10 @@ class OusterDataloader:
         self._pcap_file = str(data_dir)
 
         # read pcap file for the first pass to count scans
-        print("Pre-reading Ouster PCAP to count the scans number ...")
+        print("Pre-reading Ouster pcap to count the scans number ...")
         self._source = pcap.Pcap(self._pcap_file, self._info)
         self._scans_num = sum([1 for _ in client.Scans(self._source)])
-        print(f"Ouster PCAP total scans number:  {self._scans_num}")
+        print(f"Ouster pcap total scans number:  {self._scans_num}")
 
         # cached timestamps array
         self._timestamps = np.empty(0)
@@ -77,7 +77,7 @@ class OusterDataloader:
         # we assume that users always reads sequentially and not
         # pass idx expecting random access capability.
         assert self._next_idx == idx, (
-            "Ouster PCAP Dataloader supports only sequential reads. "
+            "Ouster pcap Dataloader supports only sequential reads. "
             f"Expected idx: {self._next_idx}, but got {idx}"
         )
         scan = next(self._scans_iter)

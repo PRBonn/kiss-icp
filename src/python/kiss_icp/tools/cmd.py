@@ -70,6 +70,9 @@ $ kiss_icp_pipeline --visualize <data-dir>:open_file_folder:
 # Process a given rosbag file
 $ kiss_icp_pipeline --topic /cloud_node --visualize <path-to-my-rosbag.bag>:page_facing_up:
 
+# Process Ouster pcap recording (requires ouster-sdk Python package installed)
+$ kiss_icp_pipeline --visualize <path-to-ouster.pcap>:page_facing_up: --meta <path-to-metadata.json>:page_facing_up:
+
 # Use a more specific dataloader: {", ".join(_available_dl_help)}
 $ kiss_icp_pipeline --dataloader kitti --sequence 07 --visualize <path-to-kitti-root>:open_file_folder:
 """
@@ -154,7 +157,7 @@ def kiss_icp_pipeline(
         None,
         "--meta",
         exists=True,
-        help="[Optional] For Ouster PCAP dataloader, you need to specify a metadata json file",
+        help="[Optional] For Ouster pcap dataloader, you need to specify a metadata json file",
         rich_help_panel="Additional Options",
     ),
     version: Optional[bool] = typer.Option(
@@ -170,13 +173,16 @@ def kiss_icp_pipeline(
         print('You must specify a sequence "--sequence"')
         raise typer.Exit(code=1)
 
-    # Check if the main source is a bagfile, then automatically fallback to RosbagDataset
-    dataloader = "rosbag" if data.is_file() and data.name.split(".")[-1] == "bag" else dataloader
-    # or to Ouster dataloader
-    dataloader = "ouster" if data.is_file() and data.name.split(".")[-1] == "pcap" else dataloader
-    if dataloader == "ouster" and meta is None:
-        print('You must specify a metadata file "--meta" for Ouster PCAP ')
-        raise typer.Exit(code=1)
+    if data.is_file():
+        # Check if the main source is a bagfile, then automatically fallback to RosbagDataset
+        if data.name.split(".")[-1] == "bag":
+            dataloader = "rosbag"
+        # or to Ouster dataloader
+        elif data.name.split(".")[-1] == "pcap":
+            dataloader = "ouster"
+            if meta is None:
+                print('You must specify a metadata file "--meta" for Ouster pcap ')
+                raise typer.Exit(code=1)
 
     # Lazy-loading for faster CLI
     from kiss_icp.datasets import dataset_factory
