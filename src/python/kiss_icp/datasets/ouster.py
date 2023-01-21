@@ -14,30 +14,28 @@ class OusterDataloader:
         *_,
         **__,
     ):
-        """Create Ouster dataloader to read scans from pcap file.
+        """Create Ouster pcap dataloader to read scans from a pcap file.
 
-        Ouster pcap recording can be done with tcpdump or programmatically.
-        Pcap file should contain raw lidar_packets and `meta` file should
-        be a corresponding sensor metadata stored at the time of sensor
-        data recording.
+        Ouster pcap can be recorded with a `tcpdump` command or programmatically.
+        Pcap file should contain raw lidar_packets and `meta` file (i.e. metadata.json)
+        should be a corresponding sensor metadata stored at the time of pcap recording.
 
 
-        NOTE: It's critical to have metadata json stored in the same recording session
-        with a pcap, because pcap reader checks the `init_id`
-        field in the UDP lidar_packets and expects it to match `initialization_id`
+        NOTE: It's critical to have a metadata json stored in the same recording session
+        as a pcap file, because pcap reader checks the `init_id` field in the UDP
+        lidar_packets and expects it to match `initialization_id`
         in the metadata json, packets with different `init_id` just skipped.
 
-        Metadata json can be get with Ouster SDK:
-        https://static.ouster.dev/sdk-docs/python/examples/basics-sensor.html#obtaining-sensor-metadata
+        Metadata json can be obtainer with Ouster SDK:
+        See examples here https://static.ouster.dev/sdk-docs/python/examples/basics-sensor.html#obtaining-sensor-metadata
 
-        or with HTTP API GET /api/v1/sensor/metadata:
-        https://static.ouster.dev/sensor-docs/image_route1/image_route2/common_sections/API/http-api-v1.html#get-api-v1-sensor-metadata
+        or with Sensor HTTP API endpoint GET /api/v1/sensor/metadata directly:
+        See doc for details https://static.ouster.dev/sensor-docs/image_route1/image_route2/common_sections/API/http-api-v1.html#get-api-v1-sensor-metadata
 
         Args:
-            data_dir: path to the pcap file (not a directory), name is such
-            to conform to the common kiss_icp Dataset interface.
-            meta: path to the metadata file that should be stored together with
-            a recorded .pcap file.
+            data_dir: path to a pcap file (not a directory)
+            meta: path to a metadata json file that should be recorded together with
+            a pcap file.
         """
 
         try:
@@ -54,6 +52,7 @@ class OusterDataloader:
             self._info_json = json.read()
             self._info = client.SensorInfo(self._info_json)
 
+        # lookup table for 2D range image projection to a 3D point cloud
         self._xyz_lut = client.XYZLut(self._info)
 
         self._pcap_file = str(data_dir)
@@ -61,7 +60,7 @@ class OusterDataloader:
         # read pcap file for the first pass to count scans
         print("Pre-reading Ouster pcap to count the scans number ...")
         self._source = pcap.Pcap(self._pcap_file, self._info)
-        self._scans_num = sum([1 for _ in client.Scans(self._source)])
+        self._scans_num = sum((1 for _ in client.Scans(self._source)))
         print(f"Ouster pcap total scans number:  {self._scans_num}")
 
         # cached timestamps array
@@ -74,8 +73,8 @@ class OusterDataloader:
         self._next_idx = 0
 
     def __getitem__(self, idx):
-        # we assume that users always reads sequentially and not
-        # pass idx expecting random access capability.
+        # we assume that users always reads sequentially and do not
+        # pass idx as for a random access collection
         assert self._next_idx == idx, (
             "Ouster pcap Dataloader supports only sequential reads. "
             f"Expected idx: {self._next_idx}, but got {idx}"
