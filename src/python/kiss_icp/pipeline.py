@@ -152,7 +152,7 @@ class OdometryPipeline:
                     tx, ty, tz = poses[idx][:3, -1].flatten()
                     qw, qx, qy, qz = Quaternion(matrix=poses[idx], atol=0.01).elements
                     tum_data.append([time_stamps[idx], tx, ty, tz, qx, qy, qz, qw])
-            return np.array(tum_data)
+            return np.array(tum_data).astype(np.float64)
 
         np.savetxt(fname=f"{filename}_tum.txt", X=_to_tum_format(poses, time_stamps), fmt="%.4f")
 
