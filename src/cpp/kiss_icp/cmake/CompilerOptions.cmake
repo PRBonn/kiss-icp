@@ -20,18 +20,13 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-cmake_minimum_required(VERSION 3.16...3.24)
-project(kiss_icp VERSION 0.0.14 LANGUAGES CXX)
+function(set_global_target_properties target)
+  target_compile_features(${target} PUBLIC cxx_std_17)
+  target_compile_options(${target} PRIVATE $<$<COMPILE_LANG_AND_ID:CXX,Clang,AppleClang>:-fcolor-diagnostics>)
+  target_compile_options(${target} PRIVATE $<$<COMPILE_LANG_AND_ID:CXX,GNU>:-fdiagnostics-color=always>)
 
-# Setup build options
-option(USE_SYSTEM_EIGEN3 "Use system pre-installed eigen3" ON)
-option(USE_SYSTEM_TBB "Use system pre-installed oneAPI/tbb" ON)
-
-# Set build type (repeat here for C++ only consumers)
-set(CMAKE_BUILD_TYPE Release)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
-include(3rdparty/find_dependencies.cmake)
-add_subdirectory(kiss_icp)
-add_subdirectory(metrics)
+  set(INCLUDE_DIRS ${PROJECT_SOURCE_DIR})
+  cmake_path(GET INCLUDE_DIRS PARENT_PATH INCLUDE_DIRS)
+  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+                             PUBLIC $<BUILD_INTERFACE:${INCLUDE_DIRS}> $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+endfunction()

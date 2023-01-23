@@ -85,17 +85,18 @@ https://user-images.githubusercontent.com/38326482/189950820-030fd9e4-406b-4d14-
 
 ## Citation
 
-If you use this library for any academic work, please cite our original [paper](https://arxiv.org/pdf/2209.15397.pdf).
+If you use this library for any academic work, please cite our original [paper](https://www.ipb.uni-bonn.de/wp-content/papercite-data/pdf/vizzo2023ral.pdf).
 
 ```bibtex
-@article{vizzo2022arxiv,
+@article{vizzo2023ral,
   author    = {Vizzo, Ignacio and Guadagnino, Tiziano and Mersch, Benedikt and Wiesmann, Louis and Behley, Jens and Stachniss, Cyrill},
   title     = {{KISS-ICP: In Defense of Point-to-Point ICP -- Simple, Accurate, and Robust Registration If Done the Right Way}},
-  journal   = {arXiv preprint},
-  eprint    = {2209.15397v1},
-  doi       = {10.48550/ARXIV.2209.15397},
-  url       = {https://arxiv.org/pdf/2209.15397.pdf},
-  year      = {2022},
+  journal   = {IEEE Robotics and Automation Letters (RA-L)},
+  pages     = {1-8},
+  doi       = {10.1109/LRA.2023.3236571},
+  volume    = {8},
+  number    = {2},
+  year      = {2023},
   codeurl   = {https://github.com/PRBonn/kiss-icp},
 }
 ```

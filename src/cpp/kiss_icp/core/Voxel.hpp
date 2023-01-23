@@ -20,21 +20,37 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
+
 #pragma once
 
 #include <Eigen/Core>
-#include <utility>
+#include <array>
 #include <vector>
 
 namespace kiss_icp {
 
-/// Crop the frame with max/min ranges
-std::vector<Eigen::Vector3d> Preprocess(const std::vector<Eigen::Vector3d>& frame,
-                                        double max_range,
-                                        double min_range);
+struct Voxel {
+    Voxel(int32_t x, int32_t y, int32_t z) : ijk({x, y, z}) {}
+    Voxel(const Eigen::Vector3d &point, double voxel_size)
+        : ijk({static_cast<int32_t>(point.x() / voxel_size),
+               static_cast<int32_t>(point.y() / voxel_size),
+               static_cast<int32_t>(point.z() / voxel_size)}) {}
+    inline bool operator==(const Voxel &vox) const {
+        return ijk[0] == vox.ijk[0] && ijk[1] == vox.ijk[1] && ijk[2] == vox.ijk[2];
+    }
 
-/// This function only applies for the KITTI dataset, and should NOT be used by any other dataset,
-/// the original idea and part of the implementation is taking from CT-ICP(Although IMLS-SLAM
-/// Originally introduced the calibration factor)
-std::vector<Eigen::Vector3d> CorrectKITTIScan(const std::vector<Eigen::Vector3d>& frame);
+    std::array<int32_t, 3> ijk;
+};
 }  // namespace kiss_icp
+
+// Specialization of std::hash for our custom type Voxel
+namespace std {
+
+template <>
+struct hash<kiss_icp::Voxel> {
+    std::size_t operator()(const kiss_icp::Voxel &vox) const {
+        const uint32_t *vec = reinterpret_cast<const uint32_t *>(vox.ijk.data());
+        return ((1 << 20) - 1) & (vec[0] * 73856093 ^ vec[1] * 19349663 ^ vec[2] * 83492791);
+    }
+};
+}  // namespace std

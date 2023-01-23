@@ -20,27 +20,18 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
+#include "Metrics.hpp"
 
-// Taken from kitti-dev-kit
-#ifndef KITTI_UTILS_H_
-#define KITTI_UTILS_H_
-
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <algorithm>
 #include <cmath>
+#include <tuple>
 #include <vector>
 
-std::tuple<float, float> SeqError(const std::vector<Eigen::Matrix4d>& poses_gt,
-                                  const std::vector<Eigen::Matrix4d>& poses_result);
-
-std::tuple<float, float> AbsoluteTrajectoryError(const std::vector<Eigen::Matrix4d>& poses_gt,
-                                                 const std::vector<Eigen::Matrix4d>& poses_result);
-
-std::tuple<float, float> RelativeErrors(const std::vector<Eigen::Matrix4d>& poses_gt,
-                                        const std::vector<Eigen::Matrix4d>& poses_result);
-
-static double lengths[] = {100, 200, 300, 400, 500, 600, 700, 800};
-static int32_t num_lengths = 8;
+// All this not so beatifull C++ functions are taken from kitti-dev-kit
+namespace {
+double lengths[] = {100, 200, 300, 400, 500, 600, 700, 800};
+int32_t num_lengths = 8;
 
 struct errors {
     int32_t first_frame;
@@ -52,7 +43,7 @@ struct errors {
         : first_frame(first_frame), r_err(r_err), t_err(t_err), len(len), speed(speed) {}
 };
 
-inline std::vector<double> trajectoryDistances(const std::vector<Eigen::Matrix4d>& poses) {
+std::vector<double> TrajectoryDistances(const std::vector<Eigen::Matrix4d>& poses) {
     std::vector<double> dist;
     dist.push_back(0);
     for (uint32_t i = 1; i < poses.size(); i++) {
@@ -69,9 +60,9 @@ inline std::vector<double> trajectoryDistances(const std::vector<Eigen::Matrix4d
     return dist;
 }
 
-inline int32_t lastFrameFromSegmentLength(const std::vector<double>& dist,
-                                          int32_t first_frame,
-                                          double len) {
+int32_t LastFrameFromSegmentLength(const std::vector<double>& dist,
+                                   int32_t first_frame,
+                                   double len) {
     for (uint32_t i = first_frame; i < dist.size(); i++) {
         if (dist[i] > dist[first_frame] + len) {
             return i;
@@ -80,7 +71,7 @@ inline int32_t lastFrameFromSegmentLength(const std::vector<double>& dist,
     return -1;
 }
 
-inline double rotationError(const Eigen::Matrix4d& pose_error) {
+double RotationError(const Eigen::Matrix4d& pose_error) {
     double a = pose_error(0, 0);
     double b = pose_error(1, 1);
     double c = pose_error(2, 2);
@@ -88,15 +79,15 @@ inline double rotationError(const Eigen::Matrix4d& pose_error) {
     return std::acos(std::max(std::min(d, 1.0), -1.0));
 }
 
-inline double translationError(const Eigen::Matrix4d& pose_error) {
+double TranslationError(const Eigen::Matrix4d& pose_error) {
     double dx = pose_error(0, 3);
     double dy = pose_error(1, 3);
     double dz = pose_error(2, 3);
     return std::sqrt(dx * dx + dy * dy + dz * dz);
 }
 
-inline std::vector<errors> calcSequenceErrors(const std::vector<Eigen::Matrix4d>& poses_gt,
-                                              const std::vector<Eigen::Matrix4d>& poses_result) {
+std::vector<errors> CalcSequenceErrors(const std::vector<Eigen::Matrix4d>& poses_gt,
+                                       const std::vector<Eigen::Matrix4d>& poses_result) {
     // error vector
     std::vector<errors> err;
 
@@ -104,7 +95,7 @@ inline std::vector<errors> calcSequenceErrors(const std::vector<Eigen::Matrix4d>
     int32_t step_size = 10;  // every second
 
     // pre-compute distances (from ground truth as reference)
-    std::vector<double> dist = trajectoryDistances(poses_gt);
+    std::vector<double> dist = TrajectoryDistances(poses_gt);
 
     // for all start positions do
     for (uint32_t first_frame = 0; first_frame < poses_gt.size(); first_frame += step_size) {
@@ -114,7 +105,7 @@ inline std::vector<errors> calcSequenceErrors(const std::vector<Eigen::Matrix4d>
             double len = lengths[i];
 
             // compute last frame
-            int32_t last_frame = lastFrameFromSegmentLength(dist, first_frame, len);
+            int32_t last_frame = LastFrameFromSegmentLength(dist, first_frame, len);
 
             // continue, if sequence not long enough
             if (last_frame == -1) {
@@ -126,8 +117,8 @@ inline std::vector<errors> calcSequenceErrors(const std::vector<Eigen::Matrix4d>
             Eigen::Matrix4d pose_delta_result =
                 poses_result[first_frame].inverse() * poses_result[last_frame];
             Eigen::Matrix4d pose_error = pose_delta_result.inverse() * pose_delta_gt;
-            double r_err = rotationError(pose_error);
-            double t_err = translationError(pose_error);
+            double r_err = RotationError(pose_error);
+            double t_err = TranslationError(pose_error);
 
             // compute speed
             auto num_frames = static_cast<double>(last_frame - first_frame + 1);
@@ -141,5 +132,60 @@ inline std::vector<errors> calcSequenceErrors(const std::vector<Eigen::Matrix4d>
     // return error vector
     return err;
 }
+}  // namespace
 
-#endif  // KITTI_UTILS_H_
+namespace kiss_icp::metrics {
+
+std::tuple<float, float> SeqError(const std::vector<Eigen::Matrix4d>& poses_gt,
+                                  const std::vector<Eigen::Matrix4d>& poses_result) {
+    std::vector<errors> err = CalcSequenceErrors(poses_gt, poses_result);
+    double t_err = 0;
+    double r_err = 0;
+
+    for (const auto& it : err) {
+        t_err += it.t_err;
+        r_err += it.r_err;
+    }
+
+    double avg_trans_error = avg_trans_error = 100.0 * (t_err / float(err.size()));
+    double avg_rot_error = avg_rot_error = 100.0 * (r_err / float(err.size())) / 3.14 * 180.0;
+
+    return std::make_tuple(avg_trans_error, avg_rot_error);
+}
+
+std::tuple<float, float> AbsoluteTrajectoryError(const std::vector<Eigen::Matrix4d>& poses_gt,
+                                                 const std::vector<Eigen::Matrix4d>& poses_result) {
+    assert(poses_gt.size() == poses_result.size() &&
+           "AbsoluteTrajectoryError| Different number of poses in ground truth and estimate");
+    Eigen::MatrixXd source(3, poses_gt.size());
+    Eigen::MatrixXd target(3, poses_gt.size());
+    const size_t num_poses = poses_gt.size();
+    // Align the two trajectories using SVD-ICP (Umeyama algorithm)
+    for (size_t i = 0; i < num_poses; ++i) {
+        source.block<3, 1>(0, i) = poses_result[i].block<3, 1>(0, 3);
+        target.block<3, 1>(0, i) = poses_gt[i].block<3, 1>(0, 3);
+    }
+    const Eigen::Matrix4d T_align_trajectories = Eigen::umeyama(source, target, false);
+    // ATE computation
+    double ATE_rot = 0, ATE_trans = 0;
+    for (size_t j = 0; j < num_poses; ++j) {
+        // Apply alignement matrix
+        const Eigen::Matrix4d T_estimate = T_align_trajectories * poses_result[j];
+        const Eigen::Matrix4d& T_ground_truth = poses_gt[j];
+        // Compute error in translation and rotation matrix (ungly)
+        const Eigen::Matrix3d delta_R =
+            T_ground_truth.block<3, 3>(0, 0) * T_estimate.block<3, 3>(0, 0).transpose();
+        const Eigen::Vector3d delta_t =
+            T_ground_truth.block<3, 1>(0, 3) - delta_R * T_estimate.block<3, 1>(0, 3);
+        // Get angular error
+        const double theta = Eigen::AngleAxisd(delta_R).angle();
+        // Sum of Squares
+        ATE_rot += theta * theta;
+        ATE_trans += delta_t.squaredNorm();
+    }
+    // Get the RMSE
+    ATE_rot /= num_poses;
+    ATE_trans /= num_poses;
+    return std::make_tuple(std::sqrt(ATE_rot), std::sqrt(ATE_trans));
+}
+}  // namespace kiss_icp::metrics

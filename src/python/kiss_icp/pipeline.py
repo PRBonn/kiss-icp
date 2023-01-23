@@ -30,8 +30,8 @@ import numpy as np
 from pyquaternion import Quaternion
 
 from kiss_icp.config import KISSConfig, load_config, write_config
+from kiss_icp.kiss_icp import KissICP
 from kiss_icp.metrics import absolute_trajectory_error, sequence_error
-from kiss_icp.odometry import Odometry
 from kiss_icp.tools.pipeline_results import PipelineResults
 from kiss_icp.tools.progress_bar import get_progress_bar
 from kiss_icp.tools.visualizer import RegistrationVisualizer, StubVisualizer
@@ -42,7 +42,7 @@ class OdometryPipeline:
         self,
         dataset,
         config: Path,
-        deskew: bool = False,
+        deskew: Optional[bool] = False,
         max_range: Optional[float] = None,
         visualize: bool = False,
         n_scans: int = -1,
@@ -55,23 +55,21 @@ class OdometryPipeline:
         self._jump = jump
         self._first = jump
         self._last = self._jump + self._n_scans
-        self.config: KISSConfig = load_config(config)
-
-        # Override defauls according to dataloader specification
-        self.config.data.max_range = max_range if max_range else self.config.data.max_range
-        if self.config.data.max_range < self.config.data.min_range:
-            print("[WARNING] max_range is smaller than min_range, settng min_range to 0.0")
-            self.config.data.min_range = 0.0
+        self.config: KISSConfig = self.load_config(config, deskew=deskew, max_range=max_range)
 
         # Pipeline
-        self.odometry = Odometry(config=self.config, deskew=deskew)
+        self.odometry = KissICP(config=self.config)
         self.results = PipelineResults()
         self.times = []
         self.poses = self.odometry.poses
         self.has_gt = hasattr(self._dataset, "gt_poses")
         self.gt_poses = self._dataset.gt_poses[self._first : self._last] if self.has_gt else None
         self.dataset_name = self._dataset.__class__.__name__
-        self.dataset_sequence = self._dataset.sequence_id
+        self.dataset_sequence = (
+            self._dataset.sequence_id
+            if hasattr(self._dataset, "sequence_id")
+            else os.path.basename(self._dataset.data_dir)
+        )
 
         # Visualizer
         self.visualizer = RegistrationVisualizer() if visualize else StubVisualizer()
@@ -106,6 +104,32 @@ class OdometryPipeline:
             frame = dataframe
             timestamps = np.zeros(frame.shape[0])
         return frame, timestamps
+
+    @staticmethod
+    def load_config(
+        config_file: Path,
+        deskew: Optional[bool] = False,
+        max_range: Optional[float] = None,
+    ):
+        config = load_config(config_file)
+
+        # Override defauls according to dataloader specification
+        config.data.deskew = deskew if deskew else config.data.deskew
+        config.data.max_range = max_range if max_range else config.data.max_range
+
+        # Check if there is a possible mistake
+        if config.data.max_range < config.data.min_range:
+            print("[WARNING] max_range is smaller than min_range, settng min_range to 0.0")
+            config.data.min_range = 0.0
+
+        # Use specified voxel size or compute one using the max range
+        config.mapping.voxel_size = (
+            config.mapping.voxel_size
+            if hasattr(config.mapping, "voxel_size")
+            else float(config.data.max_range / 100.0)
+        )
+
+        return config
 
     @property
     def results_dir(self):
