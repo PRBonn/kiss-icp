@@ -20,6 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import contextlib
 import datetime
 import os
 from pathlib import Path
@@ -27,6 +28,7 @@ import time
 from typing import List, Optional
 
 import numpy as np
+from pyquaternion import Quaternion
 
 from kiss_icp.config import KISSConfig, load_config, write_config
 from kiss_icp.kiss_icp import KissICP
@@ -141,6 +143,19 @@ class OdometryPipeline:
 
         np.savetxt(fname=f"{filename}_kitti.txt", X=_to_kitti_format(poses))
 
+    @staticmethod
+    def save_poses_tum_format(filename, poses, timestamps):
+        def _to_tum_format(poses, timestamps):
+            tum_data = []
+            with contextlib.suppress(ValueError):
+                for idx in range(len(poses)):
+                    tx, ty, tz = poses[idx][:3, -1].flatten()
+                    qw, qx, qy, qz = Quaternion(matrix=poses[idx], atol=0.01).elements
+                    tum_data.append([timestamps[idx], tx, ty, tz, qx, qy, qz, qw])
+            return np.array(tum_data).astype(np.float64)
+
+        np.savetxt(fname=f"{filename}_tum.txt", X=_to_tum_format(poses, timestamps), fmt="%.4f")
+
     def _calibrate_poses(self, poses):
         return (
             self._dataset.apply_calibration(poses)
@@ -148,14 +163,23 @@ class OdometryPipeline:
             else poses
         )
 
-    def _save_poses(self, filename: str, poses: List[np.ndarray]):
+    def _get_frames_timestamps(self):
+        return (
+            self._dataset.get_frames_timestamps()
+            if hasattr(self._dataset, "get_frames_timestamps")
+            else np.arange(0, len(self.poses), 1 / self.config.data.lidar_frequency)
+        )
+
+    def _save_poses(self, filename: str, poses, timestamps):
         np.save(filename, poses)
         self.save_poses_kitti_format(filename, poses)
+        self.save_poses_tum_format(filename, poses, timestamps)
 
     def _write_result_poses(self):
         self._save_poses(
             filename=f"{self.results_dir}/{self._dataset.sequence_id}_poses",
             poses=self._calibrate_poses(self.poses),
+            timestamps=self._get_frames_timestamps(),
         )
 
     def _write_gt_poses(self):
@@ -164,6 +188,7 @@ class OdometryPipeline:
         self._save_poses(
             filename=f"{self.results_dir}/{self._dataset.sequence_id}_gt",
             poses=self._calibrate_poses(self.gt_poses),
+            timestamps=self._get_frames_timestamps(),
         )
 
     def _run_evaluation(self):
