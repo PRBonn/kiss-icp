@@ -144,17 +144,17 @@ class OdometryPipeline:
         np.savetxt(fname=f"{filename}_kitti.txt", X=_to_kitti_format(poses))
 
     @staticmethod
-    def save_poses_tum_format(filename, poses, time_stamps):
-        def _to_tum_format(poses, time_stamps):
+    def save_poses_tum_format(filename, poses, timestamps):
+        def _to_tum_format(poses, timestamps):
             tum_data = []
             with contextlib.suppress(ValueError):
                 for idx in range(len(poses)):
                     tx, ty, tz = poses[idx][:3, -1].flatten()
                     qw, qx, qy, qz = Quaternion(matrix=poses[idx], atol=0.01).elements
-                    tum_data.append([time_stamps[idx], tx, ty, tz, qx, qy, qz, qw])
+                    tum_data.append([timestamps[idx], tx, ty, tz, qx, qy, qz, qw])
             return np.array(tum_data).astype(np.float64)
 
-        np.savetxt(fname=f"{filename}_tum.txt", X=_to_tum_format(poses, time_stamps), fmt="%.4f")
+        np.savetxt(fname=f"{filename}_tum.txt", X=_to_tum_format(poses, timestamps), fmt="%.4f")
 
     def _calibrate_poses(self, poses):
         return (
@@ -163,30 +163,23 @@ class OdometryPipeline:
             else poses
         )
 
-    def _get_time_stamps(self):
+    def _get_timestamps(self):
         return (
-            self._dataset.get_time_stamps()
-            if hasattr(self._dataset, "get_time_stamps")
-            else list(range(len(self.poses)))
+            self._dataset.get_timestamps()
+            if hasattr(self._dataset, "get_timestamps")
+            else np.arange(0, len(self.poses), 1 / self.config.data.lidar_frequency)
         )
 
-    def _get_gt_time_stamps(self):
-        return (
-            self._dataset.get_gt_time_stamps()
-            if hasattr(self._dataset, "get_gt_time_stamps")
-            else list(range(len(self.gt_poses)))
-        )
-
-    def _save_poses(self, filename: str, poses, time_stamps):
+    def _save_poses(self, filename: str, poses, timestamps):
         np.save(filename, poses)
         self.save_poses_kitti_format(filename, poses)
-        self.save_poses_tum_format(filename, poses, time_stamps)
+        self.save_poses_tum_format(filename, poses, timestamps)
 
     def _write_result_poses(self):
         self._save_poses(
             filename=f"{self.results_dir}/{self._dataset.sequence_id}_poses",
             poses=self._calibrate_poses(self.poses),
-            time_stamps=self._get_time_stamps(),
+            timestamps=self._get_timestamps(),
         )
 
     def _write_gt_poses(self):
@@ -195,7 +188,7 @@ class OdometryPipeline:
         self._save_poses(
             filename=f"{self.results_dir}/{self._dataset.sequence_id}_gt",
             poses=self._calibrate_poses(self.gt_poses),
-            time_stamps=self._get_gt_time_stamps(),
+            timestamps=self._get_timestamps(),
         )
 
     def _run_evaluation(self):

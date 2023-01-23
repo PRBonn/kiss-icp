@@ -46,20 +46,27 @@ class TUMDataset:
         self.rgb_default_frame = self.o3d.io.read_image(rgb_path)
 
         # Load GT poses
-        self.gt_list = np.loadtxt(fname=self.data_dir / "groundtruth.txt", dtype=str)
-        self.gt_poses = self.load_poses(self.gt_list)
+        gt_list = np.loadtxt(fname=self.data_dir / "groundtruth.txt", dtype=str)
+        self.gt_poses = self.load_poses(gt_list)
 
     def __len__(self):
         return len(self.depth_frames)
 
     def load_poses(self, gt_list):
-        indices = np.abs((np.subtract.outer(self.gt_list[:, 0].astype(np.float64),self.depth_frames[:,0].astype(np.float64)))).argmin(0)
-        xyz = gt_list[indices][:,1:4]
+        indices = np.abs(
+            (
+                np.subtract.outer(
+                    gt_list[:, 0].astype(np.float64),
+                    self.depth_frames[:, 0].astype(np.float64),
+                )
+            )
+        ).argmin(0)
+        xyz = gt_list[indices][:, 1:4]
 
         rotations = np.array(
             [
                 Quaternion(x=x, y=y, z=z, w=w).rotation_matrix
-                for x, y, z, w in gt_list[indices][:,4:]
+                for x, y, z, w in gt_list[indices][:, 4:]
             ]
         )
         num_poses = rotations.shape[0]
@@ -68,11 +75,8 @@ class TUMDataset:
         poses[:, :3, 3] = xyz
         return poses
 
-    def get_time_stamps(self):
+    def get_timestamps(self):
         return self.depth_frames[:, 0]
-
-    def get_gt_time_stamps(self):
-        return self.gt_list[:, 0]
 
     def __getitem__(self, idx):
         depth_id = self.depth_frames[idx][-1]
