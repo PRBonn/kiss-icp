@@ -23,7 +23,7 @@
 import importlib
 import os
 from pathlib import Path
-
+from pyquaternion import Quaternion
 import numpy as np
 
 
@@ -52,29 +52,21 @@ class TUMDataset:
     def __len__(self):
         return len(self.depth_frames)
 
-    def find_closest_ts(self, ts):
-        times = self.gt_list[:, 0]
-        diff = np.abs(times.astype(np.float64) - float(ts))
-        idx = diff.argmin()
-        return idx
-
     def load_poses(self, gt_list):
-        def conver_to_homo(v):
-            x, y, z = v[0], v[1], v[2]
-            qx, qy, qz, qw = v[3], v[4], v[5], v[6]
-            T = np.eye(4)
-            T[:3, -1] = np.array([x, y, z])
-            T[:3, :3] = self.o3d.geometry.Geometry3D.get_rotation_matrix_from_quaternion(
-                np.array([qw, qx, qy, qz])
-            )
-            return T
+        indices = np.abs((np.subtract.outer(self.gt_list[:, 0].astype(np.float64),self.depth_frames[:,0].astype(np.float64)))).argmin(0)
+        xyz = gt_list[indices][:,1:4]
 
-        poses = []
-        for depth_id, _ in self.depth_frames:
-            pose_timestamp = self.find_closest_ts(depth_id)
-            pose = conver_to_homo(gt_list[pose_timestamp][1:])
-            poses.append(pose)
-        return np.asarray(poses)
+        rotations = np.array(
+            [
+                Quaternion(x=x, y=y, z=z, w=w).rotation_matrix
+                for x, y, z, w in gt_list[indices][:,4:]
+            ]
+        )
+        num_poses = rotations.shape[0]
+        poses = np.eye(4, dtype=np.float64).reshape(1, 4, 4).repeat(num_poses, axis=0)
+        poses[:, :3, :3] = rotations
+        poses[:, :3, 3] = xyz
+        return poses
 
     def get_time_stamps(self):
         return self.depth_frames[:, 0]
