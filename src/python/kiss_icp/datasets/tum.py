@@ -50,7 +50,6 @@ class TUMDataset:
         # Load GT poses
         self.gt_list = self.read_file_list(os.path.join(self.data_dir, "groundtruth.txt"))
         self.gt_poses = self.load_poses()
-        print("Done!")
 
     def __len__(self):
         return len(self.depth_frames)

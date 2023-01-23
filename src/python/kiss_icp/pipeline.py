@@ -20,6 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import contextlib
 import datetime
 import os
 from pathlib import Path
@@ -146,18 +147,14 @@ class OdometryPipeline:
     def save_poses_tum_format(filename, poses, time_stamps):
         def _to_tum_format(poses, time_stamps):
             tum_data = []
-            for idx in range(len(poses)):
-                tx, ty, tz = poses[idx][:3, -1].flatten()
-                R = np.array(poses[idx][:3, :3])
-                try:
-                    qw, qx, qy, qz = Quaternion(matrix=R, atol=0.01).elements
-                except ValueError:
-                    print("Not writing to TUM data")
-                    continue
-                tum_data.append([time_stamps[idx], tx, ty, tz, qx, qy, qz, qw])
+            with contextlib.suppress(ValueError):
+                for idx in range(len(poses)):
+                    tx, ty, tz = poses[idx][:3, -1].flatten()
+                    qw, qx, qy, qz = Quaternion(matrix=poses[idx], atol=0.01).elements
+                    tum_data.append([time_stamps[idx], tx, ty, tz, qx, qy, qz, qw])
             return np.array(tum_data)
 
-        np.savetxt(fname=f"{filename}_tum.txt", X=_to_tum_format(poses, time_stamps))
+        np.savetxt(fname=f"{filename}_tum.txt", X=_to_tum_format(poses, time_stamps), fmt="%.4f")
 
     def _calibrate_poses(self, poses):
         return (
@@ -180,7 +177,7 @@ class OdometryPipeline:
             else list(range(len(self.gt_poses)))
         )
 
-    def _save_poses(self, filename: str, poses: List[np.ndarray], time_stamps):
+    def _save_poses(self, filename: str, poses, time_stamps):
         np.save(filename, poses)
         self.save_poses_kitti_format(filename, poses)
         self.save_poses_tum_format(filename, poses, time_stamps)
