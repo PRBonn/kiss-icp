@@ -75,7 +75,7 @@ class TUMDataset:
         poses[:, :3, 3] = xyz
         return poses
 
-    def get_timestamps(self):
+    def get_frames_timestamps(self):
         return self.depth_frames[:, 0]
 
     def __getitem__(self, idx):

@@ -163,10 +163,10 @@ class OdometryPipeline:
             else poses
         )
 
-    def _get_timestamps(self):
+    def _get_frames_timestamps(self):
         return (
-            self._dataset.get_timestamps()
-            if hasattr(self._dataset, "get_timestamps")
+            self._dataset.get_frames_timestamps()
+            if hasattr(self._dataset, "get_frames_timestamps")
             else np.arange(0, len(self.poses), 1 / self.config.data.lidar_frequency)
         )
 
@@ -179,7 +179,7 @@ class OdometryPipeline:
         self._save_poses(
             filename=f"{self.results_dir}/{self._dataset.sequence_id}_poses",
             poses=self._calibrate_poses(self.poses),
-            timestamps=self._get_timestamps(),
+            timestamps=self._get_frames_timestamps(),
         )
 
     def _write_gt_poses(self):
@@ -188,7 +188,7 @@ class OdometryPipeline:
         self._save_poses(
             filename=f"{self.results_dir}/{self._dataset.sequence_id}_gt",
             poses=self._calibrate_poses(self.gt_poses),
-            timestamps=self._get_timestamps(),
+            timestamps=self._get_frames_timestamps(),
         )
 
     def _run_evaluation(self):
