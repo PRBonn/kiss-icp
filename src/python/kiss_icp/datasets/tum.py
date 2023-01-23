@@ -29,7 +29,6 @@ import numpy as np
 
 class TUMDataset:
     def __init__(self, data_dir: Path, *_, **__):
-        # TODO(Nacho): Remove Open3D dependency
         try:
             self.o3d = importlib.import_module("open3d")
         except ModuleNotFoundError as err:
@@ -40,27 +39,26 @@ class TUMDataset:
         self.sequence_id = os.path.basename(data_dir)
 
         # Load depth frames
-        self.depth_list = self.read_file_list((self.data_dir / "depth.txt"))
-        self.depth_frames = list(self.depth_list.keys())
+        self.depth_frames = np.loadtxt(fname=self.data_dir / "depth.txt", dtype=str)
 
         # rgb single frame
         rgb_path = os.path.join(self.data_dir, "rgb", os.listdir(self.data_dir / "rgb")[0])
         self.rgb_default_frame = self.o3d.io.read_image(rgb_path)
 
         # Load GT poses
-        self.gt_list = self.read_file_list(os.path.join(self.data_dir, "groundtruth.txt"))
-        self.gt_poses = self.load_poses()
+        self.gt_list = np.loadtxt(fname=self.data_dir / "groundtruth.txt", dtype=str)
+        self.gt_poses = self.load_poses(self.gt_list)
 
     def __len__(self):
         return len(self.depth_frames)
 
     def find_closest_ts(self, ts):
-        times = list(self.gt_list.keys())
-        diff = np.abs(np.array(times) - ts)
+        times = self.gt_list[:, 0]
+        diff = np.abs(times.astype(np.float64) - float(ts))
         idx = diff.argmin()
-        return times[idx]
+        return idx
 
-    def load_poses(self):
+    def load_poses(self, gt_list):
         def conver_to_homo(v):
             x, y, z = v[0], v[1], v[2]
             qx, qy, qz, qw = v[3], v[4], v[5], v[6]
@@ -72,39 +70,21 @@ class TUMDataset:
             return T
 
         poses = []
-        for depth_id in self.depth_frames:
+        for depth_id, _ in self.depth_frames:
             pose_timestamp = self.find_closest_ts(depth_id)
-            pose = conver_to_homo(self.gt_list[pose_timestamp])
+            pose = conver_to_homo(gt_list[pose_timestamp][1:])
             poses.append(pose)
         return np.asarray(poses)
 
     def get_time_stamps(self):
-        return list(self.depth_list.keys())
+        return self.depth_frames[:, 0]
 
     def get_gt_time_stamps(self):
-        return list(self.gt_list.keys())
-
-    def read_file_list(self, filename):
-        """Reads a trajectory from a text file.
-
-        File format:
-        The file format is "stamp d1 d2 d3 ...", where stamp denotes the time stamp (to be matched)
-        and "d1 d2 d3.." is arbitary data (e.g., a 3D position and 3D orientation) associated to this timestamp.
-
-        Input:
-        filename -- File name
-
-        Output:
-        dict -- dictionary of (stamp,data) tuples
-        """
-        file_lines = np.loadtxt(fname=filename, dtype=str, comments="#", delimiter=" ")
-        list = [(float(l[0]), l[1:]) for l in file_lines if len(l) > 1]
-        return dict(list)
+        return self.gt_list[:, 0]
 
     def __getitem__(self, idx):
-        depth_id = self.depth_frames[idx]
-        depth_path = os.path.join(self.data_dir, "depth", "{:.6f}".format(depth_id) + ".png")
-        depth_raw = self.o3d.io.read_image(depth_path)
+        depth_id = self.depth_frames[idx][-1]
+        depth_raw = self.o3d.io.read_image(str(self.data_dir / depth_id))
         rgbd_image = self.o3d.geometry.RGBDImage.create_from_tum_format(
             self.rgb_default_frame, depth_raw
         )
@@ -114,5 +94,4 @@ class TUMDataset:
                 self.o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault
             ),
         )
-        pcd.transform([[0, 1, 0, 0], [1, 0, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
         return np.array(pcd.points, dtype=np.float64)
