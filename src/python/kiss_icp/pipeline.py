@@ -119,13 +119,18 @@ class OdometryPipeline:
         np.savetxt(fname=f"{filename}_kitti.txt", X=_to_kitti_format(poses))
 
     @staticmethod
-    def save_poses_tum_format(filename: str, poses: List[np.ndarray], time_stamps: List[float]):
-        def _to_tum_format(poses: np.ndarray, time_stamps) -> np.ndarray:
+    def save_poses_tum_format(filename, poses, time_stamps):
+        def _to_tum_format(poses, time_stamps):
             tum_data = []
             for idx in range(len(poses)):
-                qw, qx, qy, qz = Quaternion(matrix=poses[idx]).elements
-                x, y, z = poses[idx][:3, -1].flatten()
-                tum_data.append([time_stamps[idx], x, y, z, qx, qy, qz, qw])
+                tx, ty, tz = poses[idx][:3, -1].flatten()
+                R = np.array(poses[idx][:3, :3])
+                try:
+                    qw, qx, qy, qz = Quaternion(matrix=R, atol=0.01).elements
+                except ValueError:
+                    print("Not writing to TUM data")
+                    continue
+                tum_data.append([time_stamps[idx], tx, ty, tz, qx, qy, qz, qw])
             return np.array(tum_data)
 
         np.savetxt(fname=f"{filename}_tum.txt", X=_to_tum_format(poses, time_stamps))
