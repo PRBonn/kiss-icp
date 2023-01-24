@@ -34,19 +34,15 @@
 #include "Voxel.hpp"
 
 namespace kiss_icp {
-class VoxelHashMap {
-public:
+struct VoxelHashMap {
     using Vector3dVector = std::vector<Eigen::Vector3d>;
     using Vector3dVectorTuple = std::tuple<Vector3dVector, Vector3dVector>;
 
-public:
-    VoxelHashMap() = default;
     explicit VoxelHashMap(double voxel_size, double max_distance, int max_points_per_voxel)
         : voxel_size_(voxel_size),
           max_distance_(max_distance),
           max_points_per_voxel_(max_points_per_voxel) {}
 
-public:
     Eigen::Matrix4d RegisterPoinCloud(const Vector3dVector &points,
                                       const Eigen::Matrix4d &initial_guess,
                                       double max_correspondence_distance,
@@ -62,7 +58,6 @@ public:
     void RemovePointsFarFromLocation(const Eigen::Vector3d &origin);
     std::vector<Eigen::Vector3d> Pointcloud() const;
 
-private:
     struct VoxelBlock {
         // buffer of points with a max limit of n_points
         std::vector<Eigen::Vector3d> points;
@@ -72,7 +67,6 @@ private:
         }
     };
 
-private:
     double voxel_size_;
     double max_distance_;
     int max_points_per_voxel_;

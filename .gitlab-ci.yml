@@ -34,6 +34,17 @@ pip_package:
     - VERBOSE=1 pip install --verbose .
     - kiss_icp_pipeline --version
 
+ros1_wrapper:
+  image: osrf/ros:noetic-desktop-full
+  stage: build
+  before_script:
+    - rm -rf ~/catkin_ws/
+    - mkdir -p ~/catkin_ws/
+    - cp -r ${CI_PROJECT_DIR} ~/catkin_ws/src
+  script:
+    - cd ~/catkin_ws/
+    - catkin_make
+
 #----- deployment stage ----------------------------------------------------------------------------
 cibuildwheel:
   stage: deploy

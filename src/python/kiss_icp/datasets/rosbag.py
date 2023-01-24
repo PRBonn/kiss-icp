@@ -53,9 +53,6 @@ class RosbagDataset:
         # Visualization Options
         self.use_global_visualizer = True
 
-    def __del__(self):
-        self.bag.close()
-
     def __len__(self):
         return self.n_scans
 

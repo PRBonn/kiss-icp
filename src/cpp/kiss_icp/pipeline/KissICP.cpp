@@ -27,17 +27,25 @@
 #include <tuple>
 #include <vector>
 
+#include "kiss_icp/core/Deskew.hpp"
 #include "kiss_icp/core/Preprocessing.hpp"
 #include "kiss_icp/core/VoxelHashMap.hpp"
 
-namespace kiss_icp {
+namespace kiss_icp::pipeline {
+
+KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vector3d>& frame,
+                                                    const std::vector<double>& timestamps) {
+    const auto& deskew_frame = [&]() -> std::vector<Eigen::Vector3d> {
+        if (!config_.deskew) return frame;
+        // TODO(Nacho) Add some asserts here to sanitize the timestamps
+        return compensator_.DeSkewScan(frame, timestamps, poses_);
+    }();
+    return RegisterFrame(deskew_frame);
+}
 
 KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vector3d>& frame) {
-    // # Apply motion compensation
-    // frame = self.compensator.deskew_scan(frame, self.poses, timestamps)
-
     // Preprocess the input cloud
-    const auto& cropped_frame = Preprocess(frame, max_range_, min_range_);
+    const auto& cropped_frame = Preprocess(frame, config_.max_range, config_.min_range);
 
     // Voxelize
     const auto& [source, frame_downsample] = Voxelize(cropped_frame);
@@ -65,14 +73,15 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
 }
 
 KissICP::Vector3dVectorTuple KissICP::Voxelize(const std::vector<Eigen::Vector3d>& frame) const {
-    const auto frame_downsample = kiss_icp::VoxelDownsample(frame, voxel_size_ * 0.5);
-    const auto source = kiss_icp::VoxelDownsample(frame_downsample, voxel_size_ * 1.5);
+    const auto voxel_size = config_.voxel_size;
+    const auto frame_downsample = kiss_icp::VoxelDownsample(frame, voxel_size * 0.5);
+    const auto source = kiss_icp::VoxelDownsample(frame_downsample, voxel_size * 1.5);
     return {source, frame_downsample};
 }
 
 double KissICP::GetAdaptiveThreshold() {
     if (!HasMoved()) {
-        return initial_threshold_;
+        return config_.initial_threshold;
     }
     return adaptive_threshold_.ComputeThreshold();
 }
@@ -89,7 +98,7 @@ bool KissICP::HasMoved() {
         return ((T1.inverse() * T2).block<3, 1>(0, 3)).norm();
     };
     const double motion = ComputeMotion(poses_.front(), poses_.back());
-    return motion > 5.0 * min_motion_th_;
+    return motion > 5.0 * config_.min_motion_th;
 }
 
-}  // namespace kiss_icp
+}  // namespace kiss_icp::pipeline

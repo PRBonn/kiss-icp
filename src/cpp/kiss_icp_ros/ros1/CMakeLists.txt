@@ -20,31 +20,30 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import numpy as np
+cmake_minimum_required(VERSION 3.16...3.24)
+project(kiss_icp)
+find_package(
+  catkin REQUIRED
+  COMPONENTS geometry_msgs
+             nav_msgs
+             sensor_msgs
+             roscpp
+             rosbag
+             std_msgs
+             tf2
+             tf2_ros)
+catkin_package()
 
-from kiss_icp.config import KISSConfig
-from kiss_icp.pybind import kiss_icp_pybind
+# ROS1 node
+add_executable(odometry_node src/Utils.cpp src/OdometryServer.cpp src/odometry_node.cpp)
+target_link_libraries(odometry_node kiss_icp::pipeline)
+target_include_directories(odometry_node PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${catkin_INCLUDE_DIRS})
+target_link_libraries(odometry_node ${catkin_LIBRARIES})
+install(TARGETS odometry_node RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
-
-def get_motion_compensator(config: KISSConfig):
-    return MotionCompensator(config) if config.data.deskew else StubCompensator()
-
-
-class StubCompensator:
-    def deskew_scan(self, frame, poses, timestamps):
-        return frame
-
-
-class MotionCompensator:
-    def __init__(self, config: KISSConfig):
-        self._compensator = kiss_icp_pybind._MotionCompensator(frame_rate=config.data.frame_rate)
-
-    def deskew_scan(self, frame, poses, timestamps):
-        if len(poses) < 2:
-            return frame
-        deskew_frame = self._compensator._deskew_scan(
-            frame=kiss_icp_pybind._Vector3dVector(frame),
-            timestamps=timestamps,
-            poses=poses,
-        )
-        return np.asarray(deskew_frame)
+# KITTI helper node
+add_executable(kitti_helper_node src/Utils.cpp src/kitti_helper_node.cpp)
+target_link_libraries(kitti_helper_node kiss_icp::core)
+target_include_directories(kitti_helper_node PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${catkin_INCLUDE_DIRS})
+target_link_libraries(kitti_helper_node ${catkin_LIBRARIES})
+install(TARGETS kitti_helper_node RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})

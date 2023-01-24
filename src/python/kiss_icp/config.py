@@ -38,7 +38,7 @@ class KISSConfig:
     class data:
         preprocess: bool = True
         correct_scan: bool = True
-        lidar_frequency: float = 10.0
+        frame_rate: float = 10.0
         max_range: float = 100.0
         min_range: float = 0.0
         deskew: bool = False

@@ -27,10 +27,27 @@
 #include <Eigen/Geometry>
 #include <vector>
 
+#include "kiss_icp/core/Deskew.hpp"
 #include "kiss_icp/core/Threshold.hpp"
 #include "kiss_icp/core/VoxelHashMap.hpp"
 
-namespace kiss_icp {
+namespace kiss_icp::pipeline {
+
+struct KISSConfig {
+    // map params
+    double voxel_size = 1.0;
+    double max_range = 100.0;
+    double min_range = 5.0;
+    int max_points_per_voxel = 20;
+
+    // th parms
+    double min_motion_th = 0.1;
+    double initial_threshold = 2.0;
+
+    // Motion compensation
+    bool deskew = false;
+    double frame_rate = 10.0;  // [Hz]
+};
 
 class KissICP {
 public:
@@ -38,14 +55,21 @@ public:
     using Vector3dVectorTuple = std::tuple<Vector3dVector, Vector3dVector>;
 
 public:
-    explicit KissICP() {
-        // refactor now
-        local_map_ = VoxelHashMap(voxel_size_, max_range_, max_points_per_voxel_);
-        adaptive_threshold_ = AdaptiveThreshold(initial_threshold_, min_motion_th_, max_range_);
-    }
+    explicit KissICP(const KISSConfig& config)
+        : config_(config),
+          local_map_(config.voxel_size, config.max_range, config.max_points_per_voxel),
+          adaptive_threshold_(config.initial_threshold, config.min_motion_th, config.max_range),
+          compensator_(config.frame_rate) {}
+
+    KissICP()
+        : local_map_(config_.voxel_size, config_.max_range, config_.max_points_per_voxel),
+          adaptive_threshold_(config_.initial_threshold, config_.min_motion_th, config_.max_range),
+          compensator_(config_.frame_rate) {}
 
 public:
     Vector3dVectorTuple RegisterFrame(const std::vector<Eigen::Vector3d>& frame);
+    Vector3dVectorTuple RegisterFrame(const std::vector<Eigen::Vector3d>& frame,
+                                      const std::vector<double>& timestamps);
     Vector3dVectorTuple Voxelize(const std::vector<Eigen::Vector3d>& frame) const;
     double GetAdaptiveThreshold();
     Eigen::Matrix4d GetPredictionModel() const;
@@ -57,21 +81,12 @@ public:
     std::vector<Eigen::Matrix4d> poses() const { return poses_; };
 
 private:
+    // KISS-ICP pipeline modules
     std::vector<Eigen::Matrix4d> poses_;
-    // map params
-    double voxel_size_ = 1.0;
-    double max_range_ = 100.0;
-    double min_range_ = 5.0;
-    int max_points_per_voxel_ = 20;
-    VoxelHashMap local_map_;
-
-    // th parms
-    double min_motion_th_ = 0.1;
-    double initial_threshold_ = 2.0;
+    KISSConfig config_;
+    MotionCompensator compensator_;
     AdaptiveThreshold adaptive_threshold_;
-
-    // Motion compensation
-    bool deksew_ = false;
+    VoxelHashMap local_map_;
 };
 
-}  // namespace kiss_icp
+}  // namespace kiss_icp::pipeline

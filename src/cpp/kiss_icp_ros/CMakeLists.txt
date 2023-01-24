@@ -20,8 +20,18 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-add_library(kiss_icp_ros STATIC)
-add_library(kiss_icp::kiss_icp_ros ALIAS kiss_icp_ros)
-target_sources(kiss_icp_ros PRIVATE KissICP.cpp)
-target_link_libraries(kiss_icp_ros PUBLIC kiss_icp::core)
-set_global_target_properties(kiss_icp_ros)
+
+# ROS1
+find_package(catkin QUIET)
+if(catkin_FOUND)
+  message(STATUS "Building ROS1 Wrapper")
+  add_subdirectory(ros1)
+endif()
+
+# ROS2
+find_package(ament_cmake QUIET)
+if(ament_cmake_FOUND)
+  message(STATUS "Building ROS2 Wrapper")
+  add_subdirectory(ros2)
+endif()
+

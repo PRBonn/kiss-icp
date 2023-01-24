@@ -20,35 +20,15 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-#pragma once
+#include <cstdio>
+#include <rclcpp/rclcpp.hpp>
 
-#include <Eigen/Core>
+#include "kiss_icp/pipeline/KissICP.hpp"
 
-namespace kiss_icp {
-
-struct AdaptiveThreshold {
-    explicit AdaptiveThreshold(double initial_threshold, double min_motion_th, double max_range)
-        : initial_threshold_(initial_threshold),
-          min_motion_th_(min_motion_th),
-          max_range_(max_range) {}
-
-    /// Update the current belief of the deviation from the prediction model
-    inline void UpdateModelDeviation(const Eigen::Matrix4d& current_deviation) {
-        model_deviation_ = current_deviation;
-    }
-
-    /// Returns the KISS-ICP adaptive threshold used in registration
-    double ComputeThreshold();
-
-    // configurable parameters
-    double initial_threshold_;
-    double min_motion_th_;
-    double max_range_;
-
-    // Local cache for ccomputation
-    double model_error_sse2_ = 0;
-    int num_samples_ = 0;
-    Eigen::Matrix4d model_deviation_ = Eigen::Matrix4d::Identity();
-};
-
-}  // namespace kiss_icp
+int main(int argc, char** argv) {
+    rclcpp::init(argc, argv);
+    kiss_icp::pipeline::KissICP odometry;
+    auto node = rclcpp::Node::make_shared("kiss_icp_node");
+    RCLCPP_INFO(node->get_logger(), "KISS-ICP ROS 2 node initialized");
+    return 0;
+}

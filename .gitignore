@@ -1,3 +1,5 @@
+install/
+log/
 results/
 wheelhouse/
 _skbuild/

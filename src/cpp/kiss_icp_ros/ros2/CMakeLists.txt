@@ -20,31 +20,30 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import numpy as np
+cmake_minimum_required(VERSION 3.8)
+project(kiss_icp)
 
-from kiss_icp.config import KISSConfig
-from kiss_icp.pybind import kiss_icp_pybind
+set(ignore ${CATKIN_INSTALL_INTO_PREFIX_ROOT})
 
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
 
-def get_motion_compensator(config: KISSConfig):
-    return MotionCompensator(config) if config.data.deskew else StubCompensator()
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  # the following line skips the linter which checks for copyrights
+  # comment the line when a copyright and license is added to all source files
+  set(ament_cmake_copyright_FOUND TRUE)
+  # the following line skips cpplint (only works in a git repo)
+  # comment the line when this package is in a git repo and when
+  # a copyright and license is added to all source files
+  set(ament_cmake_cpplint_FOUND TRUE)
+  ament_lint_auto_find_test_dependencies()
+endif()
 
+ament_package()
 
-class StubCompensator:
-    def deskew_scan(self, frame, poses, timestamps):
-        return frame
-
-
-class MotionCompensator:
-    def __init__(self, config: KISSConfig):
-        self._compensator = kiss_icp_pybind._MotionCompensator(frame_rate=config.data.frame_rate)
-
-    def deskew_scan(self, frame, poses, timestamps):
-        if len(poses) < 2:
-            return frame
-        deskew_frame = self._compensator._deskew_scan(
-            frame=kiss_icp_pybind._Vector3dVector(frame),
-            timestamps=timestamps,
-            poses=poses,
-        )
-        return np.asarray(deskew_frame)
+# ROS2 node
+add_executable(kiss_icp_node src/odometry_node.cpp)
+target_link_libraries(kiss_icp_node kiss_icp::pipeline)
+ament_target_dependencies(kiss_icp_node rclcpp)
+install(TARGETS kiss_icp_node DESTINATION lib/${PROJECT_NAME})
