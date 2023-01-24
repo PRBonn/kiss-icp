@@ -20,8 +20,8 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-cmake_minimum_required(VERSION 3.20...3.24)
-project(kiss_icp VERSION 0.1.0 LANGUAGES CXX)
+cmake_minimum_required(VERSION 3.16...3.24)
+project(kiss_icp VERSION 0.1.1 LANGUAGES CXX)
 
 # Set build options
 option(BUILD_PYTHON_BINDINGS "Build the python module" OFF)
@@ -39,6 +39,8 @@ if(BUILD_PYTHON_BINDINGS)
   add_subdirectory(src/cpp/kiss_icp_pybind)
 endif()
 
-if(BUILD_ROS_WRAPPER)
+find_package(ament_cmake QUIET)
+find_package(catkin QUIET)
+if(BUILD_ROS_WRAPPER OR ament_cmake_FOUND OR catkin_FOUND)
   add_subdirectory(src/cpp/kiss_icp_ros)
 endif()

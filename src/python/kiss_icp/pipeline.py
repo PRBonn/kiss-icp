@@ -167,7 +167,7 @@ class OdometryPipeline:
         return (
             self._dataset.get_frames_timestamps()
             if hasattr(self._dataset, "get_frames_timestamps")
-            else np.arange(0, len(self.poses), 1 / self.config.data.lidar_frequency)
+            else np.arange(0, len(self.poses), 1 / self.config.data.frame_rate)
         )
 
     def _save_poses(self, filename: str, poses, timestamps):

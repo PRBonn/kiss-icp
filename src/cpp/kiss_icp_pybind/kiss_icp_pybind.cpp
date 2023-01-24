@@ -78,19 +78,23 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
         .def("_update_model_deviation", &AdaptiveThreshold::UpdateModelDeviation,
              "model_deviation"_a);
 
-    // Floating functions, unrelated to the mapping class
+    // DeSkewScan
+    py::class_<MotionCompensator> motion_compensator(m, "_MotionCompensator", "Don't use this");
+    motion_compensator.def(py::init<double>(), "frame_rate"_a)
+        .def("_deskew_scan",
+             py::overload_cast<const std::vector<Eigen::Vector3d>&, const std::vector<double>&,
+                               const std::vector<Eigen::Matrix4d>&>(&MotionCompensator::DeSkewScan),
+             "frame"_a, "timestamps"_a, "poses"_a);
+
+    // prerpocessing modules
     m.def("_voxel_down_sample", &VoxelDownsample, "frame"_a, "voxel_size"_a);
-    // KITTI utils
+    m.def("_preprocess", &Preprocess, "frame"_a, "max_range"_a, "min_range"_a);
+    m.def("_correct_kitti_scan", &CorrectKITTIScan, "frame"_a);
+
+    // Metrics
     m.def("_kitti_seq_error", &metrics::SeqError, "gt_poses"_a, "results_poses"_a);
     m.def("_absolute_trajectory_error", &metrics::AbsoluteTrajectoryError, "gt_poses"_a,
           "results_poses"_a);
-    // DeSkewScan
-    m.def("_velocity_estimation", &VelocityEstimation, "start_pose"_a, "finish_pose"_a,
-          "scan_duration"_a);
-    m.def("_deskew_scan", &DeSkewScan, "frame"_a, "timestamps"_a, "linear_velocity"_a,
-          "angular_velocity"_a);
-    m.def("_preprocess", &Preprocess, "frame"_a, "max_range"_a, "min_range"_a);
-    m.def("_correct_kitti_scan", &CorrectKITTIScan, "frame"_a);
 }
 
 }  // namespace kiss_icp

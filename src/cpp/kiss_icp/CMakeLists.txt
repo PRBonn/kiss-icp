@@ -20,8 +20,8 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-cmake_minimum_required(VERSION 3.20...3.24)
-project(kiss_icp VERSION 0.1.0 LANGUAGES CXX)
+cmake_minimum_required(VERSION 3.16...3.24)
+project(kiss_icp VERSION 0.1.1 LANGUAGES CXX)
 
 # Setup build options
 option(USE_SYSTEM_EIGEN3 "Use system pre-installed eigen3" ON)
@@ -35,5 +35,6 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 include(3rdparty/find_dependencies.cmake)
 include(cmake/CompilerOptions.cmake)
 
-add_subdirectory(metrics)
 add_subdirectory(core)
+add_subdirectory(metrics)
+add_subdirectory(pipeline)

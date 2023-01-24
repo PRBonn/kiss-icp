@@ -22,33 +22,50 @@
 // SOFTWARE.
 #pragma once
 
-#include <Eigen/Core>
+#include <nav_msgs/Path.h>
+#include <ros/ros.h>
+#include <sensor_msgs/PointCloud2.h>
+#include <tf2_ros/transform_broadcaster.h>
 
-namespace kiss_icp {
+#include "kiss_icp/pipeline/KissICP.hpp"
 
-struct AdaptiveThreshold {
-    explicit AdaptiveThreshold(double initial_threshold, double min_motion_th, double max_range)
-        : initial_threshold_(initial_threshold),
-          min_motion_th_(min_motion_th),
-          max_range_(max_range) {}
+namespace kiss_icp_ros {
 
-    /// Update the current belief of the deviation from the prediction model
-    inline void UpdateModelDeviation(const Eigen::Matrix4d& current_deviation) {
-        model_deviation_ = current_deviation;
-    }
+class OdometryServer {
+public:
+    /// OdometryServer constructor
+    OdometryServer(const ros::NodeHandle& nh, const ros::NodeHandle& pnh);
 
-    /// Returns the KISS-ICP adaptive threshold used in registration
-    double ComputeThreshold();
+    /// Register new frame
+    void RegisterFrame(const sensor_msgs::PointCloud2ConstPtr& msg);
 
-    // configurable parameters
-    double initial_threshold_;
-    double min_motion_th_;
-    double max_range_;
+private:
+    /// Ros node stuff
+    ros::NodeHandle nh_;
+    ros::NodeHandle pnh_;
+    int queue_size_{1};
 
-    // Local cache for ccomputation
-    double model_error_sse2_ = 0;
-    int num_samples_ = 0;
-    Eigen::Matrix4d model_deviation_ = Eigen::Matrix4d::Identity();
+    /// Tools for broadcasting TFs.
+    tf2_ros::TransformBroadcaster tf_broadcaster_;
+
+    /// Data subscribers.
+    ros::Subscriber pointcloud_sub_;
+
+    /// Data publishers.
+    ros::Publisher odom_publisher_;
+    ros::Publisher traj_publisher_;
+    nav_msgs::Path path_msg_;
+    ros::Publisher frame_publisher_;
+    ros::Publisher kpoints_publisher_;
+    ros::Publisher map_publisher_;
+
+    /// KISS-ICP
+    kiss_icp::pipeline::KissICP odometry_;
+    kiss_icp::pipeline::KISSConfig config_;
+
+    /// Global/map coordinate frame.
+    std::string odom_frame_{"odom"};
+    std::string pointcloud_frame_{"pointcloud_frame"};
 };
 
-}  // namespace kiss_icp
+}  // namespace kiss_icp_ros

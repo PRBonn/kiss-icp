@@ -32,13 +32,12 @@ from kiss_icp.voxelization import voxel_down_sample
 
 class KissICP:
     def __init__(self, config: KISSConfig):
-        self.config = config
         self.poses = []
-
+        self.config = config
         self.compensator = get_motion_compensator(config)
-        self.preprocess = get_preprocessor(self.config)
         self.adaptive_threshold = get_threshold_estimator(self.config)
         self.local_map = get_voxel_hash_map(self.config)
+        self.preprocess = get_preprocessor(self.config)
 
     def register_frame(self, frame, timestamps):
         # Apply motion compensation

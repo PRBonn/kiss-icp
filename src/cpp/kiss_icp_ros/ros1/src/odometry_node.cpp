@@ -10,8 +10,8 @@
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
 //
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
 //
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -20,35 +20,18 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-#pragma once
+#include "OdometryServer.hpp"
+#include "ros/init.h"
+#include "ros/node_handle.h"
 
-#include <Eigen/Core>
+int main(int argc, char **argv) {
+    ros::init(argc, argv, "kiss_icp");
+    ros::NodeHandle nh;
+    ros::NodeHandle nh_private("~");
 
-namespace kiss_icp {
+    kiss_icp_ros::OdometryServer node(nh, nh_private);
 
-struct AdaptiveThreshold {
-    explicit AdaptiveThreshold(double initial_threshold, double min_motion_th, double max_range)
-        : initial_threshold_(initial_threshold),
-          min_motion_th_(min_motion_th),
-          max_range_(max_range) {}
+    ros::spin();
 
-    /// Update the current belief of the deviation from the prediction model
-    inline void UpdateModelDeviation(const Eigen::Matrix4d& current_deviation) {
-        model_deviation_ = current_deviation;
-    }
-
-    /// Returns the KISS-ICP adaptive threshold used in registration
-    double ComputeThreshold();
-
-    // configurable parameters
-    double initial_threshold_;
-    double min_motion_th_;
-    double max_range_;
-
-    // Local cache for ccomputation
-    double model_error_sse2_ = 0;
-    int num_samples_ = 0;
-    Eigen::Matrix4d model_deviation_ = Eigen::Matrix4d::Identity();
-};
-
-}  // namespace kiss_icp
+    return 0;
+}

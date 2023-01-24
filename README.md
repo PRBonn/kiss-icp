@@ -12,7 +12,19 @@ and different shooting patterns. The automotive example stems from the MulRan da
 and the segway robot used in the NCLT dataset show a high acceleration motion profile. The handheld mechanical LiDAR of LOAM
 Livox has a completely different shooting pattern than the commonly used rotating mechanical LiDAR._
 
-## Install
+## 📰 NEWS!!! 📰 ROS API
+
+It was never this easy, just git clone this repo into your catkin workspace and build it:
+
+```sh
+cd ~/catkin_ws/ && git clone https://github.com/PRBonn/kiss-icp && catkin build
+```
+
+For more detailed instructions on the ROS wrapper, please visit [here](src/cpp/kiss_icp_ros/ros1/README.md)
+
+### ROS Video Examples
+
+## Install Python API
 
 We released a python-package supported on
 ![macos](https://img.shields.io/badge/-macos-333333?style=flat&logo=apple),
@@ -42,7 +54,7 @@ This should print the following help message:
 ![out](https://user-images.githubusercontent.com/21349875/193282970-25a400aa-ebcd-487a-b839-faa04eeca5b9.png)
 
 
-## Install (developer mode)
+### Install Python API (developer mode)
 
 If you plan to modify the code then you need to setup the dev dependencies, luckilly, the only real
 requirements are a modern C++ compiler and the `pip` package manager, nothing else!, in Ubuntu-based
@@ -53,13 +65,14 @@ sudo apt install g++ python3-pip
 ```
 
 After that you can clone the code and install the python api:
+
 ```sh
 git clone https://github.com/PRBonn/kiss-icp.git
 cd kiss-icp
 pip install --verbose .
 ```
 
-## Install (expert mode)
+### Install Python API (expert mode)
 
 If you want to have more controll over the build, you should then install `cmake`, ,`ninja`, `tbb`,
 `Eigen`, and `pybind11` as extra dependencies in your system, the ubuntu-way of doing this is:
@@ -67,7 +80,6 @@ If you want to have more controll over the build, you should then install `cmake
 ```sh
 sudo apt install build-essential libeigen3-dev libtbb-dev pybind11-dev ninja-build
 ```
-
 
 ## Teaser Video 
 
@@ -104,4 +116,3 @@ If you use this library for any academic work, please cite our original [paper](
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=PRBonn/kiss-icp&type=Date)](https://star-history.com/#PRBonn/kiss-icp&Date)
-

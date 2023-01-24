@@ -28,12 +28,28 @@
 
 namespace kiss_icp {
 
-std::tuple<Eigen::Vector3d, Eigen::Vector3d> VelocityEstimation(const Eigen::Matrix4d& start_pose,
-                                                                const Eigen::Matrix4d& finish_pose,
-                                                                double scan_duration);
+class MotionCompensator {
+public:
+    explicit MotionCompensator(double frame_rate) : scan_duration_(1 / frame_rate) {}
+    /// Compensate the frame using the given poses
+    std::vector<Eigen::Vector3d> DeSkewScan(const std::vector<Eigen::Vector3d>& frame,
+                                            const std::vector<double>& timestamps,
+                                            const std::vector<Eigen::Matrix4d>& poses);
 
-std::vector<Eigen::Vector3d> DeSkewScan(const std::vector<Eigen::Vector3d>& frame,
-                                        const std::vector<double>& timestamps,
-                                        const Eigen::Vector3d& linear_velocity,
-                                        const Eigen::Vector3d& angular_velocity);
+    /// Estimate the linear and angular velocities given 2 poses
+    using VelocityTuple = std::tuple<Eigen::Vector3d, Eigen::Vector3d>;
+    VelocityTuple VelocityEstimation(const Eigen::Matrix4d& start_pose,
+                                     const Eigen::Matrix4d& finish_pose);
+
+    // Expose this function to allow motion compensation using IMUs
+    static std::vector<Eigen::Vector3d> DeSkewScan(const std::vector<Eigen::Vector3d>& frame,
+                                                   const std::vector<double>& timestamps,
+                                                   const Eigen::Vector3d& linear_velocity,
+                                                   const Eigen::Vector3d& angular_velocity);
+
+private:
+    double scan_duration_;
+    double mid_pose_timestamp_{0.5};
+};
+
 }  // namespace kiss_icp

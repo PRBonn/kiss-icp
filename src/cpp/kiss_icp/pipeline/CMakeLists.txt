@@ -20,31 +20,9 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import numpy as np
 
-from kiss_icp.config import KISSConfig
-from kiss_icp.pybind import kiss_icp_pybind
-
-
-def get_motion_compensator(config: KISSConfig):
-    return MotionCompensator(config) if config.data.deskew else StubCompensator()
-
-
-class StubCompensator:
-    def deskew_scan(self, frame, poses, timestamps):
-        return frame
-
-
-class MotionCompensator:
-    def __init__(self, config: KISSConfig):
-        self._compensator = kiss_icp_pybind._MotionCompensator(frame_rate=config.data.frame_rate)
-
-    def deskew_scan(self, frame, poses, timestamps):
-        if len(poses) < 2:
-            return frame
-        deskew_frame = self._compensator._deskew_scan(
-            frame=kiss_icp_pybind._Vector3dVector(frame),
-            timestamps=timestamps,
-            poses=poses,
-        )
-        return np.asarray(deskew_frame)
+add_library(pipeline STATIC)
+add_library(kiss_icp::pipeline ALIAS pipeline)
+target_sources(pipeline PRIVATE KissICP.cpp)
+target_link_libraries(pipeline PUBLIC kiss_icp::core)
+set_global_target_properties(pipeline)
