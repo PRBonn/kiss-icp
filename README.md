@@ -22,7 +22,9 @@ cd ~/catkin_ws/ && git clone https://github.com/PRBonn/kiss-icp && catkin build
 
 For more detailed instructions on the ROS wrapper, please visit [here](src/cpp/kiss_icp_ros/ros1/README.md)
 
-### ROS Video Examples
+### ROS Video Example
+
+https://user-images.githubusercontent.com/21349875/214351010-7e1abb90-0b0f-4cbd-a50a-5b2f790b0f28.mp4
 
 ## Install Python API
 
