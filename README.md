@@ -24,7 +24,7 @@ For more detailed instructions on the ROS wrapper, please visit [here](src/cpp/k
 
 ### ROS Video Example
 
-https://user-images.githubusercontent.com/21349875/214351010-7e1abb90-0b0f-4cbd-a50a-5b2f790b0f28.mp4
+https://user-images.githubusercontent.com/21349875/214578180-b1d2431c-8fff-440e-aa6e-99a1d85989b5.mp4
 
 ## Install Python API
 
