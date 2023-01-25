@@ -156,7 +156,9 @@ def kiss_icp_pipeline(
     meta: Optional[Path] = typer.Option(
         None,
         "--meta",
+        "-m",
         exists=True,
+        show_default=False,
         help="[Optional] For Ouster pcap dataloader, you need to specify a metadata json file",
         rich_help_panel="Additional Options",
     ),
@@ -180,9 +182,6 @@ def kiss_icp_pipeline(
         # or to Ouster dataloader
         elif data.name.split(".")[-1] == "pcap":
             dataloader = "ouster"
-            if meta is None:
-                print('You must specify a metadata file "--meta" for Ouster pcap ')
-                raise typer.Exit(code=1)
 
     # Lazy-loading for faster CLI
     from kiss_icp.datasets import dataset_factory

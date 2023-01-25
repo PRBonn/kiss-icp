@@ -1,7 +1,49 @@
+# MIT License
+#
+# Copyright (c) 2022 Ignacio Vizzo, Tiziano Guadagnino, Benedikt Mersch, Cyrill
+# Stachniss.
+# Copyright (c) 2023 Pavlo Bashmakov
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
 import os
 from typing import Optional
 
 import numpy as np
+import glob
+
+
+def find_metadata_json(pcap_file: str) -> str:
+    """Attempts to resolve the metadata json file for a provided pcap file."""
+    dir_path, filename = os.path.split(pcap_file)
+    if not filename:
+        return ""
+    if not dir_path:
+        dir_path = os.getcwd()
+    json_candidates = sorted(glob.glob(f"{dir_path}/*.json"))
+    if not json_candidates:
+        return ""
+    prefix_sizes = list(
+        map(lambda p: len(os.path.commonprefix((filename, os.path.basename(p)))), json_candidates)
+    )
+    max_elem = max(range(len(prefix_sizes)), key=lambda i: prefix_sizes[i])
+    return json_candidates[max_elem]
 
 
 class OusterDataloader:
@@ -10,7 +52,7 @@ class OusterDataloader:
     def __init__(
         self,
         data_dir: str,
-        meta: str,
+        meta: Optional[str] = None,
         *_,
         **__,
     ):
@@ -45,10 +87,20 @@ class OusterDataloader:
             print(f'ouster-sdk is not installed on your system, run "pip install ouster-sdk"')
             exit(1)
 
-        # we expect `data_dir` param to be a path to the .pcap file
+        assert os.path.isfile(data_dir), "Ouster pcap dataloader expects an existing PCAP file"
+
+        # we expect `data_dir` param to be a path to the .pcap file, so rename for clarity
+        pcap_file = data_dir
+
+        metadata_json = meta or find_metadata_json(pcap_file)
+        if not metadata_json:
+            print("Ouster pcap dataloader can't find metadata json file.")
+            exit(1)
+        print("Ouster pcap dataloader: using metadata json: ", metadata_json)
+
         self.data_dir = os.path.dirname(data_dir)
 
-        with open(meta) as json:
+        with open(metadata_json) as json:
             self._info_json = json.read()
             self._info = client.SensorInfo(self._info_json)
 
