@@ -58,6 +58,8 @@ class OdometryPipeline:
         self._last = self._jump + self._n_scans
         self.config: KISSConfig = self.load_config(config, deskew=deskew, max_range=max_range)
 
+        self.results_dir = self._get_results_dir(self.config.out_dir)
+
         # Pipeline
         self.odometry = KissICP(config=self.config)
         self.results = PipelineResults()
@@ -131,10 +133,6 @@ class OdometryPipeline:
         )
 
         return config
-
-    @property
-    def results_dir(self):
-        return self._get_results_dir(self.config.out_dir)
 
     @staticmethod
     def save_poses_kitti_format(filename: str, poses: List[np.ndarray]):
@@ -231,6 +229,6 @@ class OdometryPipeline:
         results_dir = os.path.join(os.path.realpath(out_dir), get_current_timestamp())
         latest_dir = os.path.join(os.path.realpath(out_dir), "latest")
         os.makedirs(results_dir, exist_ok=True)
-        os.unlink(latest_dir) if os.path.exists(latest_dir) else None
+        os.unlink(latest_dir) if os.path.exists(latest_dir) or os.path.islink(latest_dir) else None
         os.symlink(results_dir, latest_dir)
         return results_dir
