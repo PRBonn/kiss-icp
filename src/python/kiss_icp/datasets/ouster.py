@@ -77,7 +77,9 @@ class OusterDataloader:
         Args:
             data_dir: path to a pcap file (not a directory)
             meta: path to a metadata json file that should be recorded together with
-            a pcap file.
+            a pcap file. If `meta` is not provided attempts to find the best matching
+            json file with the longest commong prefix of the pcap file (`data_dir`) in
+            the same directory.
         """
 
         try:
@@ -128,7 +130,7 @@ class OusterDataloader:
         # we assume that users always reads sequentially and do not
         # pass idx as for a random access collection
         assert self._next_idx == idx, (
-            "Ouster pcap Dataloader supports only sequential reads. "
+            "Ouster pcap dataloader supports only sequential reads. "
             f"Expected idx: {self._next_idx}, but got {idx}"
         )
         scan = next(self._scans_iter)

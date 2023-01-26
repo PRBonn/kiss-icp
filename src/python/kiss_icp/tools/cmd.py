@@ -179,7 +179,7 @@ def kiss_icp_pipeline(
         # Check if the main source is a bagfile, then automatically fallback to RosbagDataset
         if data.name.split(".")[-1] == "bag":
             dataloader = "rosbag"
-        # or to Ouster dataloader
+        # or to Ouster pcap dataloader
         elif data.name.split(".")[-1] == "pcap":
             dataloader = "ouster"
 
