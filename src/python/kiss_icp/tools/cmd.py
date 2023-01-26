@@ -159,7 +159,7 @@ def kiss_icp_pipeline(
         "-m",
         exists=True,
         show_default=False,
-        help="[Optional] For Ouster pcap dataloader, you need to specify a metadata json file",
+        help="[Optional] For Ouster pcap dataloader, specify metadata json file path explicitly",
         rich_help_panel="Additional Options",
     ),
     version: Optional[bool] = typer.Option(
