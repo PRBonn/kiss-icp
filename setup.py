@@ -83,6 +83,7 @@ with skbuild_isolated_context():
             ],
             "all": [
                 "open3d>=0.13",
+                "ouster-sdk>=0.7.1",
                 "pyntcloud",
                 "trimesh",
             ],

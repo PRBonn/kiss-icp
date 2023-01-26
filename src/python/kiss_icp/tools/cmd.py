@@ -70,6 +70,9 @@ $ kiss_icp_pipeline --visualize <data-dir>:open_file_folder:
 # Process a given rosbag file
 $ kiss_icp_pipeline --topic /cloud_node --visualize <path-to-my-rosbag.bag>:page_facing_up:
 
+# Process Ouster pcap recording (requires ouster-sdk Python package installed)
+$ kiss_icp_pipeline --visualize <path-to-ouster.pcap>:page_facing_up: \[--meta <path-to-metadata.json>:page_facing_up:]
+
 # Use a more specific dataloader: {", ".join(_available_dl_help)}
 $ kiss_icp_pipeline --dataloader kitti --sequence 07 --visualize <path-to-kitti-root>:open_file_folder:
 """
@@ -150,6 +153,15 @@ def kiss_icp_pipeline(
         help="[Optional] Specify if you want to start to process scans from a given starting point",
         rich_help_panel="Additional Options",
     ),
+    meta: Optional[Path] = typer.Option(
+        None,
+        "--meta",
+        "-m",
+        exists=True,
+        show_default=False,
+        help="[Optional] For Ouster pcap dataloader, specify metadata json file path explicitly",
+        rich_help_panel="Additional Options",
+    ),
     version: Optional[bool] = typer.Option(
         None,
         "--version",
@@ -163,8 +175,13 @@ def kiss_icp_pipeline(
         print('You must specify a sequence "--sequence"')
         raise typer.Exit(code=1)
 
-    # Check if the main source is a bagfile, then automatically fallback to RosbagDataset
-    dataloader = "rosbag" if data.is_file() and data.name.split(".")[-1] == "bag" else dataloader
+    if data.is_file():
+        # Check if the main source is a bagfile, then automatically fallback to RosbagDataset
+        if data.name.split(".")[-1] == "bag":
+            dataloader = "rosbag"
+        # or to Ouster pcap dataloader
+        elif data.name.split(".")[-1] == "pcap":
+            dataloader = "ouster"
 
     # Lazy-loading for faster CLI
     from kiss_icp.datasets import dataset_factory
@@ -177,6 +194,7 @@ def kiss_icp_pipeline(
             # Additional options
             sequence=sequence,
             topic=topic,
+            meta=meta,
         ),
         config=config,
         deskew=deskew,
