@@ -71,7 +71,7 @@ $ kiss_icp_pipeline --visualize <data-dir>:open_file_folder:
 $ kiss_icp_pipeline --topic /cloud_node --visualize <path-to-my-rosbag.bag>:page_facing_up:
 
 # Process Ouster pcap recording (requires ouster-sdk Python package installed)
-$ kiss_icp_pipeline --visualize <path-to-ouster.pcap>:page_facing_up: --meta <path-to-metadata.json>:page_facing_up:
+$ kiss_icp_pipeline --visualize <path-to-ouster.pcap>:page_facing_up: \[--meta <path-to-metadata.json>:page_facing_up:]
 
 # Use a more specific dataloader: {", ".join(_available_dl_help)}
 $ kiss_icp_pipeline --dataloader kitti --sequence 07 --visualize <path-to-kitti-root>:open_file_folder:
