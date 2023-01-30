@@ -47,9 +47,14 @@ OdometryServer::OdometryServer(const ros::NodeHandle &nh, const ros::NodeHandle 
     pnh_.param("min_range", config_.min_range, config_.min_range);
     pnh_.param("deskew", config_.deskew, config_.deskew);
     pnh_.param("frame_rate", config_.frame_rate, config_.frame_rate);
+    pnh_.param("voxel_size", config_.voxel_size, config_.max_range / 100.0);
     pnh_.param("max_points_per_voxel", config_.max_points_per_voxel, config_.max_points_per_voxel);
     pnh_.param("initial_threshold", config_.initial_threshold, config_.initial_threshold);
     pnh_.param("min_motion_th", config_.min_motion_th, config_.min_motion_th);
+    if (config_.max_range < config_.min_range) {
+        ROS_WARN("[WARNING] max_range is smaller than min_range, settng min_range to 0.0");
+        config_.min_range = 0.0;
+    }
 
     // Construct the main KISS-ICP odometry node
     odometry_ = kiss_icp::pipeline::KissICP(config_);

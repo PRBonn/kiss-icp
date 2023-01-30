@@ -21,11 +21,39 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 stages:
+  - format
   - build
   - deploy
 cache:
   paths:
     - .cache/pip
+
+#----- format stage --------------------------------------------------------------------------------
+black:
+  image: python:3.8
+  stage: format
+  before_script:
+    - pip install black
+  script:
+    - black --check $CI_PROJECT_DIR
+
+clang-format:
+  image: ubuntu:22.04
+  stage: format
+  before_script:
+    - apt-get update && apt-get install --no-install-recommends -y clang-format
+  script:
+    - clang-format -Werror --dry-run $(find . -regextype posix-extended -regex ".*\.(cpp|hpp|h)")
+
+#----- build stage ---------------------------------------------------------------------------------
+cpp_api:
+  image: ubuntu:22.04
+  stage: build
+  before_script:
+    - apt-get update && apt-get install --no-install-recommends -y g++ cmake make
+  script:
+    - cmake -Bbuild src/cpp/kiss_icp/
+    - cmake --build build -j$(nproc --all)
 
 pip_package:
   image: python:3.8

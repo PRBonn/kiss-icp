@@ -10,6 +10,7 @@
   <arg name="deskew" default="false"/>
   <arg name="max_range" default="100.0" />
   <arg name="min_range" default="5.0" />
+  <arg name="voxel_size" default="" />
 
   <!-- Odometry node -->
   <node pkg="kiss_icp" type="odometry_node" name="odometry_node" output="screen">
@@ -20,6 +21,7 @@
     <param name="max_range" value="$(arg max_range)"/>
     <param name="min_range" value="$(arg min_range)"/>
     <param name="deskew" value="$(arg deskew)"/>
+    <param name="voxel_size" value="$(arg voxel_size)"/>
     <param name="frame_rate" value="10.0"/>
     <param name="max_points_per_voxel" value="20"/>
     <param name="initial_threshold" value="2.0"/>
