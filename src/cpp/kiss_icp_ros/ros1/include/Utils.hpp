@@ -22,11 +22,11 @@
 // SOFTWARE.
 #pragma once
 
-#include <sensor_msgs/PointCloud2.h>
-
 #include <Eigen/Core>
 #include <string>
 #include <vector>
+
+#include "sensor_msgs/PointCloud2.h"
 
 namespace kiss_icp_ros::utils {
 
