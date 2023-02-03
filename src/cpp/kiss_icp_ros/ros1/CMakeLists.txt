@@ -22,6 +22,7 @@
 # SOFTWARE.
 cmake_minimum_required(VERSION 3.16...3.24)
 project(kiss_icp)
+set(CMAKE_BUILD_TYPE Release)
 find_package(
   catkin REQUIRED
   COMPONENTS geometry_msgs
