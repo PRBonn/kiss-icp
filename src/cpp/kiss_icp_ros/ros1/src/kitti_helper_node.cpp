@@ -26,12 +26,12 @@
 #include <string>
 #include <vector>
 
-// ROS
-#include <ros/ros.h>
-#include <sensor_msgs/PointCloud2.h>
-
+// KISS-ICP
 #include "Utils.hpp"
 #include "kiss_icp/core/Preprocessing.hpp"
+// ROS
+#include "ros/ros.h"
+#include "sensor_msgs/PointCloud2.h"
 #include "sensor_msgs/PointField.h"
 #include "sensor_msgs/point_cloud2_iterator.h"
 

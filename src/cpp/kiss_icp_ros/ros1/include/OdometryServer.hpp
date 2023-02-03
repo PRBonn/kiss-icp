@@ -22,12 +22,14 @@
 // SOFTWARE.
 #pragma once
 
-#include <nav_msgs/Path.h>
-#include <ros/ros.h>
-#include <sensor_msgs/PointCloud2.h>
-#include <tf2_ros/transform_broadcaster.h>
-
+// KISS-ICP
 #include "kiss_icp/pipeline/KissICP.hpp"
+
+// ROS
+#include "nav_msgs/Path.h"
+#include "ros/ros.h"
+#include "sensor_msgs/PointCloud2.h"
+#include "tf2_ros/transform_broadcaster.h"
 
 namespace kiss_icp_ros {
 
@@ -57,7 +59,7 @@ private:
     nav_msgs::Path path_msg_;
     ros::Publisher frame_publisher_;
     ros::Publisher kpoints_publisher_;
-    ros::Publisher map_publisher_;
+    ros::Publisher local_map_publisher_;
 
     /// KISS-ICP
     kiss_icp::pipeline::KissICP odometry_;
@@ -65,7 +67,7 @@ private:
 
     /// Global/map coordinate frame.
     std::string odom_frame_{"odom"};
-    std::string pointcloud_frame_{"pointcloud_frame"};
+    std::string child_frame_{"base_link"};
 };
 
 }  // namespace kiss_icp_ros

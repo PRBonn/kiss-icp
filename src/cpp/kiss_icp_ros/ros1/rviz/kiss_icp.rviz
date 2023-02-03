@@ -63,8 +63,8 @@ Visualization Manager:
     - Alpha: 0.5
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 27.05613899230957
-        Min Value: -9.58509635925293
+        Max Value: 29.128881454467773
+        Min Value: -13.79653549194336
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -129,9 +129,9 @@ Visualization Manager:
       Class: rviz/Axes
       Enabled: true
       Length: 3
-      Name: pointcloud_frame
+      Name: child_frame
       Radius: 0.10000000149011612
-      Reference Frame: pointcloud_frame
+      Reference Frame: base_link
       Show Trail: false
       Value: true
     - Alpha: 1
@@ -186,7 +186,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 94.52178955078125
+      Distance: 73.19767761230469
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -202,9 +202,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.560398280620575
+      Pitch: 0.6503981947898865
       Target Frame: <Fixed Frame>
-      Yaw: 5.278574466705322
+      Yaw: 4.798571586608887
     Saved: ~
 Window Geometry:
   Displays:

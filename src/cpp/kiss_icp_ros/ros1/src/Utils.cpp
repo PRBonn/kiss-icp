@@ -22,16 +22,16 @@
 // SOFTWARE.
 #include "Utils.hpp"
 
-#include <ros/console.h>
-#include <sensor_msgs/PointCloud2.h>
-#include <sensor_msgs/point_cloud2_iterator.h>
-
 #include <Eigen/Core>
 #include <algorithm>
 #include <cstddef>
 #include <regex>
 #include <string>
 #include <vector>
+
+#include "ros/console.h"
+#include "sensor_msgs/PointCloud2.h"
+#include "sensor_msgs/point_cloud2_iterator.h"
 
 namespace {
 
