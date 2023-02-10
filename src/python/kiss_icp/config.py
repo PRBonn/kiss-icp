@@ -25,7 +25,6 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, BaseSettings, PrivateAttr
-from pydantic.env_settings import InitSettingsSource
 import yaml
 
 
