@@ -62,10 +62,11 @@ struct ResultTuple {
 
 Eigen::Matrix4d TransformVector6dToMatrix4d(const Eigen::Vector6d &x) {
     Eigen::Matrix4d output = Eigen::Matrix4d::Identity();
-    output.block<3, 3>(0, 0) = (Eigen::AngleAxisd(x(2), Eigen::Vector3d::UnitZ()) *
-                                Eigen::AngleAxisd(x(1), Eigen::Vector3d::UnitY()) *
-                                Eigen::AngleAxisd(x(0), Eigen::Vector3d::UnitX()))
-                                   .matrix();
+
+    if (const double angle = x.block<3, 1>(0, 0).norm() ; angle >= 1e-6) {
+        output.block<3, 3>(0, 0) = Eigen::AngleAxisd(angle, x.block<3, 1>(0, 0) / angle).matrix();
+    }
+
     output.block<3, 1>(0, 3) = x.block<3, 1>(3, 0);
     return output;
 }
