@@ -99,7 +99,7 @@ auto CreatePointCloud2Msg(const size_t n_points,
     offset = addPointField(cloud_msg, "z", 1, sensor_msgs::PointField::FLOAT32, offset);
     offset += sizeOfPointField(sensor_msgs::PointField::FLOAT32);
     if (timestamp) {
-        // asuming timestamp on a velodyne fashion for now (between 0.0 and 1.0)
+        // assuming timestamp on a velodyne fashion for now (between 0.0 and 1.0)
         offset = addPointField(cloud_msg, "time", 1, sensor_msgs::PointField::FLOAT64, offset);
         offset += sizeOfPointField(sensor_msgs::PointField::FLOAT64);
     }

@@ -53,24 +53,24 @@ OdometryServer::OdometryServer(const ros::NodeHandle &nh, const ros::NodeHandle 
     pnh_.param("initial_threshold", config_.initial_threshold, config_.initial_threshold);
     pnh_.param("min_motion_th", config_.min_motion_th, config_.min_motion_th);
     if (config_.max_range < config_.min_range) {
-        ROS_WARN("[WARNING] max_range is smaller than min_range, settng min_range to 0.0");
+        ROS_WARN("[WARNING] max_range is smaller than min_range, setting min_range to 0.0");
         config_.min_range = 0.0;
     }
 
     // Construct the main KISS-ICP odometry node
     odometry_ = kiss_icp::pipeline::KissICP(config_);
 
-    // Intializee subscribers
+    // Initialize subscribers
     pointcloud_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>("pointcloud_topic", queue_size_,
                                                               &OdometryServer::RegisterFrame, this);
 
-    // Intializee publishers
+    // Initialize publishers
     odom_publisher_ = pnh_.advertise<nav_msgs::Odometry>("odometry", queue_size_);
     frame_publisher_ = pnh_.advertise<sensor_msgs::PointCloud2>("frame", queue_size_);
     kpoints_publisher_ = pnh_.advertise<sensor_msgs::PointCloud2>("keypoints", queue_size_);
     local_map_publisher_ = pnh_.advertise<sensor_msgs::PointCloud2>("local_map", queue_size_);
 
-    // Intialize trajectory publisher
+    // Initialize trajectory publisher
     path_msg_.header.frame_id = odom_frame_;
     traj_publisher_ = pnh_.advertise<nav_msgs::Path>("trajectory", queue_size_);
 
@@ -93,7 +93,7 @@ OdometryServer::OdometryServer(const ros::NodeHandle &nh, const ros::NodeHandle 
     }
 
     // publish odometry msg
-    ROS_INFO("KISS-ICP ROS 1 Odometry Node Unitialized");
+    ROS_INFO("KISS-ICP ROS 1 Odometry Node Initialized");
 }
 
 void OdometryServer::RegisterFrame(const sensor_msgs::PointCloud2ConstPtr &msg) {
