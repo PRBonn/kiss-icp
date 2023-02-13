@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
 
     // Notify people this node is a hack
     ROS_WARN("You should not be using kitti2rosbag for experimenting with KISS-ICP");
-    ROS_WARN("kitti2rosbag is not the oringal format of the data.");
+    ROS_WARN("kitti2rosbag is not the original format of the data.");
     ROS_WARN("If you want to only run experiments use the python API instead.");
 
     ros::spin();
