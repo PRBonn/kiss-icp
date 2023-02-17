@@ -26,7 +26,12 @@ project(kiss_icp)
 set(ignore ${CATKIN_INSTALL_INTO_PREFIX_ROOT})
 
 find_package(ament_cmake REQUIRED)
+find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
+
+include_directories(include)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -40,10 +45,10 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-ament_package()
-
 # ROS2 node
-add_executable(kiss_icp_node src/odometry_node.cpp)
-target_link_libraries(kiss_icp_node kiss_icp::pipeline)
-ament_target_dependencies(kiss_icp_node rclcpp)
-install(TARGETS kiss_icp_node DESTINATION lib/${PROJECT_NAME})
+add_executable(odometry_node src/Utils.cpp src/OdometryServer.cpp src/odometry_node.cpp)
+target_link_libraries(odometry_node kiss_icp::pipeline)
+ament_target_dependencies(odometry_node rclcpp nav_msgs sensor_msgs tf2_ros)
+install(TARGETS odometry_node RUNTIME DESTINATION lib/${PROJECT_NAME})
+
+ament_package()

@@ -24,11 +24,15 @@
 #include <rclcpp/rclcpp.hpp>
 
 #include "kiss_icp/pipeline/KissICP.hpp"
+#include "OdometryServer.hpp"
 
 int main(int argc, char **argv) {
     rclcpp::init(argc, argv);
     kiss_icp::pipeline::KissICP odometry;
-    auto node = rclcpp::Node::make_shared("kiss_icp_node");
+    rclcpp::NodeOptions options;
+    auto node = std::make_shared<kiss_icp_ros::OdometryServer>(options);
     RCLCPP_INFO(node->get_logger(), "KISS-ICP ROS 2 node initialized");
+    rclcpp::spin(node);
+    rclcpp::shutdown();
     return 0;
 }
