@@ -27,7 +27,7 @@ from kiss_icp.pybind import kiss_icp_pybind
 
 
 def get_threshold_estimator(config: KISSConfig):
-    if hasattr(config.adaptive_threshold, "fixed_threshold"):
+    if config.adaptive_threshold.fixed_threshold is not None:
         return FixedThreshold(config.adaptive_threshold.fixed_threshold)
     return AdaptiveThreshold(config)
 

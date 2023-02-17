@@ -68,10 +68,10 @@ with skbuild_isolated_context():
         package_data={"kiss_icp": ["config/default.yaml"]},
         install_requires=[
             "PyYAML",
-            "easydict",
             "natsort",
             "numpy",
             "plyfile",
+            "pydantic",
             "pyquaternion",
             "rich",
             "tqdm",
