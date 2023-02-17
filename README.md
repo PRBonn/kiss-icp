@@ -4,7 +4,8 @@
 ![windows](https://img.shields.io/badge/windows-333333?style=flat&logo=windows&logocolor=blue)
 ![macos](https://img.shields.io/badge/-macos-333333?style=flat&logo=apple)
 
-https://user-images.githubusercontent.com/21349875/219626075-d67e9165-31a2-4a1b-8c26-9f04e7d195ec.mp4
+[![KISS-ICP demo](https://user-images.githubusercontent.com/21349875/211829074-474bec08-0129-4e34-85e7-62265e44a7de.png)](https://user-images.githubusercontent.com/21349875/219626075-d67e9165-31a2-4a1b-8c26-9f04e7d195ec.mp4
+)
 
 ## 📰 NEWS!!! 📰 ROS API
 
