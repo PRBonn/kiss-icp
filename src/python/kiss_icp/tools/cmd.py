@@ -47,13 +47,6 @@ def name_callback(value: str):
     return value
 
 
-def get_package_dir() -> str:
-    import kiss_icp
-    import os
-
-    return os.path.dirname(kiss_icp.__file__)
-
-
 app = typer.Typer(add_completion=False, rich_markup_mode="rich")
 
 # Remove the clutter for the help
