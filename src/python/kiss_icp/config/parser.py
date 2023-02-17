@@ -22,11 +22,12 @@
 # SOFTWARE.
 # NOTE: This module was contributed by Markus Pielmeier on PR #63
 from __future__ import annotations
+import importlib
 from pathlib import Path
+import sys
 from typing import Any, Dict, Optional
 
 from pydantic import BaseSettings, PrivateAttr
-import yaml
 
 from kiss_icp.config.config import AdaptiveThresholdConfig, DataConfig, MappingConfig
 
@@ -45,6 +46,15 @@ class KISSConfig(BaseSettings):
     def _yaml_source(self) -> Dict[str, Any]:
         data = None
         if self._config_file is not None:
+            try:
+                yaml = importlib.import_module("yaml")
+            except ModuleNotFoundError:
+                print(
+                    "Custom configuration file specified but PyYAML is not installed on your system,"
+                    ' run "pip install kiss-icp[all]". You can also modify the config.py if your '
+                    "system does not support PyYaml "
+                )
+                sys.exit(1)
             with open(self._config_file) as cfg_file:
                 data = yaml.safe_load(cfg_file)
         return data or {}
@@ -83,4 +93,8 @@ def load_config(
 
 def write_config(config: KISSConfig, filename: str):
     with open(filename, "w") as outfile:
-        yaml.dump(config.dict(), outfile, default_flow_style=False)
+        try:
+            yaml = importlib.import_module("yaml")
+            yaml.dump(config.dict(), outfile, default_flow_style=False)
+        except ModuleNotFoundError:
+            outfile.write(str(config.dict()))
