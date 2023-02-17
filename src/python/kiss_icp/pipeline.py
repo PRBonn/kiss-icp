@@ -56,9 +56,10 @@ class OdometryPipeline:
         self._jump = jump
         self._first = jump
         self._last = self._jump + self._n_scans
-        self.config = load_config(config, deskew=deskew, max_range=max_range)
 
-        self.results_dir = self._get_results_dir(self.config.out_dir)
+        # Config and output dir
+        self.config = load_config(config, deskew=deskew, max_range=max_range)
+        self.results_dir = None
 
         # Pipeline
         self.odometry = KissICP(config=self.config)
@@ -83,6 +84,7 @@ class OdometryPipeline:
     def run(self):
         self._run_pipeline()
         self._run_evaluation()
+        self._create_output_dir()
         self._write_result_poses()
         self._write_gt_poses()
         self._write_cfg()
@@ -206,3 +208,6 @@ class OdometryPipeline:
         os.unlink(latest_dir) if os.path.exists(latest_dir) or os.path.islink(latest_dir) else None
         os.symlink(results_dir, latest_dir)
         return results_dir
+
+    def _create_output_dir(self):
+        self.results_dir = self._get_results_dir(self.config.out_dir)
