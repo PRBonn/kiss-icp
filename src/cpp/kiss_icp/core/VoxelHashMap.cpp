@@ -26,6 +26,7 @@
 #include <tbb/parallel_reduce.h>
 
 #include <Eigen/Core>
+#include <Eigen/Geometry>
 #include <algorithm>
 #include <limits>
 #include <tuple>
@@ -33,19 +34,12 @@
 #include <vector>
 
 #include "Registration.hpp"
+#include "Transforms.hpp"
 
 // This parameters are not intended to be changed, therefore we do not expose it
 namespace {
 constexpr int MAX_NUM_ITERATIONS_ = 500;
 constexpr double ESTIMATION_THRESHOLD_ = 0.0001;
-
-inline void TransformPoints(const Eigen::Matrix4d &T, std::vector<Eigen::Vector3d> &points) {
-    std::transform(points.cbegin(), points.cend(), points.begin(), [&](const auto &point) {
-        const Eigen::Matrix3d R = T.block<3, 3>(0, 0);
-        const Eigen::Vector3d translation = T.block<3, 1>(0, 3);
-        return Eigen::Vector3d{R * point + translation};
-    });
-}
 
 struct ResultTuple {
     ResultTuple(std::size_t n) {
@@ -59,10 +53,10 @@ struct ResultTuple {
 
 namespace kiss_icp {
 
-Eigen::Matrix4d VoxelHashMap::RegisterPoinCloud(const Vector3dVector &points,
-                                                const Eigen::Matrix4d &initial_guess,
-                                                double max_correspondence_distance,
-                                                double kernel) {
+Eigen::Isometry3d VoxelHashMap::RegisterPointCloud(const Vector3dVector &points,
+                                                   const Eigen::Isometry3d &initial_guess,
+                                                   double max_correspondence_distance,
+                                                   double kernel) {
     if (Empty()) return initial_guess;
 
     // Equation (9)
@@ -70,7 +64,7 @@ Eigen::Matrix4d VoxelHashMap::RegisterPoinCloud(const Vector3dVector &points,
     TransformPoints(initial_guess, source);
 
     // ICP-loop
-    Eigen::Matrix4d T_icp = Eigen::Matrix4d::Identity();
+    Eigen::Isometry3d T_icp = Eigen::Isometry3d::Identity();
     for (int j = 0; j < MAX_NUM_ITERATIONS_; ++j) {
         // Equation (10)
         const auto &[src, tgt] = GetCorrespondences(source, max_correspondence_distance);
@@ -79,12 +73,12 @@ Eigen::Matrix4d VoxelHashMap::RegisterPoinCloud(const Vector3dVector &points,
         // Equation (12)
         TransformPoints(estimation, source);
         // Update iterations
-        T_icp = estimation * T_icp;
+        T_icp = ConcatenateIsometries(estimation, T_icp);
         // Termination criteria
         if (x.norm() < ESTIMATION_THRESHOLD_) break;
     }
     // Spit the final transformation
-    return T_icp * initial_guess;
+    return ConcatenateIsometries(T_icp, initial_guess);
 }
 
 VoxelHashMap::Vector3dVectorTuple VoxelHashMap::GetCorrespondences(
@@ -188,16 +182,16 @@ void VoxelHashMap::Update(const Vector3dVector &points, const Eigen::Vector3d &o
     RemovePointsFarFromLocation(origin);
 }
 
-void VoxelHashMap::Update(const Vector3dVector &points, const Eigen::Matrix4d &pose) {
+void VoxelHashMap::Update(const Vector3dVector &points, const Eigen::Isometry3d &pose) {
     auto points_t = points;
     TransformPoints(pose, points_t);
-    const Eigen::Vector3d &origin = pose.block<3, 1>(0, 3);
+    const Eigen::Vector3d &origin = pose.translation();
     Update(points_t, origin);
 }
 
 void VoxelHashMap::AddPoints(const std::vector<Eigen::Vector3d> &points) {
     std::for_each(points.cbegin(), points.cend(), [&](const auto &point) {
-        auto voxel = Voxel(point, voxel_size_);
+        auto voxel = Voxel((point / voxel_size_).template cast<int>());
         auto search = map_.find(voxel);
         if (search != map_.end()) {
             auto &voxel_block = search.value();

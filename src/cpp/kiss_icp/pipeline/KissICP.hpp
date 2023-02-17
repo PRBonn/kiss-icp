@@ -20,11 +20,11 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-
 #pragma once
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#include <tuple>
 #include <vector>
 
 #include "kiss_icp/core/Deskew.hpp"
@@ -72,17 +72,17 @@ public:
                                       const std::vector<double> &timestamps);
     Vector3dVectorTuple Voxelize(const std::vector<Eigen::Vector3d> &frame) const;
     double GetAdaptiveThreshold();
-    Eigen::Matrix4d GetPredictionModel() const;
+    Eigen::Isometry3d GetPredictionModel() const;
     bool HasMoved();
 
 public:
     // Extra C++ API to facilitate ROS debugging
     std::vector<Eigen::Vector3d> LocalMap() const { return local_map_.Pointcloud(); };
-    std::vector<Eigen::Matrix4d> poses() const { return poses_; };
+    std::vector<Eigen::Isometry3d> poses() const { return poses_; };
 
 private:
     // KISS-ICP pipeline modules
-    std::vector<Eigen::Matrix4d> poses_;
+    std::vector<Eigen::Isometry3d> poses_;
     KISSConfig config_;
     MotionCompensator compensator_;
     AdaptiveThreshold adaptive_threshold_;

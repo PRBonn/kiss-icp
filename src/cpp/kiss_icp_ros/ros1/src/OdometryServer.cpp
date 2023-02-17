@@ -107,11 +107,11 @@ void OdometryServer::RegisterFrame(const sensor_msgs::PointCloud2ConstPtr &msg) 
     const auto &[frame, keypoints] = odometry_.RegisterFrame(points, timestamps);
 
     // PublishPose
-    const Eigen::Matrix4d pose = odometry_.poses().back();
+    const Eigen::Isometry3d pose = odometry_.poses().back();
 
-    // Convert from Eigen::Matrix4d to ROS types
-    const Eigen::Vector3d t_current = pose.block<3, 1>(0, 3);
-    const Eigen::Quaterniond q_current(pose.block<3, 3>(0, 0));
+    // Convert from Eigen to ROS types
+    const Eigen::Vector3d t_current = pose.translation();
+    const Eigen::Quaterniond q_current(pose.rotation());
 
     // Broadcast the tf
     geometry_msgs::TransformStamped transform_msg;

@@ -24,7 +24,7 @@
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
-#include <tuple>
+#include <algorithm>
 #include <vector>
 
 namespace Eigen {
@@ -33,12 +33,32 @@ using Vector6d = Eigen::Matrix<double, 6, 1>;
 
 namespace kiss_icp {
 
-Eigen::Vector6d ComputeUpdate(const std::vector<Eigen::Vector3d> &source,
-                              const std::vector<Eigen::Vector3d> &target,
-                              double th);
+inline Eigen::Isometry3d MakeTransform(const Eigen::Vector3d &xyz, const Eigen::Vector3d &theta) {
+    const double angle = theta.norm();
+    const Eigen::Vector3d axis = theta.normalized();
+    Eigen::AngleAxisd omega(angle, axis);
+    Eigen::Isometry3d transform = Eigen::Isometry3d::Identity();
+    transform.linear() = omega.toRotationMatrix();
+    transform.translation() = xyz;
+    return transform;
+}
 
-using PerturbationMatrixTuple = std::tuple<Eigen::Vector6d, Eigen::Isometry3d>;
-PerturbationMatrixTuple AlignClouds(const std::vector<Eigen::Vector3d> &source,
-                                    const std::vector<Eigen::Vector3d> &target,
-                                    double th);
+inline Eigen::Isometry3d Vector6dToIsometry3d(const Eigen::Vector6d &x) {
+    const Eigen::Vector3d &xyz = x.tail<3>();
+    const Eigen::Vector3d &theta = x.head<3>();
+    return MakeTransform(xyz, theta);
+}
+
+inline void TransformPoints(const Eigen::Isometry3d &T, std::vector<Eigen::Vector3d> &points) {
+    std::transform(points.cbegin(), points.cend(), points.begin(),
+                   [&](const auto &point) { return T * point; });
+}
+
+inline Eigen::Isometry3d ConcatenateIsometries(const Eigen::Isometry3d &lhs,
+                                               const Eigen::Isometry3d &rhs) {
+    Eigen::Isometry3d returned = Eigen::Isometry3d::Identity();
+    returned.linear() = lhs.rotation() * rhs.rotation();
+    returned.translation() = lhs.rotation() * rhs.translation() + lhs.translation();
+    return returned;
+}
 }  // namespace kiss_icp

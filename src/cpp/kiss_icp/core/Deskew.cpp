@@ -30,52 +30,30 @@
 #include <tuple>
 #include <vector>
 
+#include "Transforms.hpp"
+
 namespace {
-Eigen::Isometry3d MakeTransform(const Eigen::Vector3d &xyz, const Eigen::Vector3d &rpy) {
-    Eigen::AngleAxisd omega(rpy.norm(), rpy.normalized());
-    Eigen::Isometry3d transform(omega);
-    transform.translation() = xyz;
-    return transform;
+using VelocityTuple = std::tuple<Eigen::Vector3d, Eigen::Vector3d>;
+VelocityTuple VelocityEstimation(const Eigen::Isometry3d &start_pose,
+                                 const Eigen::Isometry3d &finish_pose,
+                                 double scan_duration) {
+    const auto delta_pose = kiss_icp::ConcatenateIsometries(start_pose.inverse(), finish_pose);
+    const auto linear_velocity = delta_pose.translation() / scan_duration;
+    const auto rotation = Eigen::AngleAxisd(delta_pose.rotation());
+    const auto angular_velocity = rotation.axis() * rotation.angle() / scan_duration;
+    return std::make_tuple(linear_velocity, angular_velocity);
 }
 }  // namespace
 
 namespace kiss_icp {
-using VelocityTuple = MotionCompensator::VelocityTuple;
+
 using Vector3dVector = std::vector<Eigen::Vector3d>;
-
-VelocityTuple MotionCompensator::VelocityEstimation(const Eigen::Matrix4d &start_pose,
-                                                    const Eigen::Matrix4d &finish_pose) {
-    const Eigen::Matrix4d delta_pose = start_pose.inverse() * finish_pose;
-    const Eigen::Vector3d linear_velocity = delta_pose.block<3, 1>(0, 3) / scan_duration_;
-    const auto rotation = Eigen::AngleAxisd(delta_pose.block<3, 3>(0, 0));
-    const Eigen::Vector3d angular_velocity = rotation.axis() * rotation.angle() / scan_duration_;
-    return std::make_tuple(linear_velocity, angular_velocity);
-}
-
 Vector3dVector MotionCompensator::DeSkewScan(const std::vector<Eigen::Vector3d> &frame,
                                              const std::vector<double> &timestamps,
-                                             const Eigen::Vector3d &linear_velocity,
-                                             const Eigen::Vector3d &angular_velocity) {
-    std::vector<Eigen::Vector3d> corrected_frame(frame.size());
-    tbb::parallel_for(size_t(0), frame.size(), [&](size_t i) {
-        const auto &dt = timestamps[i];
-        const auto motion = MakeTransform(dt * linear_velocity, dt * angular_velocity);
-        corrected_frame[i] = motion * frame[i];
-    });
-    return corrected_frame;
-}
-
-Vector3dVector MotionCompensator::DeSkewScan(const std::vector<Eigen::Vector3d> &frame,
-                                             const std::vector<double> &timestamps,
-                                             const std::vector<Eigen::Matrix4d> &poses) {
-    //  If not enough poses for the estimation, do not de-skew
-    const size_t N = poses.size();
-    if (N <= 2) return frame;
-
+                                             const Eigen::Isometry3d &start_pose,
+                                             const Eigen::Isometry3d &finish_pose) {
     // Estimate linear and angular velocities
-    const auto &start_pose = poses[N - 2];
-    const auto &finish_pose = poses[N - 1];
-    const auto [lvel, avel] = VelocityEstimation(start_pose, finish_pose);
+    const auto [lvel, avel] = VelocityEstimation(start_pose, finish_pose, scan_duration_);
 
     // TODO(Nacho) Add explanation of this
     std::vector<double> timestamps_ = timestamps;
@@ -83,8 +61,13 @@ Vector3dVector MotionCompensator::DeSkewScan(const std::vector<Eigen::Vector3d> 
         timestamp = scan_duration_ * (timestamp - mid_pose_timestamp_);
     });
 
-    // Compensate using the estimated velocities
-    return MotionCompensator::DeSkewScan(frame, timestamps_, lvel, avel);
+    std::vector<Eigen::Vector3d> corrected_frame(frame.size());
+    tbb::parallel_for(size_t(0), frame.size(), [&](size_t i) {
+        const auto &dt = timestamps_[i];
+        const auto motion = MakeTransform(dt * lvel, dt * avel);
+        corrected_frame[i] = motion * frame[i];
+    });
+    return corrected_frame;
 }
 
 }  // namespace kiss_icp
