@@ -64,14 +64,11 @@ with skbuild_isolated_context():
         cmake_install_dir="src/python/kiss_icp/pybind/",
         cmake_args=["-DBUILD_PYTHON_BINDINGS:BOOL=ON"],
         entry_points={"console_scripts": ["kiss_icp_pipeline=kiss_icp.tools.cmd:run"]},
-        include_package_data=False,
-        package_data={"kiss_icp": ["config/default.yaml"]},
         install_requires=[
-            "PyYAML",
-            "easydict",
             "natsort",
             "numpy",
             "plyfile",
+            "pydantic",
             "pyquaternion",
             "rich",
             "tqdm",
@@ -82,6 +79,7 @@ with skbuild_isolated_context():
                 "open3d>=0.13",
             ],
             "all": [
+                "PyYAML",
                 "open3d>=0.13",
                 "ouster-sdk>=0.7.1",
                 "pyntcloud",

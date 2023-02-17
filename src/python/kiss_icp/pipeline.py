@@ -30,7 +30,7 @@ from typing import List, Optional
 import numpy as np
 from pyquaternion import Quaternion
 
-from kiss_icp.config import KISSConfig, load_config, write_config
+from kiss_icp.config import load_config, write_config
 from kiss_icp.kiss_icp import KissICP
 from kiss_icp.metrics import absolute_trajectory_error, sequence_error
 from kiss_icp.tools.pipeline_results import PipelineResults
@@ -42,7 +42,7 @@ class OdometryPipeline:
     def __init__(
         self,
         dataset,
-        config: Path,
+        config: Optional[Path] = None,
         deskew: Optional[bool] = False,
         max_range: Optional[float] = None,
         visualize: bool = False,
@@ -56,9 +56,10 @@ class OdometryPipeline:
         self._jump = jump
         self._first = jump
         self._last = self._jump + self._n_scans
-        self.config: KISSConfig = self.load_config(config, deskew=deskew, max_range=max_range)
 
-        self.results_dir = self._get_results_dir(self.config.out_dir)
+        # Config and output dir
+        self.config = load_config(config, deskew=deskew, max_range=max_range)
+        self.results_dir = None
 
         # Pipeline
         self.odometry = KissICP(config=self.config)
@@ -83,6 +84,7 @@ class OdometryPipeline:
     def run(self):
         self._run_pipeline()
         self._run_evaluation()
+        self._create_output_dir()
         self._write_result_poses()
         self._write_gt_poses()
         self._write_cfg()
@@ -107,32 +109,6 @@ class OdometryPipeline:
             frame = dataframe
             timestamps = np.zeros(frame.shape[0])
         return frame, timestamps
-
-    @staticmethod
-    def load_config(
-        config_file: Path,
-        deskew: Optional[bool] = False,
-        max_range: Optional[float] = None,
-    ):
-        config = load_config(config_file)
-
-        # Override defauls according to dataloader specification
-        config.data.deskew = deskew if deskew else config.data.deskew
-        config.data.max_range = max_range if max_range else config.data.max_range
-
-        # Check if there is a possible mistake
-        if config.data.max_range < config.data.min_range:
-            print("[WARNING] max_range is smaller than min_range, settng min_range to 0.0")
-            config.data.min_range = 0.0
-
-        # Use specified voxel size or compute one using the max range
-        config.mapping.voxel_size = (
-            config.mapping.voxel_size
-            if hasattr(config.mapping, "voxel_size")
-            else float(config.data.max_range / 100.0)
-        )
-
-        return config
 
     @staticmethod
     def save_poses_kitti_format(filename: str, poses: List[np.ndarray]):
@@ -232,3 +208,6 @@ class OdometryPipeline:
         os.unlink(latest_dir) if os.path.exists(latest_dir) or os.path.islink(latest_dir) else None
         os.symlink(results_dir, latest_dir)
         return results_dir
+
+    def _create_output_dir(self):
+        self.results_dir = self._get_results_dir(self.config.out_dir)

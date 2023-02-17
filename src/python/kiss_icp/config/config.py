@@ -20,39 +20,26 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import numpy as np
+from typing import Optional
 
-from kiss_icp.config import KISSConfig
-from kiss_icp.pybind import kiss_icp_pybind
-
-
-def get_threshold_estimator(config: KISSConfig):
-    if config.adaptive_threshold.fixed_threshold is not None:
-        return FixedThreshold(config.adaptive_threshold.fixed_threshold)
-    return AdaptiveThreshold(config)
+from pydantic import BaseModel
 
 
-class FixedThreshold:
-    def __init__(self, fixed_threshold: float):
-        self.fixed_threshold = fixed_threshold
-
-    def get_threshold(self):
-        return self.fixed_threshold
-
-    def update_model_deviation(self, model_deviation):
-        pass
+class DataConfig(BaseModel):
+    preprocess: bool = True
+    correct_scan: bool = True
+    frame_rate: float = 10.0
+    max_range: float = 100.0
+    min_range: float = 5.0
+    deskew: bool = False
 
 
-class AdaptiveThreshold:
-    def __init__(self, config: KISSConfig):
-        self._estimator = kiss_icp_pybind._AdaptiveThreshold(
-            initial_threshold=config.adaptive_threshold.initial_threshold,
-            min_motion_th=config.adaptive_threshold.min_motion_th,
-            max_range=config.data.max_range,
-        )
+class MappingConfig(BaseModel):
+    voxel_size: Optional[float] = None  # default: take it from data
+    max_points_per_voxel: int = 20
 
-    def get_threshold(self):
-        return self._estimator._compute_threshold()
 
-    def update_model_deviation(self, model_deviation: np.ndarray):
-        self._estimator._update_model_deviation(model_deviation=model_deviation)
+class AdaptiveThresholdConfig(BaseModel):
+    fixed_threshold: Optional[float] = None
+    initial_threshold: float = 2.0
+    min_motion_th: float = 0.1
