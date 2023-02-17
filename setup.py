@@ -64,7 +64,6 @@ with skbuild_isolated_context():
         cmake_install_dir="src/python/kiss_icp/pybind/",
         cmake_args=["-DBUILD_PYTHON_BINDINGS:BOOL=ON"],
         entry_points={"console_scripts": ["kiss_icp_pipeline=kiss_icp.tools.cmd:run"]},
-        include_package_data=False,
         install_requires=[
             "natsort",
             "numpy",
