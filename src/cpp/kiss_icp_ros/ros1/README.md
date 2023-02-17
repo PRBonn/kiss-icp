@@ -3,6 +3,8 @@
 This node is just an application example on how to use the KISS-ICP C++ API. It's still considered
 work in progress and we are very happy to receive any contribution from the comunity 👼
 
+https://user-images.githubusercontent.com/21349875/214578180-b1d2431c-8fff-440e-aa6e-99a1d85989b5.mp4
+
 ## How to build
 
 You should not need any extra dependency, just clone and build:
