@@ -4,13 +4,7 @@
 ![windows](https://img.shields.io/badge/windows-333333?style=flat&logo=windows&logocolor=blue)
 ![macos](https://img.shields.io/badge/-macos-333333?style=flat&logo=apple)
 
-![overview](https://user-images.githubusercontent.com/21349875/211829074-474bec08-0129-4e34-85e7-62265e44a7de.png)
-
-_Point cloud maps (blue) generated online by our proposed odometry pipeline on different datasets with the same set of parameters.
-We depict the latest scan in yellow. The scans are recorded using different sensors with different point densities, different orientations,
-and different shooting patterns. The automotive example stems from the MulRan dataset. The drone of the Voxgraph dataset
-and the segway robot used in the NCLT dataset show a high acceleration motion profile. The handheld mechanical LiDAR of LOAM
-Livox has a completely different shooting pattern than the commonly used rotating mechanical LiDAR._
+https://user-images.githubusercontent.com/21349875/219626075-d67e9165-31a2-4a1b-8c26-9f04e7d195ec.mp4
 
 ## 📰 NEWS!!! 📰 ROS API
 
@@ -21,10 +15,6 @@ cd ~/catkin_ws/ && git clone https://github.com/PRBonn/kiss-icp && catkin build
 ```
 
 For more detailed instructions on the ROS wrapper, please visit [here](src/cpp/kiss_icp_ros/ros1/README.md)
-
-### ROS Video Example
-
-https://user-images.githubusercontent.com/21349875/214578180-b1d2431c-8fff-440e-aa6e-99a1d85989b5.mp4
 
 ## Install Python API
 
@@ -82,11 +72,6 @@ If you want to have more controll over the build, you should then install `cmake
 ```sh
 sudo apt install build-essential libeigen3-dev libtbb-dev pybind11-dev ninja-build
 ```
-
-## Teaser Video 
-
-https://user-images.githubusercontent.com/38326482/189950820-030fd9e4-406b-4d14-8171-43b134344223.mp4
-
 
 ## Authors
 
