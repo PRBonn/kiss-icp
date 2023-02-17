@@ -66,7 +66,6 @@ with skbuild_isolated_context():
         entry_points={"console_scripts": ["kiss_icp_pipeline=kiss_icp.tools.cmd:run"]},
         include_package_data=False,
         install_requires=[
-            "PyYAML",
             "natsort",
             "numpy",
             "plyfile",
@@ -81,6 +80,7 @@ with skbuild_isolated_context():
                 "open3d>=0.13",
             ],
             "all": [
+                "PyYAML",
                 "open3d>=0.13",
                 "ouster-sdk>=0.7.1",
                 "pyntcloud",
