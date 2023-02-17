@@ -65,7 +65,6 @@ with skbuild_isolated_context():
         cmake_args=["-DBUILD_PYTHON_BINDINGS:BOOL=ON"],
         entry_points={"console_scripts": ["kiss_icp_pipeline=kiss_icp.tools.cmd:run"]},
         include_package_data=False,
-        package_data={"kiss_icp": ["config/default.yaml"]},
         install_requires=[
             "PyYAML",
             "natsort",
