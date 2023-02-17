@@ -59,15 +59,27 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
              py::overload_cast<const VoxelHashMap::Vector3dVector &, const Eigen::Vector3d &>(
                  &VoxelHashMap::Update),
              "points"_a, "origin"_a)
-        .def("_update",
-             py::overload_cast<const VoxelHashMap::Vector3dVector &, const Eigen::Matrix4d &>(
-                 &VoxelHashMap::Update),
-             "points"_a, "pose"_a)
+        .def(
+            "_update",
+            [](VoxelHashMap &self, const VoxelHashMap::Vector3dVector &points,
+               const Eigen::Matrix4d &T) {
+                Eigen::Isometry3d pose(T);
+                self.Update(points, pose);
+            },
+            "points"_a, "pose"_a)
         .def("_point_cloud", &VoxelHashMap::Pointcloud)
         .def("_get_correspondences", &VoxelHashMap::GetCorrespondences, "points"_a,
              "max_correspondance_distance"_a)
-        .def("_register_point_cloud", &VoxelHashMap::RegisterPoinCloud, "points"_a,
-             "initial_guess"_a, "max_correspondance_distance"_a, "kernel"_a);
+        .def(
+            "_register_point_cloud",
+            [](VoxelHashMap &self, const std::vector<Eigen::Vector3d> &points,
+               const Eigen::Matrix4d &T_guess, double max_correspondence_distance, double kernel) {
+                Eigen::Isometry3d initial_guess(T_guess);
+                return self
+                    .RegisterPointCloud(points, initial_guess, max_correspondence_distance, kernel)
+                    .matrix();
+            },
+            "points"_a, "initial_guess"_a, "max_correspondance_distance"_a, "kernel"_a);
 
     // AdaptiveThreshold bindings
     py::class_<AdaptiveThreshold> adaptive_threshold(m, "_AdaptiveThreshold", "Don't use this");
@@ -75,17 +87,27 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
         .def(py::init<double, double, double>(), "initial_threshold"_a, "min_motion_th"_a,
              "max_range"_a)
         .def("_compute_threshold", &AdaptiveThreshold::ComputeThreshold)
-        .def("_update_model_deviation", &AdaptiveThreshold::UpdateModelDeviation,
-             "model_deviation"_a);
+        .def(
+            "_update_model_deviation",
+            [](AdaptiveThreshold &self, const Eigen::Matrix4d &T) {
+                Eigen::Isometry3d model_deviation(T);
+                self.UpdateModelDeviation(model_deviation);
+            },
+            "model_deviation"_a);
 
     // DeSkewScan
     py::class_<MotionCompensator> motion_compensator(m, "_MotionCompensator", "Don't use this");
     motion_compensator.def(py::init<double>(), "frame_rate"_a)
         .def(
             "_deskew_scan",
-            py::overload_cast<const std::vector<Eigen::Vector3d> &, const std::vector<double> &,
-                              const std::vector<Eigen::Matrix4d> &>(&MotionCompensator::DeSkewScan),
-            "frame"_a, "timestamps"_a, "poses"_a);
+            [](MotionCompensator &self, const std::vector<Eigen::Vector3d> &frame,
+               const std::vector<double> &timestamps, const Eigen::Matrix4d &T_start,
+               const Eigen::Matrix4d &T_finish) {
+                Eigen::Isometry3d start_pose(T_start);
+                Eigen::Isometry3d finish_pose(T_finish);
+                return self.DeSkewScan(frame, timestamps, start_pose, finish_pose);
+            },
+            "frame"_a, "timestamps"_a, "start_pose"_a, "finish_pose"_a);
 
     // prerpocessing modules
     m.def("_voxel_down_sample", &VoxelDownsample, "frame"_a, "voxel_size"_a);

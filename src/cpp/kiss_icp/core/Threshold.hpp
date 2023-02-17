@@ -22,7 +22,7 @@
 // SOFTWARE.
 #pragma once
 
-#include <Eigen/Core>
+#include <Eigen/Geometry>
 
 namespace kiss_icp {
 
@@ -33,7 +33,7 @@ struct AdaptiveThreshold {
           max_range_(max_range) {}
 
     /// Update the current belief of the deviation from the prediction model
-    inline void UpdateModelDeviation(const Eigen::Matrix4d &current_deviation) {
+    inline void UpdateModelDeviation(const Eigen::Isometry3d &current_deviation) {
         model_deviation_ = current_deviation;
     }
 
@@ -48,7 +48,7 @@ struct AdaptiveThreshold {
     // Local cache for ccomputation
     double model_error_sse2_ = 0;
     int num_samples_ = 0;
-    Eigen::Matrix4d model_deviation_ = Eigen::Matrix4d::Identity();
+    Eigen::Isometry3d model_deviation_ = Eigen::Isometry3d::Identity();
 };
 
 }  // namespace kiss_icp

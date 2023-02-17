@@ -25,10 +25,16 @@
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_reduce.h>
 
-#include <Eigen/Dense>
 #include <algorithm>
 #include <cmath>
 #include <tuple>
+
+#include "Transforms.hpp"
+
+namespace Eigen {
+using Matrix6d = Eigen::Matrix<double, 6, 6>;
+using Matrix3_6d = Eigen::Matrix<double, 3, 6>;
+}  // namespace Eigen
 
 namespace {
 
@@ -60,25 +66,15 @@ struct ResultTuple {
     Eigen::Vector6d JTr;
 };
 
-Eigen::Matrix4d TransformVector6dToMatrix4d(const Eigen::Vector6d &x) {
-    Eigen::Matrix4d output = Eigen::Matrix4d::Identity();
-    output.block<3, 3>(0, 0) = (Eigen::AngleAxisd(x(2), Eigen::Vector3d::UnitZ()) *
-                                Eigen::AngleAxisd(x(1), Eigen::Vector3d::UnitY()) *
-                                Eigen::AngleAxisd(x(0), Eigen::Vector3d::UnitX()))
-                                   .matrix();
-    output.block<3, 1>(0, 3) = x.block<3, 1>(3, 0);
-    return output;
-}
-
 }  // namespace
 
 namespace kiss_icp {
 
-std::tuple<Eigen::Vector6d, Eigen::Matrix4d> AlignClouds(const std::vector<Eigen::Vector3d> &source,
-                                                         const std::vector<Eigen::Vector3d> &target,
-                                                         double th) {
+PerturbationMatrixTuple AlignClouds(const std::vector<Eigen::Vector3d> &source,
+                                    const std::vector<Eigen::Vector3d> &target,
+                                    double th) {
     Eigen::Vector6d x = ComputeUpdate(source, target, th);
-    Eigen::Matrix4d update = TransformVector6dToMatrix4d(x);
+    Eigen::Isometry3d update = Vector6dToIsometry3d(x);
     return {x, update};
 }
 

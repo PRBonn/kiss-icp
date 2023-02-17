@@ -45,6 +45,7 @@ class MotionCompensator:
         deskew_frame = self._compensator._deskew_scan(
             frame=kiss_icp_pybind._Vector3dVector(frame),
             timestamps=timestamps,
-            poses=poses,
+            start_pose=poses[-2],
+            finish_pose=poses[-1],
         )
         return np.asarray(deskew_frame)

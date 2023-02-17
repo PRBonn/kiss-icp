@@ -26,7 +26,6 @@ from pathlib import Path
 import sys
 
 import numpy as np
-import yaml
 
 
 class RosbagDataset:
@@ -43,12 +42,11 @@ class RosbagDataset:
         # bagfile
         self.bagfile = data_dir
         self.bag = rosbag.Bag(data_dir, mode="r")
-        self.topic = topic
-        self.check_for_topics()
+        self.topic = self.check_topic(topic)
 
         # Get an iterable
-        self.n_scans = self.bag.get_message_count(topic_filters=topic)
-        self.msgs = self.bag.read_messages(topics=[topic])
+        self.n_scans = self.bag.get_message_count(topic_filters=self.topic)
+        self.msgs = self.bag.read_messages(topics=[self.topic])
 
         # Visualization Options
         self.use_global_visualizer = True
@@ -74,15 +72,32 @@ class RosbagDataset:
             timestamps = timestamps / np.max(timestamps) if t_field != "time" else timestamps
         return points.astype(np.float64), timestamps
 
-    def check_for_topics(self):
-        if self.topic:
-            return
-        print("Please provide one of the following topics with the --topic flag")
-        info_dict = yaml.safe_load(self.bag._get_yaml_info())
-        info_dict.keys()
-        print("PointCloud2 topics available:")
-        for topic in info_dict["topics"]:
-            if topic["type"] == "sensor_msgs/PointCloud2":
-                for k, v in topic.items():
-                    print(k.ljust(20), v)
-        exit(1)
+    def check_topic(self, topic: str) -> str:
+        # when user specified the topic don't check
+        if topic:
+            return topic
+
+        # Extract all PointCloud2 msg topics from the bagfile
+        point_cloud_topics = [
+            topic
+            for topic in self.bag.get_type_and_topic_info().topics.items()
+            if topic[1].msg_type == "sensor_msgs/PointCloud2"
+        ]
+
+        if len(point_cloud_topics) == 1:
+            return point_cloud_topics[0][0]  # this is the string topic name, go figure out
+
+        # In any other case we consider this an error
+        if len(point_cloud_topics) == 0:
+            print("[ERROR] Your bagfile does not contain any sensor_msgs/PointCloud2 topic")
+        if len(point_cloud_topics) > 1:
+            print("Multiple sensor_msgs/PointCloud2 topics available.")
+            print("Please provide one of the following topics with the --topic flag")
+            for topic_tuple in point_cloud_topics:
+                print(50 * "-")
+                print(f"Topic   {topic_tuple[0]}")
+                print(f"\tType      {topic_tuple[1].msg_type}")
+                print(f"\tMessages  {topic_tuple[1].message_count}")
+                print(f"\tFrequency {topic_tuple[1].frequency}")
+            print(50 * "-")
+        sys.exit(1)

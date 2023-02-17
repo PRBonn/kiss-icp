@@ -26,12 +26,10 @@
 #include <cmath>
 
 namespace {
-double ComputeModelError(const Eigen::Matrix4d &model_deviation, double max_range) {
-    const Eigen::Matrix3d &R = model_deviation.block<3, 3>(0, 0);
-    const Eigen::Vector3d &t = model_deviation.block<3, 1>(0, 3);
-    const double theta = std::acos(0.5 * (R.trace() - 1));
+double ComputeModelError(const Eigen::Isometry3d &model_deviation, double max_range) {
+    const double theta = Eigen::AngleAxisd(model_deviation.rotation()).angle();
     const double delta_rot = 2.0 * max_range * std::sin(theta / 2.0);
-    const double delta_trans = t.norm();
+    const double delta_trans = model_deviation.translation().norm();
     return delta_trans + delta_rot;
 }
 }  // namespace

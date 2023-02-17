@@ -29,6 +29,7 @@
 
 #include "kiss_icp/core/Deskew.hpp"
 #include "kiss_icp/core/Preprocessing.hpp"
+#include "kiss_icp/core/Transforms.hpp"
 #include "kiss_icp/core/VoxelHashMap.hpp"
 
 namespace kiss_icp::pipeline {
@@ -38,7 +39,15 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
     const auto &deskew_frame = [&]() -> std::vector<Eigen::Vector3d> {
         if (!config_.deskew) return frame;
         // TODO(Nacho) Add some asserts here to sanitize the timestamps
-        return compensator_.DeSkewScan(frame, timestamps, poses_);
+
+        //  If not enough poses for the estimation, do not de-skew
+        const size_t N = poses().size();
+        if (N <= 2) return frame;
+
+        // Estimate linear and angular velocities
+        const auto &start_pose = poses_[N - 2];
+        const auto &finish_pose = poses_[N - 1];
+        return compensator_.DeSkewScan(frame, timestamps, start_pose, finish_pose);
     }();
     return RegisterFrame(deskew_frame);
 }
@@ -55,18 +64,16 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
 
     // Compute initial_guess for ICP
     const auto prediction = GetPredictionModel();
-    const auto last_pose = [&]() -> Eigen::Matrix4d {
-        if (poses_.empty()) return Eigen::Matrix4d::Identity();
-        return poses_.back();
-    }();
-    const auto initial_guess = last_pose * prediction;
+    const auto last_pose = !poses_.empty() ? poses_.back() : Eigen::Isometry3d::Identity();
+    const auto initial_guess = ConcatenateIsometries(last_pose, prediction);
 
     // Run icp
-    const Eigen::Matrix4d new_pose = local_map_.RegisterPoinCloud(source,         //
-                                                                  initial_guess,  //
-                                                                  3.0 * sigma,    //
-                                                                  sigma / 3.0);
-    adaptive_threshold_.UpdateModelDeviation(initial_guess.inverse() * new_pose);
+    const Eigen::Isometry3d new_pose = local_map_.RegisterPointCloud(source,         //
+                                                                     initial_guess,  //
+                                                                     3.0 * sigma,    //
+                                                                     sigma / 3.0);
+    const auto model_deviation = ConcatenateIsometries(initial_guess.inverse(), new_pose);
+    adaptive_threshold_.UpdateModelDeviation(model_deviation);
     local_map_.Update(frame_downsample, new_pose);
     poses_.push_back(new_pose);
     return {frame, source};
@@ -86,18 +93,16 @@ double KissICP::GetAdaptiveThreshold() {
     return adaptive_threshold_.ComputeThreshold();
 }
 
-Eigen::Matrix4d KissICP::GetPredictionModel() const {
+Eigen::Isometry3d KissICP::GetPredictionModel() const {
+    Eigen::Isometry3d pred = Eigen::Isometry3d::Identity();
     const size_t N = poses_.size();
-    if (N < 2) return Eigen::Matrix4d::Identity();
-    return poses_[N - 2].inverse() * poses_[N - 1];
+    if (N < 2) return pred;
+    return ConcatenateIsometries(poses_[N - 2].inverse(), poses_[N - 1]);
 }
 
 bool KissICP::HasMoved() {
     if (poses_.empty()) return false;
-    auto ComputeMotion = [&](const Eigen::Matrix4d &T1, const Eigen::Matrix4d &T2) {
-        return ((T1.inverse() * T2).block<3, 1>(0, 3)).norm();
-    };
-    const double motion = ComputeMotion(poses_.front(), poses_.back());
+    const double motion = (poses_.front().inverse() * poses_.back()).translation().norm();
     return motion > 5.0 * config_.min_motion_th;
 }
 
