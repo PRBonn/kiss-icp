@@ -55,7 +55,7 @@ public:
     using Vector3dVectorTuple = std::tuple<Vector3dVector, Vector3dVector>;
 
 public:
-    explicit KissICP(const KISSConfig& config)
+    explicit KissICP(const KISSConfig &config)
         : config_(config),
           local_map_(config.voxel_size, config.max_range, config.max_points_per_voxel),
           adaptive_threshold_(config.initial_threshold, config.min_motion_th, config.max_range),
@@ -67,10 +67,10 @@ public:
           compensator_(config_.frame_rate) {}
 
 public:
-    Vector3dVectorTuple RegisterFrame(const std::vector<Eigen::Vector3d>& frame);
-    Vector3dVectorTuple RegisterFrame(const std::vector<Eigen::Vector3d>& frame,
-                                      const std::vector<double>& timestamps);
-    Vector3dVectorTuple Voxelize(const std::vector<Eigen::Vector3d>& frame) const;
+    Vector3dVectorTuple RegisterFrame(const std::vector<Eigen::Vector3d> &frame);
+    Vector3dVectorTuple RegisterFrame(const std::vector<Eigen::Vector3d> &frame,
+                                      const std::vector<double> &timestamps);
+    Vector3dVectorTuple Voxelize(const std::vector<Eigen::Vector3d> &frame) const;
     double GetAdaptiveThreshold();
     Eigen::Matrix4d GetPredictionModel() const;
     bool HasMoved();

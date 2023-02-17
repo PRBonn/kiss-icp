@@ -25,7 +25,7 @@
 
 #include "kiss_icp/pipeline/KissICP.hpp"
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
     rclcpp::init(argc, argv);
     kiss_icp::pipeline::KissICP odometry;
     auto node = rclcpp::Node::make_shared("kiss_icp_node");

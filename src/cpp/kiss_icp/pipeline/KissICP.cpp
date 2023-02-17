@@ -33,9 +33,9 @@
 
 namespace kiss_icp::pipeline {
 
-KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vector3d>& frame,
-                                                    const std::vector<double>& timestamps) {
-    const auto& deskew_frame = [&]() -> std::vector<Eigen::Vector3d> {
+KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vector3d> &frame,
+                                                    const std::vector<double> &timestamps) {
+    const auto &deskew_frame = [&]() -> std::vector<Eigen::Vector3d> {
         if (!config_.deskew) return frame;
         // TODO(Nacho) Add some asserts here to sanitize the timestamps
         return compensator_.DeSkewScan(frame, timestamps, poses_);
@@ -43,12 +43,12 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
     return RegisterFrame(deskew_frame);
 }
 
-KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vector3d>& frame) {
+KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vector3d> &frame) {
     // Preprocess the input cloud
-    const auto& cropped_frame = Preprocess(frame, config_.max_range, config_.min_range);
+    const auto &cropped_frame = Preprocess(frame, config_.max_range, config_.min_range);
 
     // Voxelize
-    const auto& [source, frame_downsample] = Voxelize(cropped_frame);
+    const auto &[source, frame_downsample] = Voxelize(cropped_frame);
 
     // Get motion prediction and adaptive_threshold
     const double sigma = GetAdaptiveThreshold();
@@ -72,7 +72,7 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
     return {frame, source};
 }
 
-KissICP::Vector3dVectorTuple KissICP::Voxelize(const std::vector<Eigen::Vector3d>& frame) const {
+KissICP::Vector3dVectorTuple KissICP::Voxelize(const std::vector<Eigen::Vector3d> &frame) const {
     const auto voxel_size = config_.voxel_size;
     const auto frame_downsample = kiss_icp::VoxelDownsample(frame, voxel_size * 0.5);
     const auto source = kiss_icp::VoxelDownsample(frame_downsample, voxel_size * 1.5);
@@ -94,7 +94,7 @@ Eigen::Matrix4d KissICP::GetPredictionModel() const {
 
 bool KissICP::HasMoved() {
     if (poses_.empty()) return false;
-    auto ComputeMotion = [&](const Eigen::Matrix4d& T1, const Eigen::Matrix4d& T2) {
+    auto ComputeMotion = [&](const Eigen::Matrix4d &T1, const Eigen::Matrix4d &T2) {
         return ((T1.inverse() * T2).block<3, 1>(0, 3)).norm();
     };
     const double motion = ComputeMotion(poses_.front(), poses_.back());

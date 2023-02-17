@@ -56,11 +56,11 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
         .def("_clear", &VoxelHashMap::Clear)
         .def("_empty", &VoxelHashMap::Empty)
         .def("_update",
-             py::overload_cast<const VoxelHashMap::Vector3dVector&, const Eigen::Vector3d&>(
+             py::overload_cast<const VoxelHashMap::Vector3dVector &, const Eigen::Vector3d &>(
                  &VoxelHashMap::Update),
              "points"_a, "origin"_a)
         .def("_update",
-             py::overload_cast<const VoxelHashMap::Vector3dVector&, const Eigen::Matrix4d&>(
+             py::overload_cast<const VoxelHashMap::Vector3dVector &, const Eigen::Matrix4d &>(
                  &VoxelHashMap::Update),
              "points"_a, "pose"_a)
         .def("_point_cloud", &VoxelHashMap::Pointcloud)
@@ -81,10 +81,11 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
     // DeSkewScan
     py::class_<MotionCompensator> motion_compensator(m, "_MotionCompensator", "Don't use this");
     motion_compensator.def(py::init<double>(), "frame_rate"_a)
-        .def("_deskew_scan",
-             py::overload_cast<const std::vector<Eigen::Vector3d>&, const std::vector<double>&,
-                               const std::vector<Eigen::Matrix4d>&>(&MotionCompensator::DeSkewScan),
-             "frame"_a, "timestamps"_a, "poses"_a);
+        .def(
+            "_deskew_scan",
+            py::overload_cast<const std::vector<Eigen::Vector3d> &, const std::vector<double> &,
+                              const std::vector<Eigen::Matrix4d> &>(&MotionCompensator::DeSkewScan),
+            "frame"_a, "timestamps"_a, "poses"_a);
 
     // prerpocessing modules
     m.def("_voxel_down_sample", &VoxelDownsample, "frame"_a, "voxel_size"_a);

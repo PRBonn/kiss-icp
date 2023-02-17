@@ -32,20 +32,20 @@ class MotionCompensator {
 public:
     explicit MotionCompensator(double frame_rate) : scan_duration_(1 / frame_rate) {}
     /// Compensate the frame using the given poses
-    std::vector<Eigen::Vector3d> DeSkewScan(const std::vector<Eigen::Vector3d>& frame,
-                                            const std::vector<double>& timestamps,
-                                            const std::vector<Eigen::Matrix4d>& poses);
+    std::vector<Eigen::Vector3d> DeSkewScan(const std::vector<Eigen::Vector3d> &frame,
+                                            const std::vector<double> &timestamps,
+                                            const std::vector<Eigen::Matrix4d> &poses);
 
     /// Estimate the linear and angular velocities given 2 poses
     using VelocityTuple = std::tuple<Eigen::Vector3d, Eigen::Vector3d>;
-    VelocityTuple VelocityEstimation(const Eigen::Matrix4d& start_pose,
-                                     const Eigen::Matrix4d& finish_pose);
+    VelocityTuple VelocityEstimation(const Eigen::Matrix4d &start_pose,
+                                     const Eigen::Matrix4d &finish_pose);
 
     // Expose this function to allow motion compensation using IMUs
-    static std::vector<Eigen::Vector3d> DeSkewScan(const std::vector<Eigen::Vector3d>& frame,
-                                                   const std::vector<double>& timestamps,
-                                                   const Eigen::Vector3d& linear_velocity,
-                                                   const Eigen::Vector3d& angular_velocity);
+    static std::vector<Eigen::Vector3d> DeSkewScan(const std::vector<Eigen::Vector3d> &frame,
+                                                   const std::vector<double> &timestamps,
+                                                   const Eigen::Vector3d &linear_velocity,
+                                                   const Eigen::Vector3d &angular_velocity);
 
 private:
     double scan_duration_;

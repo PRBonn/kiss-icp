@@ -6,3 +6,5 @@ ColumnLimit: 100
 BinPackParameters: false
 SortIncludes: true
 Standard: c++17
+DerivePointerAlignment: false
+PointerAlignment: Right

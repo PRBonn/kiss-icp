@@ -33,7 +33,7 @@ struct AdaptiveThreshold {
           max_range_(max_range) {}
 
     /// Update the current belief of the deviation from the prediction model
-    inline void UpdateModelDeviation(const Eigen::Matrix4d& current_deviation) {
+    inline void UpdateModelDeviation(const Eigen::Matrix4d &current_deviation) {
         model_deviation_ = current_deviation;
     }
 

@@ -43,12 +43,12 @@ struct errors {
         : first_frame(first_frame), r_err(r_err), t_err(t_err), len(len), speed(speed) {}
 };
 
-std::vector<double> TrajectoryDistances(const std::vector<Eigen::Matrix4d>& poses) {
+std::vector<double> TrajectoryDistances(const std::vector<Eigen::Matrix4d> &poses) {
     std::vector<double> dist;
     dist.push_back(0);
     for (uint32_t i = 1; i < poses.size(); i++) {
-        const Eigen::Matrix4d& P1 = poses[i - 1];
-        const Eigen::Matrix4d& P2 = poses[i];
+        const Eigen::Matrix4d &P1 = poses[i - 1];
+        const Eigen::Matrix4d &P2 = poses[i];
 
         double dx = P1(0, 3) - P2(0, 3);
         double dy = P1(1, 3) - P2(1, 3);
@@ -60,7 +60,7 @@ std::vector<double> TrajectoryDistances(const std::vector<Eigen::Matrix4d>& pose
     return dist;
 }
 
-int32_t LastFrameFromSegmentLength(const std::vector<double>& dist,
+int32_t LastFrameFromSegmentLength(const std::vector<double> &dist,
                                    int32_t first_frame,
                                    double len) {
     for (uint32_t i = first_frame; i < dist.size(); i++) {
@@ -71,7 +71,7 @@ int32_t LastFrameFromSegmentLength(const std::vector<double>& dist,
     return -1;
 }
 
-double RotationError(const Eigen::Matrix4d& pose_error) {
+double RotationError(const Eigen::Matrix4d &pose_error) {
     double a = pose_error(0, 0);
     double b = pose_error(1, 1);
     double c = pose_error(2, 2);
@@ -79,15 +79,15 @@ double RotationError(const Eigen::Matrix4d& pose_error) {
     return std::acos(std::max(std::min(d, 1.0), -1.0));
 }
 
-double TranslationError(const Eigen::Matrix4d& pose_error) {
+double TranslationError(const Eigen::Matrix4d &pose_error) {
     double dx = pose_error(0, 3);
     double dy = pose_error(1, 3);
     double dz = pose_error(2, 3);
     return std::sqrt(dx * dx + dy * dy + dz * dz);
 }
 
-std::vector<errors> CalcSequenceErrors(const std::vector<Eigen::Matrix4d>& poses_gt,
-                                       const std::vector<Eigen::Matrix4d>& poses_result) {
+std::vector<errors> CalcSequenceErrors(const std::vector<Eigen::Matrix4d> &poses_gt,
+                                       const std::vector<Eigen::Matrix4d> &poses_result) {
     // error vector
     std::vector<errors> err;
 
@@ -136,13 +136,13 @@ std::vector<errors> CalcSequenceErrors(const std::vector<Eigen::Matrix4d>& poses
 
 namespace kiss_icp::metrics {
 
-std::tuple<float, float> SeqError(const std::vector<Eigen::Matrix4d>& poses_gt,
-                                  const std::vector<Eigen::Matrix4d>& poses_result) {
+std::tuple<float, float> SeqError(const std::vector<Eigen::Matrix4d> &poses_gt,
+                                  const std::vector<Eigen::Matrix4d> &poses_result) {
     std::vector<errors> err = CalcSequenceErrors(poses_gt, poses_result);
     double t_err = 0;
     double r_err = 0;
 
-    for (const auto& it : err) {
+    for (const auto &it : err) {
         t_err += it.t_err;
         r_err += it.r_err;
     }
@@ -153,8 +153,8 @@ std::tuple<float, float> SeqError(const std::vector<Eigen::Matrix4d>& poses_gt,
     return std::make_tuple(avg_trans_error, avg_rot_error);
 }
 
-std::tuple<float, float> AbsoluteTrajectoryError(const std::vector<Eigen::Matrix4d>& poses_gt,
-                                                 const std::vector<Eigen::Matrix4d>& poses_result) {
+std::tuple<float, float> AbsoluteTrajectoryError(const std::vector<Eigen::Matrix4d> &poses_gt,
+                                                 const std::vector<Eigen::Matrix4d> &poses_result) {
     assert(poses_gt.size() == poses_result.size() &&
            "AbsoluteTrajectoryError| Different number of poses in ground truth and estimate");
     Eigen::MatrixXd source(3, poses_gt.size());
@@ -171,7 +171,7 @@ std::tuple<float, float> AbsoluteTrajectoryError(const std::vector<Eigen::Matrix
     for (size_t j = 0; j < num_poses; ++j) {
         // Apply alignement matrix
         const Eigen::Matrix4d T_estimate = T_align_trajectories * poses_result[j];
-        const Eigen::Matrix4d& T_ground_truth = poses_gt[j];
+        const Eigen::Matrix4d &T_ground_truth = poses_gt[j];
         // Compute error in translation and rotation matrix (ungly)
         const Eigen::Matrix3d delta_R =
             T_ground_truth.block<3, 3>(0, 0) * T_estimate.block<3, 3>(0, 0).transpose();
