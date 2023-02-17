@@ -23,13 +23,14 @@
 import contextlib
 import datetime
 import os
+from pathlib import Path
 import time
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 from pyquaternion import Quaternion
 
-from kiss_icp.config import write_config, KISSConfig
+from kiss_icp.config import load_config, write_config
 from kiss_icp.kiss_icp import KissICP
 from kiss_icp.metrics import absolute_trajectory_error, sequence_error
 from kiss_icp.tools.pipeline_results import PipelineResults
@@ -41,7 +42,9 @@ class OdometryPipeline:
     def __init__(
         self,
         dataset,
-        config: KISSConfig,
+        config: Optional[Path] = None,
+        deskew: Optional[bool] = False,
+        max_range: Optional[float] = None,
         visualize: bool = False,
         n_scans: int = -1,
         jump: int = 0,
@@ -53,7 +56,7 @@ class OdometryPipeline:
         self._jump = jump
         self._first = jump
         self._last = self._jump + self._n_scans
-        self.config = config
+        self.config = load_config(config, deskew=deskew, max_range=max_range)
 
         self.results_dir = self._get_results_dir(self.config.out_dir)
 

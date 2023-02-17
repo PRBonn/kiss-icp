@@ -179,9 +179,6 @@ def kiss_icp_pipeline(
     # Lazy-loading for faster CLI
     from kiss_icp.datasets import dataset_factory
     from kiss_icp.pipeline import OdometryPipeline
-    from kiss_icp.config import load_config
-
-    kiss_config = load_config(config, deskew=deskew, max_range=max_range)
 
     OdometryPipeline(
         dataset=dataset_factory(
@@ -192,7 +189,9 @@ def kiss_icp_pipeline(
             topic=topic,
             meta=meta,
         ),
-        config=kiss_config,
+        config=config,
+        deskew=deskew,
+        max_range=max_range,
         visualize=visualize,
         n_scans=n_scans,
         jump=jump,
