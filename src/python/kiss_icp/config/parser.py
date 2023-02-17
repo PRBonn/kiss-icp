@@ -20,32 +20,15 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+# NOTE: This module was contributed by Markus Pielmeier on PR #63
 from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, BaseSettings, PrivateAttr
+from pydantic import BaseSettings, PrivateAttr
 import yaml
 
-
-class DataConfig(BaseModel):
-    preprocess: bool = True
-    correct_scan: bool = True
-    frame_rate: float = 10.0
-    max_range: float = 100.0
-    min_range: float = 0.0
-    deskew: bool = False
-
-
-class MappingConfig(BaseModel):
-    voxel_size: Optional[float] = None  # default: take it from data
-    max_points_per_voxel: int = 20
-
-
-class AdaptiveThresholdConfig(BaseModel):
-    fixed_threshold: Optional[float] = None
-    initial_threshold: float = 2.0
-    min_motion_th: float = 0.1
+from kiss_icp.config.config import AdaptiveThresholdConfig, DataConfig, MappingConfig
 
 
 class KISSConfig(BaseSettings):
@@ -53,43 +36,31 @@ class KISSConfig(BaseSettings):
     data: DataConfig = DataConfig()
     mapping: MappingConfig = MappingConfig()
     adaptive_threshold: AdaptiveThresholdConfig = AdaptiveThresholdConfig()
-
     _config_file: Optional[Path] = PrivateAttr()
 
     def __init__(self, config_file: Optional[Path] = None, *args, **kwargs):
-        """
-        Initialize a new configuration.
-
-        :param config_file: optional path to a YAML configuration file.
-            The file can selectively specify values to override default values.
-        """
         self._config_file = config_file
         super().__init__(*args, **kwargs)
 
     def _yaml_source(self) -> Dict[str, Any]:
-        """Function that implements the `pydantic.env_settings.SettingsSourceCallable` interface."""
         data = None
         if self._config_file is not None:
-            with open(self._config_file) as f:
-                data = yaml.safe_load(f)
+            with open(self._config_file) as cfg_file:
+                data = yaml.safe_load(cfg_file)
         return data or {}
 
     class Config:
-        # Register our custom yaml loader
-        # See https://docs.pydantic.dev/usage/settings/#adding-sources
         @classmethod
-        def customise_sources(
-            cls,
-            init_settings,
-            env_settings,
-            file_secret_settings,
-        ):
+        def customise_sources(cls, init_settings, env_settings, file_secret_settings):
             return init_settings, KISSConfig._yaml_source
 
 
 def load_config(
     config_file: Optional[Path], deskew: Optional[bool], max_range: Optional[float]
 ) -> KISSConfig:
+    """Load configuration from an Optional yaml file. Additionally, deskew and max_range can be
+    also specified from the CLI interface"""
+
     config = KISSConfig(config_file=config_file)
 
     # Override defaults from command line

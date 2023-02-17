@@ -29,7 +29,7 @@ from typing import List
 import numpy as np
 from pyquaternion import Quaternion
 
-from kiss_icp.config import KISSConfig, write_config
+from kiss_icp.config import write_config, KISSConfig
 from kiss_icp.kiss_icp import KissICP
 from kiss_icp.metrics import absolute_trajectory_error, sequence_error
 from kiss_icp.tools.pipeline_results import PipelineResults
