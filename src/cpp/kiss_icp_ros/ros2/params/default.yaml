@@ -1,0 +1,12 @@
+odometry_node:
+  ros__parameters:
+    odom_frame: odom
+    child_frame: base_link
+    deskew: false
+    max_range: 100.0
+    min_range: 5.0
+    # voxel_size: 1.0 # Defaults to max_range / 100.0
+    frame_rate: 10.0
+    max_points_per_voxel: 20
+    initial_threshold: 2.0
+    min_motion_th: 0.1

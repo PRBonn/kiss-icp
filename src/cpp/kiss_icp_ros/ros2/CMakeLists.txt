@@ -49,6 +49,14 @@ endif()
 add_executable(odometry_node src/Utils.cpp src/OdometryServer.cpp src/odometry_node.cpp)
 target_link_libraries(odometry_node kiss_icp::pipeline)
 ament_target_dependencies(odometry_node rclcpp nav_msgs sensor_msgs tf2_ros)
+
+install(DIRECTORY
+  launch
+  params
+  rviz
+  DESTINATION share/${PROJECT_NAME}/
+)
+
 install(TARGETS odometry_node RUNTIME DESTINATION lib/${PROJECT_NAME})
 
 ament_package()
