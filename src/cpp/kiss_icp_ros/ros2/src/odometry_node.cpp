@@ -20,18 +20,12 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-#include <rclcpp/rclcpp.hpp>
-
 #include "OdometryServer.hpp"
-#include "kiss_icp/pipeline/KissICP.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 int main(int argc, char **argv) {
     rclcpp::init(argc, argv);
-    kiss_icp::pipeline::KissICP odometry;
-    rclcpp::NodeOptions options;
-    auto node = std::make_shared<kiss_icp_ros::OdometryServer>(options);
-    RCLCPP_INFO(node->get_logger(), "KISS-ICP ROS 2 node initialized");
-    rclcpp::spin(node);
+    rclcpp::spin(std::make_shared<kiss_icp_ros::OdometryServer>());
     rclcpp::shutdown();
     return 0;
 }

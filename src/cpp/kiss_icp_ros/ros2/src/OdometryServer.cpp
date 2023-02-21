@@ -40,8 +40,7 @@
 
 namespace kiss_icp_ros {
 
-OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
-    : rclcpp::Node("odometry_node", options) {
+OdometryServer::OdometryServer() : rclcpp::Node("odometry_node") {
     // clang-format off
     child_frame_ = declare_parameter<std::string>("child_frame", child_frame_);
     odom_frame_ = declare_parameter<std::string>("odom_frame", odom_frame_);
@@ -62,31 +61,29 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
     // Construct the main KISS-ICP odometry node
     odometry_ = kiss_icp::pipeline::KissICP(config_);
 
-    tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
-
     // Intialize subscribers
     pointcloud_sub_ = create_subscription<sensor_msgs::msg::PointCloud2>(
         "pointcloud_topic", rclcpp::SensorDataQoS(),
         std::bind(&OdometryServer::RegisterFrame, this, std::placeholders::_1));
 
     // Intialize publishers
-    rclcpp::QoS qos(rclcpp::KeepLast{queue_size_});
-    odom_publisher_ = create_publisher<nav_msgs::msg::Odometry>("odometry", qos);
-    frame_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("frame", qos);
-    kpoints_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("keypoints", qos);
-    local_map_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("local_map", qos);
+    tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
+    odom_publisher_ = create_publisher<nav_msgs::msg::Odometry>("odometry", queue_size_);
+    frame_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("frame", queue_size_);
+    kpoints_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("keypoints", queue_size_);
+    local_map_publisher_ =
+        create_publisher<sensor_msgs::msg::PointCloud2>("local_map", queue_size_);
 
     // Intialize trajectory publisher
     path_msg_.header.frame_id = odom_frame_;
-    traj_publisher_ = create_publisher<nav_msgs::msg::Path>("trajectory", qos);
+    traj_publisher_ = create_publisher<nav_msgs::msg::Path>("trajectory", queue_size_);
 
     // Broadcast a static transformation that links with identity the specified base link to the
     // pointcloud_frame, basically to always be able to visualize the frame in rviz
     if (child_frame_ != "base_link") {
-        auto br = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
-        ;
+        static auto br = std::make_shared<tf2_ros::StaticTransformBroadcaster>(*this);
         geometry_msgs::msg::TransformStamped alias_transform_msg;
-        alias_transform_msg.header.stamp = now();
+        alias_transform_msg.header.stamp = this->get_clock()->now();
         alias_transform_msg.transform.translation.x = 0.0;
         alias_transform_msg.transform.translation.y = 0.0;
         alias_transform_msg.transform.translation.z = 0.0;
