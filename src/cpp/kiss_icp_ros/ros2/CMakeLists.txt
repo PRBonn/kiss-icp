@@ -25,6 +25,12 @@ project(kiss_icp)
 
 set(ignore ${CATKIN_INSTALL_INTO_PREFIX_ROOT})
 
+# Default to C++17
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+endif()
+
 find_package(ament_cmake REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
