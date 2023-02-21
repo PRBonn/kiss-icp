@@ -35,7 +35,7 @@ def generate_launch_description():
                         "min_range": LaunchConfiguration("min_range"),
                         "deskew": LaunchConfiguration("deskew"),
                         "voxel_size": LaunchConfiguration("voxel_size"),
-                        "frame_rate": 10,
+                        "frame_rate": 10.0,
                         "max_points_per_voxel": 20,
                         "initial_threshold": 2.0,
                         "min_motion_th": 0.1,
