@@ -40,16 +40,17 @@ std::vector<double> GetTimestamps(const sensor_msgs::msg::PointCloud2::SharedPtr
                                   const sensor_msgs::msg::PointField &field = {});
 
 /// Convert PointCloud2 msg to vector of Eigen
-std::vector<Eigen::Vector3d> PointCloud2ToEigen(const sensor_msgs::msg::PointCloud2::SharedPtr &msg);
+std::vector<Eigen::Vector3d> PointCloud2ToEigen(
+    const sensor_msgs::msg::PointCloud2::SharedPtr &msg);
 
 /// Convert vector of Eigen to PointCloud2 msg
 sensor_msgs::msg::PointCloud2 EigenToPointCloud2(const std::vector<Eigen::Vector3d> &points,
-                                            const std_msgs::msg::Header &header);
+                                                 const std_msgs::msg::Header &header);
 
 /// Convert vector of (Eigen, timestamps) to PointCloud2 msg. For the moment we only support
 /// timestamps in the velodyne-like format, in the range [0.0, 1.0)
 sensor_msgs::msg::PointCloud2 EigenToPointCloud2(const std::vector<Eigen::Vector3d> &points,
-                                            const std::vector<double> &timestamps,
-                                            const std_msgs::msg::Header &header);
+                                                 const std::vector<double> &timestamps,
+                                                 const std_msgs::msg::Header &header);
 
 }  // namespace kiss_icp_ros::utils

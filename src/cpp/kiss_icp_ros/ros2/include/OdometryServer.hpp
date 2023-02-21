@@ -26,8 +26,8 @@
 #include "kiss_icp/pipeline/KissICP.hpp"
 
 // ROS
-#include "nav_msgs/msg/path.hpp"
 #include "nav_msgs/msg/odometry.hpp"
+#include "nav_msgs/msg/path.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "tf2_ros/transform_broadcaster.h"
@@ -37,7 +37,7 @@ namespace kiss_icp_ros {
 class OdometryServer : public rclcpp::Node {
 public:
     /// OdometryServer constructor
-    OdometryServer(const rclcpp::NodeOptions & options);
+    OdometryServer(const rclcpp::NodeOptions &options);
 
     /// Register new frame
     void RegisterFrame(const sensor_msgs::msg::PointCloud2::SharedPtr msg);

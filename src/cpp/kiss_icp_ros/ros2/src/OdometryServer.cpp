@@ -40,7 +40,8 @@
 
 namespace kiss_icp_ros {
 
-OdometryServer::OdometryServer(const rclcpp::NodeOptions & options) : rclcpp::Node("odometry_node", options) {
+OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
+    : rclcpp::Node("odometry_node", options) {
     child_frame_ = declare_parameter<std::string>("child_frame", child_frame_);
     odom_frame_ = declare_parameter<std::string>("odom_frame", odom_frame_);
     config_.max_range = declare_parameter<double>("max_range", config_.max_range);
@@ -48,23 +49,26 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions & options) : rclcpp::No
     config_.deskew = declare_parameter<bool>("deskew", config_.deskew);
     config_.frame_rate = declare_parameter<double>("frame_rate", config_.frame_rate);
     config_.voxel_size = declare_parameter<double>("voxel_size", config_.max_range / 100.0);
-    config_.max_points_per_voxel = declare_parameter<int>("max_points_per_voxel", config_.max_points_per_voxel);
-    config_.initial_threshold = declare_parameter<double>("initial_threshold", config_.initial_threshold);
+    config_.max_points_per_voxel =
+        declare_parameter<int>("max_points_per_voxel", config_.max_points_per_voxel);
+    config_.initial_threshold =
+        declare_parameter<double>("initial_threshold", config_.initial_threshold);
     config_.min_motion_th = declare_parameter<double>("min_motion_th", config_.min_motion_th);
     if (config_.max_range < config_.min_range) {
-        RCLCPP_WARN(get_logger(), "[WARNING] max_range is smaller than min_range, settng min_range to 0.0");
+        RCLCPP_WARN(get_logger(),
+                    "[WARNING] max_range is smaller than min_range, settng min_range to 0.0");
         config_.min_range = 0.0;
     }
 
     // Construct the main KISS-ICP odometry node
     odometry_ = kiss_icp::pipeline::KissICP(config_);
 
-    tf_broadcaster_ =
-      std::make_unique<tf2_ros::TransformBroadcaster>(*this);
+    tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
 
     // Intialize subscribers
-    pointcloud_sub_ = create_subscription<sensor_msgs::msg::PointCloud2>("pointcloud_topic", rclcpp::SensorDataQoS(),
-                                                              std::bind(&OdometryServer::RegisterFrame, this, std::placeholders::_1));
+    pointcloud_sub_ = create_subscription<sensor_msgs::msg::PointCloud2>(
+        "pointcloud_topic", rclcpp::SensorDataQoS(),
+        std::bind(&OdometryServer::RegisterFrame, this, std::placeholders::_1));
 
     // Intialize publishers
     rclcpp::QoS qos(rclcpp::KeepLast{queue_size_});
@@ -80,7 +84,8 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions & options) : rclcpp::No
     // Broadcast a static transformation that links with identity the specified base link to the
     // pointcloud_frame, basically to always be able to visualize the frame in rviz
     if (child_frame_ != "base_link") {
-        auto br = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);;
+        auto br = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
+        ;
         geometry_msgs::msg::TransformStamped alias_transform_msg;
         alias_transform_msg.header.stamp = now();
         alias_transform_msg.transform.translation.x = 0.0;
@@ -92,7 +97,7 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions & options) : rclcpp::No
         alias_transform_msg.transform.rotation.w = 1.0;
         alias_transform_msg.header.frame_id = child_frame_;
         alias_transform_msg.child_frame_id = "base_link";
-        br->    sendTransform(alias_transform_msg);
+        br->sendTransform(alias_transform_msg);
     }
 
     // publish odometry msg
@@ -160,7 +165,8 @@ void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::SharedPt
     // Map is referenced to the odometry_frame
     std_msgs::msg::Header local_map_header = msg->header;
     local_map_header.frame_id = odom_frame_;
-    local_map_publisher_->publish(utils::EigenToPointCloud2(odometry_.LocalMap(), local_map_header));
+    local_map_publisher_->publish(
+        utils::EigenToPointCloud2(odometry_.LocalMap(), local_map_header));
 }
 
 }  // namespace kiss_icp_ros

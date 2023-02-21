@@ -111,7 +111,8 @@ auto CreatePointCloud2Msg(const size_t n_points,
     return cloud_msg;
 }
 
-void FillPointCloud2XYZ(const std::vector<Eigen::Vector3d> &points, sensor_msgs::msg::PointCloud2 &msg) {
+void FillPointCloud2XYZ(const std::vector<Eigen::Vector3d> &points,
+                        sensor_msgs::msg::PointCloud2 &msg) {
     sensor_msgs::PointCloud2Iterator<float> msg_x(msg, "x");
     sensor_msgs::PointCloud2Iterator<float> msg_y(msg, "y");
     sensor_msgs::PointCloud2Iterator<float> msg_z(msg, "z");
@@ -150,7 +151,8 @@ std::vector<double> GetTimestamps(const sensor_msgs::msg::PointCloud2::SharedPtr
     return timestamps;
 }
 
-std::vector<Eigen::Vector3d> PointCloud2ToEigen(const sensor_msgs::msg::PointCloud2::SharedPtr &msg) {
+std::vector<Eigen::Vector3d> PointCloud2ToEigen(
+    const sensor_msgs::msg::PointCloud2::SharedPtr &msg) {
     std::vector<Eigen::Vector3d> points;
     points.reserve(msg->height * msg->width);
     sensor_msgs::PointCloud2ConstIterator<float> msg_x(*msg, "x");
@@ -163,15 +165,15 @@ std::vector<Eigen::Vector3d> PointCloud2ToEigen(const sensor_msgs::msg::PointClo
 }
 
 sensor_msgs::msg::PointCloud2 EigenToPointCloud2(const std::vector<Eigen::Vector3d> &points,
-                                            const std_msgs::msg::Header &header) {
+                                                 const std_msgs::msg::Header &header) {
     sensor_msgs::msg::PointCloud2 msg = CreatePointCloud2Msg(points.size(), header);
     FillPointCloud2XYZ(points, msg);
     return msg;
 }
 
 sensor_msgs::msg::PointCloud2 EigenToPointCloud2(const std::vector<Eigen::Vector3d> &points,
-                                            const std::vector<double> &timestamps,
-                                            const std_msgs::msg::Header &header) {
+                                                 const std::vector<double> &timestamps,
+                                                 const std_msgs::msg::Header &header) {
     sensor_msgs::msg::PointCloud2 msg = CreatePointCloud2Msg(points.size(), header, true);
     FillPointCloud2XYZ(points, msg);
     FillPointCloud2Timestamp(timestamps, msg);

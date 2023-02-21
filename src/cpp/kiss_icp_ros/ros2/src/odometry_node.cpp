@@ -23,8 +23,8 @@
 #include <cstdio>
 #include <rclcpp/rclcpp.hpp>
 
-#include "kiss_icp/pipeline/KissICP.hpp"
 #include "OdometryServer.hpp"
+#include "kiss_icp/pipeline/KissICP.hpp"
 
 int main(int argc, char **argv) {
     rclcpp::init(argc, argv);
