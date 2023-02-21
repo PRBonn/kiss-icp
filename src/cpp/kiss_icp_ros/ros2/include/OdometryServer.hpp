@@ -25,7 +25,7 @@
 // KISS-ICP
 #include "kiss_icp/pipeline/KissICP.hpp"
 
-// ROS
+// ROS2
 #include "nav_msgs/msg/odometry.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -39,8 +39,9 @@ public:
     /// OdometryServer constructor
     OdometryServer();
 
+private:
     /// Register new frame
-    void RegisterFrame(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
+    void RegisterFrame(const sensor_msgs::msg::PointCloud2 &msg);
 
 private:
     /// Ros node stuff
@@ -54,11 +55,13 @@ private:
 
     /// Data publishers.
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_publisher_;
-    rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr traj_publisher_;
-    nav_msgs::msg::Path path_msg_;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr frame_publisher_;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr kpoints_publisher_;
-    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr local_map_publisher_;
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr map_publisher_;
+
+    /// Path publisher
+    nav_msgs::msg::Path path_msg_;
+    rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr traj_publisher_;
 
     /// KISS-ICP
     kiss_icp::pipeline::KissICP odometry_;

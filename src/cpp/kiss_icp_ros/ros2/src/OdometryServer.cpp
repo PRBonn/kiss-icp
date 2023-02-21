@@ -28,13 +28,15 @@
 #include "Utils.hpp"
 #include "kiss_icp/pipeline/KissICP.hpp"
 
-// ROS
+// ROS2 headers
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "nav_msgs/msg/path.hpp"
+#include "rclcpp/qos.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
+#include "std_msgs/msg/string.hpp"
 #include "tf2_ros/static_transform_broadcaster.h"
 #include "tf2_ros/transform_broadcaster.h"
 
@@ -67,19 +69,18 @@ OdometryServer::OdometryServer() : rclcpp::Node("odometry_node") {
         std::bind(&OdometryServer::RegisterFrame, this, std::placeholders::_1));
 
     // Intialize publishers
-
-    odom_publisher_ = create_publisher<nav_msgs::msg::Odometry>("odometry", queue_size_);
-    frame_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("frame", queue_size_);
-    kpoints_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("keypoints", queue_size_);
-    local_map_publisher_ =
-        create_publisher<sensor_msgs::msg::PointCloud2>("local_map", queue_size_);
+    rclcpp::QoS qos(rclcpp::KeepLast{queue_size_});
+    odom_publisher_ = create_publisher<nav_msgs::msg::Odometry>("odometry", qos);
+    frame_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("frame", qos);
+    kpoints_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("keypoints", qos);
+    map_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("local_map", qos);
 
     // Initialize the transform broadcaster
     tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
 
     // Intialize trajectory publisher
     path_msg_.header.frame_id = odom_frame_;
-    traj_publisher_ = create_publisher<nav_msgs::msg::Path>("trajectory", queue_size_);
+    traj_publisher_ = create_publisher<nav_msgs::msg::Path>("trajectory", qos);
 
     // Broadcast a static transformation that links with identity the specified base link to the
     // pointcloud_frame, basically to always be able to visualize the frame in rviz
@@ -99,11 +100,10 @@ OdometryServer::OdometryServer() : rclcpp::Node("odometry_node") {
         br->sendTransform(alias_transform_msg);
     }
 
-    // publish odometry msg
-    RCLCPP_INFO(get_logger(), "KISS-ICP ROS 2 Odometry Node Unitialized");
+    RCLCPP_INFO(this->get_logger(), "KISS-ICP ROS2 odometry node initialized");
 }
 
-void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
+void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2 &msg) {
     const auto &points = utils::PointCloud2ToEigen(msg);
     const auto &timestamps = [&]() -> std::vector<double> {
         if (!config_.deskew) return {};
@@ -122,7 +122,7 @@ void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::SharedPt
 
     // Broadcast the tf
     geometry_msgs::msg::TransformStamped transform_msg;
-    transform_msg.header.stamp = msg->header.stamp;
+    transform_msg.header.stamp = msg.header.stamp;
     transform_msg.header.frame_id = odom_frame_;
     transform_msg.child_frame_id = child_frame_;
     transform_msg.transform.rotation.x = q_current.x();
@@ -136,7 +136,7 @@ void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::SharedPt
 
     // publish odometry msg
     nav_msgs::msg::Odometry odom_msg;
-    odom_msg.header.stamp = msg->header.stamp;
+    odom_msg.header.stamp = msg.header.stamp;
     odom_msg.header.frame_id = odom_frame_;
     odom_msg.child_frame_id = child_frame_;
     odom_msg.pose.pose.orientation.x = q_current.x();
@@ -156,16 +156,14 @@ void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::SharedPt
     traj_publisher_->publish(path_msg_);
 
     // Publish KISS-ICP internal data, just for debugging
-    std_msgs::msg::Header frame_header = msg->header;
+    std_msgs::msg::Header frame_header = msg.header;
     frame_header.frame_id = child_frame_;
     frame_publisher_->publish(utils::EigenToPointCloud2(frame, frame_header));
     kpoints_publisher_->publish(utils::EigenToPointCloud2(keypoints, frame_header));
 
     // Map is referenced to the odometry_frame
-    std_msgs::msg::Header local_map_header = msg->header;
+    auto local_map_header = msg.header;
     local_map_header.frame_id = odom_frame_;
-    local_map_publisher_->publish(
-        utils::EigenToPointCloud2(odometry_.LocalMap(), local_map_header));
+    map_publisher_->publish(utils::EigenToPointCloud2(odometry_.LocalMap(), local_map_header));
 }
-
 }  // namespace kiss_icp_ros
