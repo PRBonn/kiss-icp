@@ -46,13 +46,22 @@ clang-format:
     - clang-format -Werror --dry-run $(find . -regextype posix-extended -regex ".*\.(cpp|hpp|h)")
 
 #----- build stage ---------------------------------------------------------------------------------
-cpp_api:
+cpp_api:gcc:
   image: ubuntu:22.04
   stage: build
   before_script:
     - apt-get update && apt-get install --no-install-recommends -y g++ cmake make
   script:
     - cmake -Bbuild src/cpp/kiss_icp/
+    - cmake --build build -j$(nproc --all)
+
+cpp_api:clang:
+  image: ubuntu:22.04
+  stage: build
+  before_script:
+    - apt-get update && apt-get install --no-install-recommends -y clang cmake make
+  script:
+    - cmake cmake -DCMAKE_CXX_COMPILER=clang++ -Bbuild src/cpp/kiss_icp/
     - cmake --build build -j$(nproc --all)
 
 pip_package:
