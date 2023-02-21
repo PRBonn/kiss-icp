@@ -29,15 +29,14 @@
 #include <string>
 #include <vector>
 
-#include "ros/console.h"
 #include "sensor_msgs/PointCloud2.h"
 #include "sensor_msgs/point_cloud2_iterator.h"
 
 namespace {
 
-auto GetTimestampField(const sensor_msgs::PointCloud2ConstPtr &msg) {
+auto GetTimestampField(const sensor_msgs::PointCloud2 &msg) {
     sensor_msgs::PointField timestamp_field;
-    for (const auto &field : msg->fields) {
+    for (const auto &field : msg.fields) {
         if ((field.name == "t" || field.name == "timestamp" || field.name == "time")) {
             timestamp_field = field;
         }
@@ -59,16 +58,16 @@ auto NormalizeTimestamps(const std::vector<double> &timestamps) {
     return timestamps_normalized;
 }
 
-auto ExtractTimestampsFromMsg(const sensor_msgs::PointCloud2ConstPtr &msg,
+auto ExtractTimestampsFromMsg(const sensor_msgs::PointCloud2 &msg,
                               const sensor_msgs::PointField &field) {
     // Extract timestamps from cloud_msg
-    const size_t n_points = msg->height * msg->width;
+    const size_t n_points = msg.height * msg.width;
     std::vector<double> timestamps;
     timestamps.reserve(n_points);
 
     // Option 1: Timestamps are unsigned integers -> epoch time.
     if (field.name == "t" || field.name == "timestamp") {
-        sensor_msgs::PointCloud2ConstIterator<uint32_t> msg_t(*msg, field.name);
+        sensor_msgs::PointCloud2ConstIterator<uint32_t> msg_t(msg, field.name);
         for (size_t i = 0; i < n_points; ++i, ++msg_t) {
             timestamps.emplace_back(static_cast<double>(*msg_t));
         }
@@ -78,7 +77,7 @@ auto ExtractTimestampsFromMsg(const sensor_msgs::PointCloud2ConstPtr &msg,
 
     // Option 2: Timestamps are floating point values between 0.0 and 1.0
     // field.name == "timestamp"
-    sensor_msgs::PointCloud2ConstIterator<double> msg_t(*msg, field.name);
+    sensor_msgs::PointCloud2ConstIterator<double> msg_t(msg, field.name);
     for (size_t i = 0; i < n_points; ++i, ++msg_t) {
         timestamps.emplace_back(*msg_t);
     }
@@ -99,7 +98,7 @@ auto CreatePointCloud2Msg(const size_t n_points,
     offset = addPointField(cloud_msg, "z", 1, sensor_msgs::PointField::FLOAT32, offset);
     offset += sizeOfPointField(sensor_msgs::PointField::FLOAT32);
     if (timestamp) {
-        // assuming timestamp on a velodyne fashion for now (between 0.0 and 1.0)
+        // asuming timestamp on a velodyne fashion for now (between 0.0 and 1.0)
         offset = addPointField(cloud_msg, "time", 1, sensor_msgs::PointField::FLOAT64, offset);
         offset += sizeOfPointField(sensor_msgs::PointField::FLOAT64);
     }
@@ -137,7 +136,7 @@ std::string FixFrameId(const std::string &frame_id) {
     return std::regex_replace(frame_id, std::regex("^/"), "");
 }
 
-std::vector<double> GetTimestamps(const sensor_msgs::PointCloud2ConstPtr &msg,
+std::vector<double> GetTimestamps(const sensor_msgs::PointCloud2 &msg,
                                   const sensor_msgs::PointField &field) {
     // Extract timestamp field from msg if not given
     auto timestamp_field = [&]() {
@@ -151,13 +150,13 @@ std::vector<double> GetTimestamps(const sensor_msgs::PointCloud2ConstPtr &msg,
     return timestamps;
 }
 
-std::vector<Eigen::Vector3d> PointCloud2ToEigen(const sensor_msgs::PointCloud2ConstPtr &msg) {
+std::vector<Eigen::Vector3d> PointCloud2ToEigen(const sensor_msgs::PointCloud2 &msg) {
     std::vector<Eigen::Vector3d> points;
-    points.reserve(msg->height * msg->width);
-    sensor_msgs::PointCloud2ConstIterator<float> msg_x(*msg, "x");
-    sensor_msgs::PointCloud2ConstIterator<float> msg_y(*msg, "y");
-    sensor_msgs::PointCloud2ConstIterator<float> msg_z(*msg, "z");
-    for (size_t i = 0; i < msg->height * msg->width; ++i, ++msg_x, ++msg_y, ++msg_z) {
+    points.reserve(msg.height * msg.width);
+    sensor_msgs::PointCloud2ConstIterator<float> msg_x(msg, "x");
+    sensor_msgs::PointCloud2ConstIterator<float> msg_y(msg, "y");
+    sensor_msgs::PointCloud2ConstIterator<float> msg_z(msg, "z");
+    for (size_t i = 0; i < msg.height * msg.width; ++i, ++msg_x, ++msg_y, ++msg_z) {
         points.emplace_back(*msg_x, *msg_y, *msg_z);
     }
     return points;

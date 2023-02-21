@@ -104,8 +104,8 @@ OdometryServer::OdometryServer() : rclcpp::Node("odometry_node") {
 }
 
 void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2 &msg) {
-    const auto &points = utils::PointCloud2ToEigen(msg);
-    const auto &timestamps = [&]() -> std::vector<double> {
+    const auto points = utils::PointCloud2ToEigen(msg);
+    const auto timestamps = [&]() -> std::vector<double> {
         if (!config_.deskew) return {};
         return utils::GetTimestamps(msg);
     }();

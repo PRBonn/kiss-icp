@@ -36,11 +36,11 @@ std::string FixFrameId(const std::string &frame_id);
 
 /// Extract the timestamps values from the point cloud msg. The user can specify the timestamp
 /// field, if non given, "t" and "timestamp" fields will be checked if present in the msg
-std::vector<double> GetTimestamps(const sensor_msgs::PointCloud2ConstPtr &msg,
+std::vector<double> GetTimestamps(const sensor_msgs::PointCloud2 &msg,
                                   const sensor_msgs::PointField &field = {});
 
 /// Convert PointCloud2 msg to vector of Eigen
-std::vector<Eigen::Vector3d> PointCloud2ToEigen(const sensor_msgs::PointCloud2ConstPtr &msg);
+std::vector<Eigen::Vector3d> PointCloud2ToEigen(const sensor_msgs::PointCloud2 &msg);
 
 /// Convert vector of Eigen to PointCloud2 msg
 sensor_msgs::PointCloud2 EigenToPointCloud2(const std::vector<Eigen::Vector3d> &points,

@@ -38,10 +38,10 @@ public:
     /// OdometryServer constructor
     OdometryServer(const ros::NodeHandle &nh, const ros::NodeHandle &pnh);
 
-    /// Register new frame
-    void RegisterFrame(const sensor_msgs::PointCloud2ConstPtr &msg);
-
 private:
+    /// Register new frame
+    void RegisterFrame(const sensor_msgs::PointCloud2 &msg);
+
     /// Ros node stuff
     ros::NodeHandle nh_;
     ros::NodeHandle pnh_;

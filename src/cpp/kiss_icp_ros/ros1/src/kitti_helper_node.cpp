@@ -52,14 +52,15 @@ int main(int argc, char **argv) {
     ros::NodeHandle nh;
 
     using sensor_msgs::PointCloud2;
-    auto frame_publisher = nh.advertise<PointCloud2>("pointcloud_topic", 1);
-    auto sub = nh.subscribe<PointCloud2>("/velodyne_points", 1, [&](const auto &msg) {
+    auto frame_publisher = nh.advertise<sensor_msgs::PointCloud2>("pointcloud_topic", 1);
+    auto register_frame = [&](const sensor_msgs::PointCloud2 &msg) -> void {
         const auto points = kiss_icp_ros::utils::PointCloud2ToEigen(msg);
         const auto frame = kiss_icp::CorrectKITTIScan(points);
         const auto timestamps = GetVelodyneTimestamps(frame);
-        auto msg_corr = kiss_icp_ros::utils::EigenToPointCloud2(frame, timestamps, msg->header);
+        auto msg_corr = kiss_icp_ros::utils::EigenToPointCloud2(frame, timestamps, msg.header);
         frame_publisher.publish(msg_corr);
-    });
+    };
+    auto s = nh.subscribe<PointCloud2, const PointCloud2 &>("/velodyne_points", 1, register_frame);
 
     // Notify people this node is a hack
     ROS_WARN("You should not be using kitti2rosbag for experimenting with KISS-ICP");

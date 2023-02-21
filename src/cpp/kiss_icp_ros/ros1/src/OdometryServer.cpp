@@ -61,8 +61,8 @@ OdometryServer::OdometryServer(const ros::NodeHandle &nh, const ros::NodeHandle 
     odometry_ = kiss_icp::pipeline::KissICP(config_);
 
     // Initialize subscribers
-    pointcloud_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>("pointcloud_topic", queue_size_,
-                                                              &OdometryServer::RegisterFrame, this);
+    pointcloud_sub_ = nh_.subscribe<const sensor_msgs::PointCloud2 &>(
+        "pointcloud_topic", queue_size_, &OdometryServer::RegisterFrame, this);
 
     // Initialize publishers
     odom_publisher_ = pnh_.advertise<nav_msgs::Odometry>("odometry", queue_size_);
@@ -96,9 +96,9 @@ OdometryServer::OdometryServer(const ros::NodeHandle &nh, const ros::NodeHandle 
     ROS_INFO("KISS-ICP ROS 1 Odometry Node Initialized");
 }
 
-void OdometryServer::RegisterFrame(const sensor_msgs::PointCloud2ConstPtr &msg) {
-    const auto &points = utils::PointCloud2ToEigen(msg);
-    const auto &timestamps = [&]() -> std::vector<double> {
+void OdometryServer::RegisterFrame(const sensor_msgs::PointCloud2 &msg) {
+    const auto points = utils::PointCloud2ToEigen(msg);
+    const auto timestamps = [&]() -> std::vector<double> {
         if (!config_.deskew) return {};
         return utils::GetTimestamps(msg);
     }();
@@ -115,7 +115,7 @@ void OdometryServer::RegisterFrame(const sensor_msgs::PointCloud2ConstPtr &msg) 
 
     // Broadcast the tf
     geometry_msgs::TransformStamped transform_msg;
-    transform_msg.header.stamp = msg->header.stamp;
+    transform_msg.header.stamp = msg.header.stamp;
     transform_msg.header.frame_id = odom_frame_;
     transform_msg.child_frame_id = child_frame_;
     transform_msg.transform.rotation.x = q_current.x();
@@ -129,7 +129,7 @@ void OdometryServer::RegisterFrame(const sensor_msgs::PointCloud2ConstPtr &msg) 
 
     // publish odometry msg
     nav_msgs::Odometry odom_msg;
-    odom_msg.header.stamp = msg->header.stamp;
+    odom_msg.header.stamp = msg.header.stamp;
     odom_msg.header.frame_id = odom_frame_;
     odom_msg.child_frame_id = child_frame_;
     odom_msg.pose.pose.orientation.x = q_current.x();
@@ -149,13 +149,13 @@ void OdometryServer::RegisterFrame(const sensor_msgs::PointCloud2ConstPtr &msg) 
     traj_publisher_.publish(path_msg_);
 
     // Publish KISS-ICP internal data, just for debugging
-    std_msgs::Header frame_header = msg->header;
+    std_msgs::Header frame_header = msg.header;
     frame_header.frame_id = child_frame_;
     frame_publisher_.publish(utils::EigenToPointCloud2(frame, frame_header));
     kpoints_publisher_.publish(utils::EigenToPointCloud2(keypoints, frame_header));
 
     // Map is referenced to the odometry_frame
-    std_msgs::Header local_map_header = msg->header;
+    std_msgs::Header local_map_header = msg.header;
     local_map_header.frame_id = odom_frame_;
     local_map_publisher_.publish(utils::EigenToPointCloud2(odometry_.LocalMap(), local_map_header));
 }
