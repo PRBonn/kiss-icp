@@ -43,20 +43,21 @@ namespace kiss_icp_ros {
 OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
     : rclcpp::Node("odometry_node", options) {
     // clang-format off
-    child_frame_ = get_parameter_or<std::string>("child_frame", child_frame_);
-    odom_frame_ = get_parameter_or<std::string>("odom_frame", odom_frame_);
-    config_.max_range = get_parameter_or<double>("max_range", config_.max_range);
-    config_.min_range = get_parameter_or<double>("min_range", config_.min_range);
-    config_.deskew = get_parameter_or<bool>("deskew", config_.deskew);
-    config_.frame_rate = get_parameter_or<double>("frame_rate", config_.frame_rate);
-    config_.voxel_size = get_parameter_or<double>("voxel_size", config_.max_range / 100.0);
-    config_.max_points_per_voxel = get_parameter_or<int>("max_points_per_voxel", config_.max_points_per_voxel);
-    config_.initial_threshold = get_parameter_or<double>("initial_threshold", config_.initial_threshold);
-    config_.min_motion_th = get_parameter_or<double>("min_motion_th", config_.min_motion_th);
+    child_frame_ = declare_parameter<std::string>("child_frame", child_frame_);
+    odom_frame_ = declare_parameter<std::string>("odom_frame", odom_frame_);
+    config_.max_range = declare_parameter<double>("max_range", config_.max_range);
+    config_.min_range = declare_parameter<double>("min_range", config_.min_range);
+    config_.deskew = declare_parameter<bool>("deskew", config_.deskew);
+    config_.frame_rate = declare_parameter<double>("frame_rate", config_.frame_rate);
+    config_.voxel_size = declare_parameter<double>("voxel_size", config_.max_range / 100.0);
+    config_.max_points_per_voxel = declare_parameter<int>("max_points_per_voxel", config_.max_points_per_voxel);
+    config_.initial_threshold = declare_parameter<double>("initial_threshold", config_.initial_threshold);
+    config_.min_motion_th = declare_parameter<double>("min_motion_th", config_.min_motion_th);
     if (config_.max_range < config_.min_range) {
         RCLCPP_WARN(get_logger(), "[WARNING] max_range is smaller than min_range, settng min_range to 0.0");
         config_.min_range = 0.0;
-    }  // clang-format on
+    }
+    // clang-format on
 
     // Construct the main KISS-ICP odometry node
     odometry_ = kiss_icp::pipeline::KissICP(config_);

@@ -11,16 +11,17 @@ def generate_launch_description():
     return LaunchDescription(
         [
             # ROS2 parameters
-            DeclareLaunchArgument("bagfile", default_value=""),
+            DeclareLaunchArgument("topic", description="sensor_msg/PointCloud2 topic to process"),
+            DeclareLaunchArgument("bagfile", description="Optionally play a bagfile"),
             DeclareLaunchArgument("visualize", default_value="true"),
             DeclareLaunchArgument("odom_frame", default_value="odom"),
             DeclareLaunchArgument("child_frame", default_value="base_link"),
-            DeclareLaunchArgument("topic", default_value=""),
             # KISS-ICP parameters
             DeclareLaunchArgument("deskew", default_value="false"),
             DeclareLaunchArgument("max_range", default_value="100.0"),
             DeclareLaunchArgument("min_range", default_value="5.0"),
-            DeclareLaunchArgument("voxel_size", default_value=""),
+            # This thing is still not suported: https://github.com/ros2/launch/issues/290#issuecomment-1438476902
+            #  DeclareLaunchArgument("voxel_size", default_value=None),
             Node(
                 package="kiss_icp",
                 executable="odometry_node",
@@ -34,7 +35,7 @@ def generate_launch_description():
                         "max_range": LaunchConfiguration("max_range"),
                         "min_range": LaunchConfiguration("min_range"),
                         "deskew": LaunchConfiguration("deskew"),
-                        "voxel_size": LaunchConfiguration("voxel_size"),
+                        #  "voxel_size": LaunchConfiguration("voxel_size"),
                         "frame_rate": 10.0,
                         "max_points_per_voxel": 20,
                         "initial_threshold": 2.0,
