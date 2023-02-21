@@ -134,8 +134,9 @@ VoxelHashMap::Vector3dVectorTuple VoxelHashMap::GetCorrespondences(
         // 1st lambda: Paralell computation
         [&](const tbb::blocked_range<points_iterator> &r, ResultTuple res) -> ResultTuple {
             auto &[src, tgt] = res;
-            auto &source_private = src;  // compile on clang
-            auto &target_private = tgt;  // compile on clang
+            // Compile in clang for macOS: https://stackoverflow.com/questions/46114214
+            auto &source_private = src;
+            auto &target_private = tgt;
             source_private.reserve(r.size());
             target_private.reserve(r.size());
             std::for_each(r.begin(), r.end(), [&](const auto &point) {
@@ -150,12 +151,13 @@ VoxelHashMap::Vector3dVectorTuple VoxelHashMap::GetCorrespondences(
         // 2st lambda: Parallell reduction
         [&](ResultTuple a, const ResultTuple &b) -> ResultTuple {
             auto &[src, tgt] = a;
-            auto &source = src;  // compile on clang
-            auto &target = tgt;  // compile on clang
             const auto &[srcp, tgtp] = b;
-            auto &source_private = srcp;  // compile on clang
-            auto &target_private = tgtp;  // compile on clang
-            source.insert(source.end(),   //
+            // Compile in clang for macOS: https://stackoverflow.com/questions/46114214
+            auto &source = src;
+            auto &target = tgt;
+            auto &source_private = srcp;
+            auto &target_private = tgtp;
+            source.insert(source.end(),  //
                           std::make_move_iterator(source_private.begin()),
                           std::make_move_iterator(source_private.end()));
             target.insert(target.end(),  //
