@@ -44,4 +44,3 @@ find_package(catkin QUIET)
 if(BUILD_ROS_WRAPPER OR ament_cmake_FOUND OR catkin_FOUND)
   add_subdirectory(src/cpp/kiss_icp_ros)
 endif()
-

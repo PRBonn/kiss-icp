@@ -20,7 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.16...3.24)
 project(kiss_icp)
 
 set(ignore ${CATKIN_INSTALL_INTO_PREFIX_ROOT})
@@ -31,32 +31,20 @@ find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 
-include_directories(include)
-
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
-  # the following line skips the linter which checks for copyrights
-  # comment the line when a copyright and license is added to all source files
   set(ament_cmake_copyright_FOUND TRUE)
-  # the following line skips cpplint (only works in a git repo)
-  # comment the line when this package is in a git repo and when
-  # a copyright and license is added to all source files
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
 
 # ROS2 node
 add_executable(odometry_node src/Utils.cpp src/OdometryServer.cpp src/odometry_node.cpp)
+target_include_directories(odometry_node PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(odometry_node kiss_icp::pipeline)
 ament_target_dependencies(odometry_node rclcpp nav_msgs sensor_msgs tf2_ros)
 
-install(DIRECTORY
-  launch
-  params
-  rviz
-  DESTINATION share/${PROJECT_NAME}/
-)
-
+install(DIRECTORY launch params rviz DESTINATION share/${PROJECT_NAME}/)
 install(TARGETS odometry_node RUNTIME DESTINATION lib/${PROJECT_NAME})
 
 ament_package()
