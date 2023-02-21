@@ -67,12 +67,15 @@ OdometryServer::OdometryServer() : rclcpp::Node("odometry_node") {
         std::bind(&OdometryServer::RegisterFrame, this, std::placeholders::_1));
 
     // Intialize publishers
-    tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
+
     odom_publisher_ = create_publisher<nav_msgs::msg::Odometry>("odometry", queue_size_);
     frame_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("frame", queue_size_);
     kpoints_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("keypoints", queue_size_);
     local_map_publisher_ =
         create_publisher<sensor_msgs::msg::PointCloud2>("local_map", queue_size_);
+
+    // Initialize the transform broadcaster
+    tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
 
     // Intialize trajectory publisher
     path_msg_.header.frame_id = odom_frame_;
