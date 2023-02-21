@@ -26,19 +26,19 @@ def generate_launch_description():
                 description="Full path to the ROS2 parameters file to use",
             ),
             Node(
+                package="rviz2",
+                executable="rviz2",
+                output={"both": "log"},
+                arguments=["-d", PathJoinSubstitution([current_pkg, "rviz", "kiss_icp.rviz"])],
+                condition=IfCondition(LaunchConfiguration("visualize")),
+            ),
+            Node(
                 package="kiss_icp",
                 executable="odometry_node",
                 name="odometry_node",
                 output="screen",
                 parameters=[LaunchConfiguration("params_file")],
                 remappings=[("pointcloud_topic", LaunchConfiguration("topic"))],
-            ),
-            Node(
-                package="rviz2",
-                executable="rviz2",
-                output={"both": "log"},
-                arguments=["-d", PathJoinSubstitution([current_pkg, "rviz", "kiss_icp.rviz"])],
-                condition=IfCondition(LaunchConfiguration("visualize")),
             ),
         ]
     )
