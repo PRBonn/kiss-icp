@@ -1,7 +1,11 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, ExecuteProcess
 from launch.conditions import IfCondition
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import (
+    LaunchConfiguration,
+    PathJoinSubstitution,
+    PythonExpression,
+)
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
@@ -12,7 +16,7 @@ def generate_launch_description():
         [
             # ROS2 parameters
             DeclareLaunchArgument("topic", description="sensor_msg/PointCloud2 topic to process"),
-            DeclareLaunchArgument("bagfile", description="Optionally play a bagfile"),
+            DeclareLaunchArgument("bagfile", default_value=""),
             DeclareLaunchArgument("visualize", default_value="true"),
             DeclareLaunchArgument("odom_frame", default_value="odom"),
             DeclareLaunchArgument("child_frame", default_value="base_link"),
@@ -49,6 +53,13 @@ def generate_launch_description():
                 output={"both": "log"},
                 arguments=["-d", PathJoinSubstitution([current_pkg, "rviz", "kiss_icp.rviz"])],
                 condition=IfCondition(LaunchConfiguration("visualize")),
+            ),
+            ExecuteProcess(
+                cmd=["ros2", "bag", "play", LaunchConfiguration("bagfile")],
+                output="screen",
+                condition=IfCondition(
+                    PythonExpression(["'", LaunchConfiguration("bagfile"), "' != ''"])
+                ),
             ),
         ]
     )
