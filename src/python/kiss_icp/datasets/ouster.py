@@ -89,6 +89,9 @@ class OusterDataloader:
             print(f'ouster-sdk is not installed on your system, run "pip install ouster-sdk"')
             exit(1)
 
+        # since we import ouster-sdk's client module locally, we keep it locally as well
+        self._client = client
+
         assert os.path.isfile(data_dir), "Ouster pcap dataloader expects an existing PCAP file"
 
         # we expect `data_dir` param to be a path to the .pcap file, so rename for clarity
@@ -137,10 +140,15 @@ class OusterDataloader:
         self._next_idx += 1
 
         if not self._timestamps_initialized:
-            self._timestamps = np.tile(np.linspace(0, 1.0, scan.w, endpoint=False), scan.h)
+            self._timestamps = np.tile(np.linspace(0, 1.0, scan.w, endpoint=False), (scan.h, 1))
             self._timestamps_initialized = True
 
-        return self._xyz_lut(scan).reshape((-1, 3)), self._timestamps
+        # filtering our zero returns makes it substantially faster for kiss-icp
+        sel_flag = scan.field(self._client.ChanField.RANGE) != 0
+        xyz = self._xyz_lut(scan)[sel_flag]
+        timestamps = self._timestamps[sel_flag]
+
+        return xyz, timestamps
 
     def __len__(self):
         return self._scans_num

@@ -53,7 +53,11 @@ Vector3dVector MotionCompensator::DeSkewScan(const std::vector<Eigen::Vector3d> 
                                              const Eigen::Isometry3d &start_pose,
                                              const Eigen::Isometry3d &finish_pose) {
     // Estimate linear and angular velocities
-    const auto [lvel, avel] = VelocityEstimation(start_pose, finish_pose, scan_duration_);
+    const auto [lv, av] = VelocityEstimation(start_pose, finish_pose, scan_duration_);
+
+    // Compile in clang for macOS: https://stackoverflow.com/questions/46114214
+    const auto &linear_velocity = lv;
+    const auto &angular_velocity = av;
 
     // TODO(Nacho) Add explanation of this
     std::vector<double> timestamps_ = timestamps;
@@ -63,8 +67,8 @@ Vector3dVector MotionCompensator::DeSkewScan(const std::vector<Eigen::Vector3d> 
 
     std::vector<Eigen::Vector3d> corrected_frame(frame.size());
     tbb::parallel_for(size_t(0), frame.size(), [&](size_t i) {
-        const auto &dt = timestamps_[i];
-        const auto motion = MakeTransform(dt * lvel, dt * avel);
+        const auto dt = timestamps_[i];
+        const auto motion = MakeTransform(dt * linear_velocity, dt * angular_velocity);
         corrected_frame[i] = motion * frame[i];
     });
     return corrected_frame;
