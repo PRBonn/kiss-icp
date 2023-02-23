@@ -24,8 +24,6 @@ import os
 from pathlib import Path
 import sys
 
-import numpy as np
-
 
 class RosbagDataset:
     def __init__(self, data_dir: Path, topic: str, *_, **__):
@@ -36,6 +34,7 @@ class RosbagDataset:
             sys.exit(1)
 
         from kiss_icp.tools.point_cloud2 import read_point_cloud
+
         self.read_point_cloud = read_point_cloud
         self.sequence_id = os.path.basename(data_dir).split(".")[0]
 
@@ -72,7 +71,8 @@ class RosbagDataset:
         ]
 
         if len(point_cloud_topics) == 1:
-            return point_cloud_topics[0][0]  # this is the string topic name, go figure out
+            # this is the string topic name, go figure out
+            return point_cloud_topics[0][0]
 
         # In any other case we consider this an error
         if len(point_cloud_topics) == 0:
