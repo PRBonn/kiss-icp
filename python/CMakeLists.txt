@@ -21,7 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 cmake_minimum_required(VERSION 3.16...3.24)
-project(kiss_icp_pybind VERSION 0.2.0 LANGUAGES CXX)
+project(kiss_icp_pybind VERSION 0.2.1 LANGUAGES CXX)
 
 # Set build type
 set(CMAKE_BUILD_TYPE Release)
@@ -33,8 +33,10 @@ if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../cpp/kiss_icp/)
 else()
   message(STATUS "Performing out-of-tree build, fetching KISS-ICP v${CMAKE_PROJECT_VERSION} Release from Github")
   include(FetchContent)
-  FetchContent_Declare(ext_kiss_icp_core PREFIX kiss_icp_core
-                       URL https://github.com/PRBonn/kiss-icp/archive/refs/tags/v${CMAKE_PROJECT_VERSION}.tar.gz)
+  FetchContent_Declare(
+    ext_kiss_icp_core PREFIX kiss_icp_core
+    URL https://github.com/PRBonn/kiss-icp/archive/refs/tags/v${CMAKE_PROJECT_VERSION}.tar.gz SOURCE_SUBDIR
+        cpp/kiss_icp)
   FetchContent_MakeAvailable(ext_kiss_icp_core)
 endif()
 
