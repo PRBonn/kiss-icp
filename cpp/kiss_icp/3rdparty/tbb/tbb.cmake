@@ -22,7 +22,7 @@
 # SOFTWARE.
 # TODO(Nacho): Use mainstream repo from OneAPI instead of my own fork
 include(ExternalProject)
-
+find_package(Threads)
 ExternalProject_Add(
   external_tbb
   PREFIX tbb
@@ -45,5 +45,5 @@ add_library(TBBHelper INTERFACE)
 add_dependencies(TBBHelper external_tbb)
 target_include_directories(TBBHelper INTERFACE ${INSTALL_DIR}/include)
 target_link_directories(TBBHelper INTERFACE ${INSTALL_DIR}/lib)
-target_link_libraries(TBBHelper INTERFACE tbb)
+target_link_libraries(TBBHelper INTERFACE tbb Threads::Threads)
 add_library(TBB::tbb ALIAS TBBHelper)

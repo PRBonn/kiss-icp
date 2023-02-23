@@ -71,6 +71,23 @@ pip_package:
     - VERBOSE=1 pip install --verbose ./python/
     - kiss_icp_pipeline --version
 
+ros1_melodic:
+  image: osrf/ros:melodic-desktop-full
+  stage: build
+  before_script:
+    - apt-get update && sudo apt-get install -y gpg wget
+    - wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
+    - echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ bionic main' | sudo tee /etc/apt/sources.list.d/kitware.list >/dev/null && apt update
+    - rm /usr/share/keyrings/kitware-archive-keyring.gpg
+    - apt-get install -y kitware-archive-keyring
+    - apt-get install -y cmake
+  script:
+    - rm -rf ~/catkin_ws/
+    - mkdir -p ~/catkin_ws/
+    - cp -r ${CI_PROJECT_DIR} ~/catkin_ws/src
+    - cd ~/catkin_ws/
+    - catkin_make
+
 ros1_noetic:
   image: osrf/ros:noetic-desktop-full
   stage: build
