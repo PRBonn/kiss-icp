@@ -35,7 +35,7 @@ black:
   before_script:
     - pip install black
   script:
-    - black --check $CI_PROJECT_DIR
+    - black --line-length 100 --check $CI_PROJECT_DIR
 
 clang-format:
   image: ubuntu:22.04
@@ -52,7 +52,7 @@ cpp_api:gcc:
   before_script:
     - apt-get update && apt-get install --no-install-recommends -y g++ cmake make
   script:
-    - cmake -Bbuild src/cpp/kiss_icp/
+    - cmake -Bbuild cpp/kiss_icp/
     - cmake --build build -j$(nproc --all)
 
 cpp_api:clang:
@@ -61,14 +61,14 @@ cpp_api:clang:
   before_script:
     - apt-get update && apt-get install --no-install-recommends -y clang cmake make
   script:
-    - cmake cmake -DCMAKE_CXX_COMPILER=clang++ -Bbuild src/cpp/kiss_icp/
+    - cmake cmake -DCMAKE_CXX_COMPILER=clang++ -Bbuild cpp/kiss_icp/
     - cmake --build build -j$(nproc --all)
 
 pip_package:
   image: python:3.8
   stage: build
   script:
-    - VERBOSE=1 pip install --verbose .
+    - VERBOSE=1 pip install --verbose ./python/
     - kiss_icp_pipeline --version
 
 ros1_wrapper:
@@ -81,6 +81,12 @@ ros1_wrapper:
   script:
     - cd ~/catkin_ws/
     - catkin_make
+
+ros2_wrapper:
+  image: osrf/ros:humble-desktop
+  stage: build
+  script:
+    - colcon build --event-handlers console_direct+
 
 #----- deployment stage ----------------------------------------------------------------------------
 cibuildwheel:
@@ -99,7 +105,7 @@ cibuildwheel:
   script:
     - curl -sSL https://get.docker.com/ | sh
     - python -m pip install pipx
-    - pipx run cibuildwheel --output-dir wheelhouse
+    - pipx run cibuildwheel --output-dir wheelhouse ./python/
   artifacts:
     paths:
       - wheelhouse/
@@ -116,5 +122,5 @@ pypi:
   script:
     - rm -rf dist && mkdir -p dist/ && mv wheelhouse/*.whl dist/
     - python -m pip install pipx
-    - pipx run build --sdist
+    - pipx run build --sdist ./python/
     - pipx run twine upload --verbose dist/*

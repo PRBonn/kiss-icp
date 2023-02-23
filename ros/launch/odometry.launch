@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- ROS paramaters -->
+  <arg name="bagfile" default=""/>
+  <arg name="visualize" default="true"/>
+  <arg name="odom_frame" default="odom"/>
+  <arg name="child_frame" default="base_link"/>
+  <arg name="topic" default=""/>
+
+  <!-- KISS-ICP paramaters -->
+  <arg name="deskew" default="false"/>
+  <arg name="max_range" default="100.0" />
+  <arg name="min_range" default="5.0" />
+  <arg name="voxel_size" default="" />
+
+  <!-- Odometry node -->
+  <node pkg="kiss_icp" type="odometry_node" name="odometry_node" output="screen">
+    <!-- ROS params -->
+    <remap from="pointcloud_topic" to="$(arg topic)"/>
+    <param name="odom_frame" value="$(arg odom_frame)"/>
+    <param name="child_frame" value="$(arg child_frame)"/>
+    <!-- KISS-ICP params -->
+    <param name="max_range" value="$(arg max_range)"/>
+    <param name="min_range" value="$(arg min_range)"/>
+    <param name="deskew" value="$(arg deskew)"/>
+    <param name="voxel_size" value="$(arg voxel_size)"/>
+    <param name="max_points_per_voxel" value="20"/>
+    <param name="initial_threshold" value="2.0"/>
+    <param name="min_motion_th" value="0.1" />
+  </node>
+
+  <!-- Rosbag player, if bagfile argument was specified -->
+  <group if="$(eval bagfile != '')">
+    <node pkg="rosbag" type="play" name="player" args="$(arg bagfile)" output="screen"/>
+  </group>
+
+  <!-- Visualizer -->
+  <group if="$(arg visualize)">
+    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find kiss_icp)/rviz/kiss_icp_ros1.rviz"/>
+  </group>
+
+</launch>
