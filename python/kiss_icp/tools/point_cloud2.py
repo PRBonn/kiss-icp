@@ -34,7 +34,7 @@ All rights reserved to the original authors: Tim Field and Florian Vahl.
 
 import sys
 import numpy as np
-from typing import Iterable, Optional, List
+from typing import Iterable, Optional, List, Tuple
 
 try:
     from rosbags.typesys.types import sensor_msgs__msg__PointField as PointField
@@ -57,6 +57,33 @@ _DATATYPES[PointField.FLOAT32] = np.dtype(np.float32)
 _DATATYPES[PointField.FLOAT64] = np.dtype(np.float64)
 
 DUMMY_FIELD_PREFIX = 'unnamed_field'
+
+
+def read_point_cloud(msg: PointCloud2) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Extract poitns and timestamps from a PointCloud2 message.
+    
+    :return: Tuple of [points, timestamps]
+        points: array of x, y z points, shape: (N, 3) 
+        timestamps: array of per-pixel timestamps, shape: (N,)
+    """
+    field_names = ["x", "y", "z"]
+    t_field = None
+    for field in msg.fields:
+        if field.name in ["t", "timestamp", "time"]:
+            t_field = field.name
+            field_names.append(t_field)
+            break
+    
+    points_structured = read_points(msg, field_names=field_names)
+    points = np.column_stack([points_structured["x"], points_structured["y"], points_structured["z"]])
+
+    if t_field:
+        timestamps = points_structured[t_field]
+        timestamps = timestamps / np.max(timestamps) if t_field != "time" else timestamps
+    else:
+        timestamps = np.ones(points.shape[0])
+    return points.astype(np.float64), timestamps
 
 
 def read_points(
