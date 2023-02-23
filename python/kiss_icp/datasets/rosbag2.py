@@ -33,7 +33,7 @@ class RosbagDataset:
     def __init__(self, data_dir: Path, topic: str, *_, **__):
         try:
             from rosbags import rosbag2
-        except ModuleNotFoundError:
+        except ImportError:
             print('rosbag2 reader is not installed, run "pip install rosbags"')
             sys.exit(1)
         
@@ -61,7 +61,8 @@ class RosbagDataset:
         self.use_global_visualizer = True
 
     def __del__(self):
-        self.bag.close()
+        if hasattr(self, 'bag'):
+            self.bag.close()
 
     def __len__(self):
         return self.n_scans
