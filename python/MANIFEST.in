@@ -1,0 +1,6 @@
+recursive-include kiss_icp *.py
+recursive-include kiss_icp *.cpp
+recursive-include kiss_icp *.h
+global-include CMakeLists.txt
+global-include LICENSE
+global-include *.cmake

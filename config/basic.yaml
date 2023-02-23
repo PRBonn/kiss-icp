@@ -2,7 +2,6 @@ out_dir: "results"
 
 data:
   deskew: False
-  frame_rate: 10.0 # <- optional only valid if deskew==True
   preprocess: True
   max_range: 100.0 # can be also changed in the CLI
   min_range: 5.0
