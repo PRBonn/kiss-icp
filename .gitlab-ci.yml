@@ -71,7 +71,7 @@ pip_package:
     - VERBOSE=1 pip install --verbose ./python/
     - kiss_icp_pipeline --version
 
-ros1_wrapper:
+ros1_noetic:
   image: osrf/ros:noetic-desktop-full
   stage: build
   before_script:
@@ -82,7 +82,13 @@ ros1_wrapper:
     - cd ~/catkin_ws/
     - catkin_make
 
-ros2_wrapper:
+ros2_foxy:
+  image: osrf/ros:foxy-desktop
+  stage: build
+  script:
+    - colcon build --event-handlers console_direct+
+
+ros2_humble:
   image: osrf/ros:humble-desktop
   stage: build
   script:

@@ -104,7 +104,10 @@ OdometryServer::OdometryServer() : rclcpp::Node("odometry_node") {
     RCLCPP_INFO(this->get_logger(), "KISS-ICP ROS2 odometry node initialized");
 }
 
-void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2 &msg) {
+void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::SharedPtr msg_ptr) {
+    // ROS2::Foxy can't handle a callback to const MessageT&, so we hack it here
+    // https://github.com/ros2/rclcpp/pull/1598
+    const sensor_msgs::msg::PointCloud2 &msg = *msg_ptr;
     const auto points = utils::PointCloud2ToEigen(msg);
     const auto timestamps = [&]() -> std::vector<double> {
         if (!config_.deskew) return {};
