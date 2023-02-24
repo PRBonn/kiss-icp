@@ -20,7 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-cmake_minimum_required(VERSION 3.18...3.24)
+cmake_minimum_required(VERSION 3.16...3.24)
 project(kiss_icp_pybind VERSION 0.2.2 LANGUAGES CXX)
 
 # Set build type
@@ -31,6 +31,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../cpp/kiss_icp/)
   add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../cpp/kiss_icp ${CMAKE_CURRENT_BINARY_DIR}/kiss_icp)
 else()
+  cmake_minimum_required(VERSION 3.18)
   message(STATUS "Performing out-of-tree build, fetching KISS-ICP v${CMAKE_PROJECT_VERSION} Release from Github")
   include(FetchContent)
   FetchContent_Declare(
