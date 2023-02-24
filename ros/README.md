@@ -76,8 +76,7 @@ Good news! If you don't have git or you don't need to change the core KISS-ICP l
 copy paste this folder into your ROS1/ROS2 workspace and build as usual. The build system will fetch
 the latest stable release for you.
 
-## Looking to run KITTI on ROS?
-
+## Looking how to run KITTI on ROS along with KISS-ICP?
 
 I believe you could use the python API instead, to avoid converting all the data to a format that is
 not the original one. If you still insist in doing it, I've created a separate repository for this,
