@@ -22,19 +22,19 @@ source ./install/setup.bash
 The only required argument to provide is the **topic name** so KISS-ICP knows which PointCloud2 to proces:
 
 ```sh
-roslaunch kiss_icp odometry.launch.py bagfile:=<path_to_rosbag> topic:=<topic_name>
+ros2 launch kiss_icp odometry.launch.py bagfile:=<path_to_rosbag> topic:=<topic_name>
 ```
 
 You can optionally launch the node with any bagfile, and play the bagfiles on a different shell:
 
 ```sh
-roslaunch kiss_icp odometry.launch.py topic:=<topic_name>
+ros2 launch kiss_icp odometry.launch.py topic:=<topic_name>
 ```
 
 and then,
 
 ```sh
-rosbag play <path>*.bag
+ros2 bag play <path>*.bag
 ```
 
 ## ROS1
@@ -72,4 +72,13 @@ rosbag play <path>*.bag
 
 ## Out of source builds
 
-Good news! If you don't have git or you don't need to change the core KISS-ICP library, you can just copy paste this folder into your ROS1/ROS2 workspace and build as usual. The build system will fetch the latest stable release for you.
+Good news! If you don't have git or you don't need to change the core KISS-ICP library, you can just
+copy paste this folder into your ROS1/ROS2 workspace and build as usual. The build system will fetch
+the latest stable release for you.
+
+## Looking to run KITTI on ROS?
+
+
+I believe you could use the python API instead, to avoid converting all the data to a format that is
+not the original one. If you still insist in doing it, I've created a separate repository for this,
+just clone and build [this package](https://github.com/nachovizzo/kiss_icp_kitti)
