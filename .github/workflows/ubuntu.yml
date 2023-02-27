@@ -1,4 +1,4 @@
-name: C++ API
+name: ubuntu
 
 on:
   push:
