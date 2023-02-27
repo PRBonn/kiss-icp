@@ -43,8 +43,8 @@
     <!-- ROS1/2 dependencies -->
   <depend>geometry_msgs</depend>
   <depend>nav_msgs</depend>
-  <depend>roscpp</depend>
-  <depend>rospy</depend>
+  <depend condition="$ROS_VERSION == 1">roscpp</depend>
+  <depend condition="$ROS_VERSION == 1">rospy</depend>
   <depend>std_msgs</depend>  
   <depend>sensor_msgs</depend>
   <depend>tf2</depend>
