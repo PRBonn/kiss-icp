@@ -46,6 +46,7 @@ namespace kiss_icp_ros {
 
 OdometryServer::OdometryServer(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
     : nh_(nh), pnh_(pnh) {
+    bool alias_transform;
     pnh_.param("child_frame", child_frame_, child_frame_);
     pnh_.param("odom_frame", odom_frame_, odom_frame_);
     pnh_.param("max_range", config_.max_range, config_.max_range);
@@ -55,6 +56,9 @@ OdometryServer::OdometryServer(const ros::NodeHandle &nh, const ros::NodeHandle 
     pnh_.param("max_points_per_voxel", config_.max_points_per_voxel, config_.max_points_per_voxel);
     pnh_.param("initial_threshold", config_.initial_threshold, config_.initial_threshold);
     pnh_.param("min_motion_th", config_.min_motion_th, config_.min_motion_th);
+    pnh_.param("publish_alias_tf", alias_transform, true);
+    pnh_.param("publish_odom_tf", publish_odom_tf_, true);
+
     if (config_.max_range < config_.min_range) {
         ROS_WARN("[WARNING] max_range is smaller than min_range, setting min_range to 0.0");
         config_.min_range = 0.0;
@@ -79,7 +83,7 @@ OdometryServer::OdometryServer(const ros::NodeHandle &nh, const ros::NodeHandle 
 
     // Broadcast a static transformation that links with identity the specified base link to the
     // pointcloud_frame, basically to always be able to visualize the frame in rviz
-    if (child_frame_ != "base_link") {
+    if (alias_transform && child_frame_ != "base_link") {
         static tf2_ros::StaticTransformBroadcaster br;
         geometry_msgs::TransformStamped alias_transform_msg;
         alias_transform_msg.header.stamp = ros::Time::now();
@@ -117,18 +121,20 @@ void OdometryServer::RegisterFrame(const sensor_msgs::PointCloud2 &msg) {
     const Eigen::Quaterniond q_current = pose.unit_quaternion();
 
     // Broadcast the tf
-    geometry_msgs::TransformStamped transform_msg;
-    transform_msg.header.stamp = msg.header.stamp;
-    transform_msg.header.frame_id = odom_frame_;
-    transform_msg.child_frame_id = child_frame_;
-    transform_msg.transform.rotation.x = q_current.x();
-    transform_msg.transform.rotation.y = q_current.y();
-    transform_msg.transform.rotation.z = q_current.z();
-    transform_msg.transform.rotation.w = q_current.w();
-    transform_msg.transform.translation.x = t_current.x();
-    transform_msg.transform.translation.y = t_current.y();
-    transform_msg.transform.translation.z = t_current.z();
-    tf_broadcaster_.sendTransform(transform_msg);
+    if (publish_odom_tf_) {
+        geometry_msgs::TransformStamped transform_msg;
+        transform_msg.header.stamp = msg.header.stamp;
+        transform_msg.header.frame_id = odom_frame_;
+        transform_msg.child_frame_id = child_frame_;
+        transform_msg.transform.rotation.x = q_current.x();
+        transform_msg.transform.rotation.y = q_current.y();
+        transform_msg.transform.rotation.z = q_current.z();
+        transform_msg.transform.rotation.w = q_current.w();
+        transform_msg.transform.translation.x = t_current.x();
+        transform_msg.transform.translation.y = t_current.y();
+        transform_msg.transform.translation.z = t_current.z();
+        tf_broadcaster_.sendTransform(transform_msg);
+    }
 
     // publish odometry msg
     nav_msgs::Odometry odom_msg;

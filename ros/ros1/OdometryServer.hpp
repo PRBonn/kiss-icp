@@ -49,6 +49,7 @@ private:
 
     /// Tools for broadcasting TFs.
     tf2_ros::TransformBroadcaster tf_broadcaster_;
+    bool publish_odom_tf_;
 
     /// Data subscribers.
     ros::Subscriber pointcloud_sub_;
