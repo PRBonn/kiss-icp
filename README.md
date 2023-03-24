@@ -64,6 +64,10 @@ If you use this library for any academic work, please cite our original [paper](
 }
 ```
 
-## Star History
+## Contributing
 
-[![Star History Chart](https://api.star-history.com/svg?repos=PRBonn/kiss-icp&type=Date)](https://star-history.com/#PRBonn/kiss-icp&Date)
+We envision KISS-ICP as a comunity-driven project, we love to see how the project is growing thanks to the contributions from the comunity. We would love to see your face in the list below, just open a Pull Request!
+
+<a href="https://github.com/PRBonn/kiss-icp/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=PRBonn/kiss-icp" />
+</a>
