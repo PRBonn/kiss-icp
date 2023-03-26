@@ -6,10 +6,22 @@ on:
     branches: ["main"]
 
 jobs:
+  style:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python3
+        uses: actions/setup-python@v3
+      - name: Run black style check
+        uses: psf/black@stable
+        with:
+          options: "--check --config=python/pyproject.toml"
+          jupyter: true
+
   python_package:
+    needs: style
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
       matrix:
         os: [ubuntu-22.04, ubuntu-20.04, windows-2019, macos-11]
 

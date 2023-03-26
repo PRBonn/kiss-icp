@@ -12,7 +12,7 @@ https://user-images.githubusercontent.com/21349875/214578180-b1d2431c-8fff-440e-
 You should not need any extra dependency, just clone and build:
 
 ```sh
-git clone https://github.com/PRBonn/kiss-icp 
+git clone https://github.com/PRBonn/kiss-icp
 colcon build
 source ./install/setup.bash
 ```
@@ -45,7 +45,7 @@ You should not need any extra dependency, just clone and build:
 
 ```sh
 cd ~/catkin_ws/
-git clone https://github.com/PRBonn/kiss-icp 
+git clone https://github.com/PRBonn/kiss-icp
 catkin build
 source devel/setup.bash
 ```

@@ -39,11 +39,11 @@
   <depend condition="$ROS_VERSION == 2">rclcpp</depend>
   <depend condition="$ROS_VERSION == 2">rclcpp_components</depend>
   <exec_depend condition="$ROS_VERSION == 2">ros2launch</exec_depend>
-    
+
   <!-- ROS1/2 dependencies -->
   <depend>geometry_msgs</depend>
   <depend>nav_msgs</depend>
-  <depend>std_msgs</depend>  
+  <depend>std_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>tf2</depend>
   <depend>tf2_ros</depend>

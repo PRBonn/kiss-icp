@@ -23,7 +23,6 @@
 stages:
   - format
   - build
-  - deploy
 cache:
   paths:
     - .cache/pip
@@ -110,40 +109,3 @@ ros2_humble:
   stage: build
   script:
     - colcon build --event-handlers console_direct+
-
-#----- deployment stage ----------------------------------------------------------------------------
-cibuildwheel:
-  stage: deploy
-  image: python:3.8
-  rules:
-    - if: $CI_COMMIT_TAG
-  services:
-    - name: docker:dind
-      entrypoint: ["env", "-u", "DOCKER_HOST"]
-      command: ["dockerd-entrypoint.sh"]
-  variables:
-    DOCKER_HOST: tcp://docker:2375/
-    DOCKER_DRIVER: overlay2
-    DOCKER_TLS_CERTDIR: ""
-  script:
-    - curl -sSL https://get.docker.com/ | sh
-    - python -m pip install pipx
-    - pipx run cibuildwheel --output-dir wheelhouse ./python/
-  artifacts:
-    paths:
-      - wheelhouse/
-
-pypi:
-  stage: deploy
-  image: python:3.8
-  needs: ["cibuildwheel"]
-  rules:
-    - if: $CI_COMMIT_TAG
-  variables:
-    TWINE_PASSWORD: "${PYPI_ACCESS_TOKEN}"
-    TWINE_USERNAME: "__token__"
-  script:
-    - rm -rf dist && mkdir -p dist/ && mv wheelhouse/*.whl dist/
-    - python -m pip install pipx
-    - pipx run build --sdist ./python/
-    - pipx run twine upload --verbose dist/*

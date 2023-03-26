@@ -22,4 +22,3 @@ $ kiss_icp_pipeline <YOUR_DATASET> --config <path-to-config>/my_config.yaml
 
 Big thanks to Markus Pielmeier who contributed PR #63 making this configuration module as flexible
 as possible.
-
