@@ -7,7 +7,7 @@ on:
     branches: ["main"]
 
 jobs:
-  python_api:
+  python_packages:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -34,6 +34,7 @@ jobs:
   build_sdist:
     name: Build source distribution
     runs-on: ubuntu-latest
+    if: github.event_name == 'release' && github.event.action == 'published'
     steps:
       - uses: actions/checkout@v3
 
@@ -46,9 +47,10 @@ jobs:
         with:
           path: dist/*.tar.gz
 
-  build_wheels:
+  cibuildwheel:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    if: github.event_name == 'release' && github.event.action == 'published'
     strategy:
       matrix:
         os: [ubuntu-22.04, windows-2019, macos-11]
