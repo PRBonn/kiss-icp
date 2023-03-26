@@ -32,9 +32,9 @@ ExternalProject_Add(
   BUILD_COMMAND ""
   INSTALL_COMMAND ""
   CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-             -DSOPHUS_USE_BASIC_LOGGING=ON 
+             -DSOPHUS_USE_BASIC_LOGGING=ON
              -DBUILD_SOPHUS_EXAMPLES=OFF
-             -DBUILD_SOPHUS_TESTS=OFF 
+             -DBUILD_SOPHUS_TESTS=OFF
              -DCMAKE_BUILD_TYPE=Release)
 
 ExternalProject_Get_Property(external_sophus SOURCE_DIR)
