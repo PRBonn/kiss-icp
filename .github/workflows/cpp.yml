@@ -1,4 +1,4 @@
-name: C++ Core API
+name: C++ API
 
 on:
   push:
