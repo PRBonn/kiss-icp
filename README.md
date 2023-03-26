@@ -55,7 +55,7 @@ If you use this library for any academic work, please cite our original [paper](
   author    = {Vizzo, Ignacio and Guadagnino, Tiziano and Mersch, Benedikt and Wiesmann, Louis and Behley, Jens and Stachniss, Cyrill},
   title     = {{KISS-ICP: In Defense of Point-to-Point ICP -- Simple, Accurate, and Robust Registration If Done the Right Way}},
   journal   = {IEEE Robotics and Automation Letters (RA-L)},
-  pages     = {1-8},
+  pages     = {1029--1036},
   doi       = {10.1109/LRA.2023.3236571},
   volume    = {8},
   number    = {2},
@@ -64,6 +64,10 @@ If you use this library for any academic work, please cite our original [paper](
 }
 ```
 
-## Star History
+## Contributing
 
-[![Star History Chart](https://api.star-history.com/svg?repos=PRBonn/kiss-icp&type=Date)](https://star-history.com/#PRBonn/kiss-icp&Date)
+We envision KISS-ICP as a comunity-driven project, we love to see how the project is growing thanks to the contributions from the comunity. We would love to see your face in the list below, just open a Pull Request!
+
+<a href="https://github.com/PRBonn/kiss-icp/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=PRBonn/kiss-icp" />
+</a>
