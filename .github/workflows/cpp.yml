@@ -10,7 +10,18 @@ env:
   BUILD_TYPE: Release
 
 jobs:
+  style:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Run clang-format style check.
+      uses: jidicula/clang-format-action@v4.11.0
+      with:
+        clang-format-version: '14'
+        check-path: '.'
+
   cpp_api:
+    needs: style
     strategy:
       matrix:
         os: [ubuntu-22.04, ubuntu-20.04, windows-2019, macos-11]
