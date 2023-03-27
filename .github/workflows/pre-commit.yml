@@ -1,9 +1,10 @@
 name: Style Check
 
 on:
-  pull_request:
   push:
-    branches: [main]
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
 
 jobs:
   pre-commit:
