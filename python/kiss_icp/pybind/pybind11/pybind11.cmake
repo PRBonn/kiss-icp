@@ -22,7 +22,6 @@
 # SOFTWARE.
 include(FetchContent)
 
-FetchContent_Declare(
-  ext_pybind11 PREFIX pybind11
-  URL https://github.com/pybind/pybind11/archive/refs/tags/v2.10.0.tar.gz)
+FetchContent_Declare(ext_pybind11 PREFIX pybind11
+                     URL https://github.com/pybind/pybind11/archive/refs/tags/v2.10.0.tar.gz)
 FetchContent_MakeAvailable(ext_pybind11)
