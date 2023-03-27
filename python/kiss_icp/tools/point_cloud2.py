@@ -79,6 +79,9 @@ def read_point_cloud(msg: PointCloud2) -> Tuple[np.ndarray, np.ndarray]:
         [points_structured["x"], points_structured["y"], points_structured["z"]]
     )
 
+    # Remove nan if any
+    points = points[~np.any(np.isnan(points), axis=1)]
+
     if t_field:
         timestamps = points_structured[t_field]
         timestamps = timestamps / np.max(timestamps) if t_field != "time" else timestamps
@@ -90,7 +93,6 @@ def read_point_cloud(msg: PointCloud2) -> Tuple[np.ndarray, np.ndarray]:
 def read_points(
     cloud: PointCloud2,
     field_names: Optional[List[str]] = None,
-    skip_nans: bool = False,
     uvs: Optional[Iterable] = None,
     reshape_organized_cloud: bool = False,
 ) -> np.ndarray:
@@ -99,8 +101,6 @@ def read_points(
     :param cloud: The point cloud to read from sensor_msgs.PointCloud2.
     :param field_names: The names of fields to read. If None, read all fields.
                         (Type: Iterable, Default: None)
-    :param skip_nans: If True, then don't return any point with a NaN value.
-                      (Type: Bool, Default: False)
     :param uvs: If specified, then only return the points at the given
         coordinates. (Type: Iterable, Default: None)
     :param reshape_organized_cloud: Returns the array as an 2D organized point cloud if set.
@@ -124,16 +124,6 @@ def read_points(
     # Swap array if byte order does not match
     if bool(sys.byteorder != "little") != bool(cloud.is_bigendian):
         points = points.byteswap(inplace=True)
-
-    # Check if we want to drop points with nan values
-    if skip_nans and not cloud.is_dense:
-        # Init mask which selects all points
-        not_nan_mask = np.ones(len(points), dtype=bool)
-        for field_name in points.dtype.names:
-            # Only keep points without any non values in the mask
-            not_nan_mask = np.logical_and(not_nan_mask, ~np.isnan(points[field_name]))
-        # Select these points
-        points = points[not_nan_mask]
 
     # Select points indexed by the uvs field
     if uvs is not None:
