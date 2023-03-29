@@ -30,6 +30,9 @@
   <maintainer email="ignaciovizzo@gmail.com">ivizzo</maintainer>
   <license>MIT</license>
 
+  <!-- Common ROS 1 / ROS 2 dependencies -->
+  <build_depend>ros_environment</build_depend>
+
   <!-- ROS1 dependencies -->
   <buildtool_depend condition="$ROS_VERSION == 1">catkin</buildtool_depend>
   <depend condition="$ROS_VERSION == 1">roscpp</depend>
