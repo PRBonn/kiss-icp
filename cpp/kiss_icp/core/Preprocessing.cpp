@@ -55,7 +55,8 @@ std::vector<Eigen::Vector3d> VoxelDownsample(const std::vector<Eigen::Vector3d> 
     }
     std::vector<Eigen::Vector3d> frame_dowsampled;
     frame_dowsampled.reserve(grid.size());
-    for (const auto &[_, point] : grid) {
+    for (const auto &[voxel, point] : grid) {
+        (void)voxel;
         frame_dowsampled.emplace_back(point);
     }
     return frame_dowsampled;

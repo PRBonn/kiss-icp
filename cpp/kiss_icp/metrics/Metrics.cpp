@@ -148,8 +148,8 @@ std::tuple<float, float> SeqError(const std::vector<Eigen::Matrix4d> &poses_gt,
         r_err += it.r_err;
     }
 
-    double avg_trans_error = avg_trans_error = 100.0 * (t_err / float(err.size()));
-    double avg_rot_error = avg_rot_error = 100.0 * (r_err / float(err.size())) / 3.14 * 180.0;
+    double avg_trans_error = 100.0 * (t_err / static_cast<double>(err.size()));
+    double avg_rot_error = 100.0 * (r_err / static_cast<double>(err.size())) / 3.14 * 180.0;
 
     return std::make_tuple(avg_trans_error, avg_rot_error);
 }
@@ -185,8 +185,8 @@ std::tuple<float, float> AbsoluteTrajectoryError(const std::vector<Eigen::Matrix
         ATE_trans += delta_t.squaredNorm();
     }
     // Get the RMSE
-    ATE_rot /= num_poses;
-    ATE_trans /= num_poses;
+    ATE_rot /= static_cast<double>(num_poses);
+    ATE_trans /= static_cast<double>(num_poses);
     return std::make_tuple(std::sqrt(ATE_rot), std::sqrt(ATE_trans));
 }
 }  // namespace kiss_icp::metrics

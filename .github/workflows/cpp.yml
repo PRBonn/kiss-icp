@@ -14,13 +14,13 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-22.04, ubuntu-20.04, windows-2019, macos-11]
+        os: [ubuntu-22.04, ubuntu-20.04, windows-2022, macos-11]
     steps:
       - uses: actions/checkout@v3
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v1.13
         with:
-          cmake-version: "3.22.x"
+          cmake-version: "3.24.x"
       - name: Configure CMake
         run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} ${{github.workspace}}/cpp/kiss_icp
       - name: Build
