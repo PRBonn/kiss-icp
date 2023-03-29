@@ -7,24 +7,38 @@ on:
     branches: ["main"]
 
 jobs:
-  ros1_node:
+  ros1_melodic:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        release: [melodic, noetic]
-    container: osrf/ros:${{ matrix.release }}-desktop-full
+    container: osrf/ros:melodic-desktop-full
     steps:
-      - name: Setup cmake
-        uses: jwlawson/actions-setup-cmake@v1.13
-        with:
-          cmake-version: "3.24.x"
+      - name: Insall modern CMake
+        run: |
+          apt-get update && sudo apt-get install -y gpg wget
+          wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
+          echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ bionic main' | sudo tee /etc/apt/sources.list.d/kitware.list >/dev/null && apt update
+          rm /usr/share/keyrings/kitware-archive-keyring.gpg
+          apt-get install -y kitware-archive-keyring
+          apt-get install -y cmake
       - name: Prepare catkin_ws
         run: mkdir -p catkin_ws/src
       - uses: actions/checkout@v3
         with:
           path: catkin_ws/src
       - name: Run catkin_make
-        run: source /opt/ros/${{ matrix.release }}/setup.bash && cd catkin_ws && catkin_make
+        run: source /opt/ros/melodic/setup.bash && cd catkin_ws && catkin_make
+        shell: bash
+
+  ros1_noetic:
+    runs-on: ubuntu-latest
+    container: osrf/ros:noetic-desktop-full
+    steps:
+      - name: Prepare catkin_ws
+        run: mkdir -p catkin_ws/src
+      - uses: actions/checkout@v3
+        with:
+          path: catkin_ws/src
+      - name: Run catkin_make
+        run: source /opt/ros/noetic/setup.bash && cd catkin_ws && catkin_make
         shell: bash
 
   ros2_node:
