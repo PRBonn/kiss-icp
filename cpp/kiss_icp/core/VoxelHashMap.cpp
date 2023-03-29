@@ -138,8 +138,10 @@ std::vector<Eigen::Vector3d> VoxelHashMap::Pointcloud() const {
     std::vector<Eigen::Vector3d> points;
     points.reserve(max_points_per_voxel_ * map_.size());
     for (const auto &[voxel, voxel_block] : map_) {
-        std::for_each(voxel_block.points.cbegin(), voxel_block.points.cend(),
-                      [&](const auto &point) { points.emplace_back(point); });
+        (void)voxel;
+        for (const auto &point : voxel_block.points) {
+            points.push_back(point);
+        }
     }
     return points;
 }
