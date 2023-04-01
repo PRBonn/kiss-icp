@@ -62,11 +62,11 @@ class McapDataloader:
         return self.n_scans
 
     def _get_n_scans(self) -> int:
-        return [
+        return sum(
             count
             for (id, count) in self.summary.statistics.channel_message_counts.items()
             if self.summary.channels[id].topic == self.topic
-        ][0]
+        )
 
     def check_topic(self, topic: str) -> str:
         # when user specified the topic don't check
