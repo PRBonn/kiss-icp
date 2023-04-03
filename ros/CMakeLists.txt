@@ -40,7 +40,7 @@ else()
   FetchContent_MakeAvailable(ext_kiss_icp_core)
 endif()
 
-if(CATKIN_DEVEL_PREFIX OR catkin_FOUND OR CATKIN_BUILD_BINARY_PACKAGE)
+if("$ENV{ROS_VERSION}" STREQUAL "1")
   message(STATUS "KISS-ICP-ROS1 wrapper will be compiled")
   find_package(
     catkin REQUIRED
@@ -60,7 +60,7 @@ if(CATKIN_DEVEL_PREFIX OR catkin_FOUND OR CATKIN_BUILD_BINARY_PACKAGE)
   target_link_libraries(odometry_node kiss_icp::pipeline ${catkin_LIBRARIES})
   install(TARGETS odometry_node RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
   install(DIRECTORY launch DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
-elseif(DEFINED ENV{AMENT_PREFIX_PATH})
+elseif("$ENV{ROS_VERSION}" STREQUAL "2")
   message(STATUS "KISS-ICP-ROS2 wrapper will be compiled")
 
   find_package(ament_cmake REQUIRED)

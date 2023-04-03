@@ -57,10 +57,7 @@ public:
           local_map_(config.voxel_size, config.max_range, config.max_points_per_voxel),
           adaptive_threshold_(config.initial_threshold, config.min_motion_th, config.max_range) {}
 
-    KissICP()
-        : local_map_(config_.voxel_size, config_.max_range, config_.max_points_per_voxel),
-          adaptive_threshold_(config_.initial_threshold, config_.min_motion_th, config_.max_range) {
-    }
+    KissICP() : KissICP(KISSConfig{}) {}
 
 public:
     Vector3dVectorTuple RegisterFrame(const std::vector<Eigen::Vector3d> &frame);
@@ -80,8 +77,8 @@ private:
     // KISS-ICP pipeline modules
     std::vector<Sophus::SE3d> poses_;
     KISSConfig config_;
-    AdaptiveThreshold adaptive_threshold_;
     VoxelHashMap local_map_;
+    AdaptiveThreshold adaptive_threshold_;
 };
 
 }  // namespace kiss_icp::pipeline
