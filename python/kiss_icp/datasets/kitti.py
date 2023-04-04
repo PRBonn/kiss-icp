@@ -106,3 +106,4 @@ class KITTIOdometryDataset:
                     key = tokens[0][:-1]
                     calib_dict[key] = values
         return calib_dict
+    
