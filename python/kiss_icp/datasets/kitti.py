@@ -34,6 +34,7 @@ class KITTIOdometryDataset:
 
         self.scan_files = sorted(glob.glob(self.velodyne_dir + "*.bin"))
         self.calibration = self.read_calib_file(os.path.join(self.kitti_sequence_dir, "calib.txt"))
+        self.timestamps = self.read_timestamps(os.path.join(self.kitti_sequence_dir, "times.txt"))
 
         # Load GT Poses (if available)
         if sequence < 11:
@@ -85,7 +86,11 @@ class KITTIOdometryDataset:
         poses = poses.reshape((n, 4, 4))  # [N, 4, 4]
         return _lidar_pose_gt(poses)
 
-    def get_frames_timestamps(file_path: str) -> np.ndarray:
+    def get_frames_timestamps(self) -> np.ndarray:
+        return self.timestamps
+    
+    @staticmethod
+    def read_timestamps(file_path: str) -> np.ndarray:
         timestamps = np.loadtxt(file_path).reshape(-1, 1)
         return timestamps
     
