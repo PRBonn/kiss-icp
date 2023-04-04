@@ -40,14 +40,13 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
         if (!config_.deskew) return frame;
         // TODO(Nacho) Add some asserts here to sanitize the timestamps
 
+        const auto &start_pose = poses_.next_to_last();
+        const auto &finish_pose = poses_.last();
         //  If not enough poses for the estimation, do not de-skew
-        const size_t N = poses().size();
-        if (N <= 2) return frame;
+        if (!start_pose.has_value() || !finish_pose.has_value()) return frame;
 
         // Estimate linear and angular velocities
-        const auto &start_pose = poses_[N - 2];
-        const auto &finish_pose = poses_[N - 1];
-        return DeSkewScan(frame, timestamps, start_pose, finish_pose);
+        return DeSkewScan(frame, timestamps, start_pose.value(), finish_pose.value());
     }();
     return RegisterFrame(deskew_frame);
 }
@@ -64,19 +63,19 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
 
     // Compute initial_guess for ICP
     const auto prediction = GetPredictionModel();
-    const auto last_pose = !poses_.empty() ? poses_.back() : Sophus::SE3d();
+    const auto last_pose = poses_.last().has_value() ? poses_.last().value() : Sophus::SE3d();
     const auto initial_guess = last_pose * prediction;
 
     // Run icp
-    const Sophus::SE3d new_pose = kiss_icp::RegisterFrame(source,         //
-                                                          local_map_,     //
-                                                          initial_guess,  //
-                                                          3.0 * sigma,    //
-                                                          sigma / 3.0);
+    Sophus::SE3d new_pose = kiss_icp::RegisterFrame(source,         //
+                                                    local_map_,     //
+                                                    initial_guess,  //
+                                                    3.0 * sigma,    //
+                                                    sigma / 3.0);
     const auto model_deviation = initial_guess.inverse() * new_pose;
     adaptive_threshold_.UpdateModelDeviation(model_deviation);
     local_map_.Update(frame_downsample, new_pose);
-    poses_.push_back(new_pose);
+    poses_.push(std::move(new_pose));
     return {frame, source};
 }
 
@@ -95,16 +94,21 @@ double KissICP::GetAdaptiveThreshold() {
 }
 
 Sophus::SE3d KissICP::GetPredictionModel() const {
-    Sophus::SE3d pred = Sophus::SE3d();
-    const size_t N = poses_.size();
-    if (N < 2) return pred;
-    return poses_[N - 2].inverse() * poses_[N - 1];
+    const auto &last = poses_.last();
+    const auto &next_to_last = poses_.next_to_last();
+    if (last.has_value() && next_to_last.has_value()) {
+        return next_to_last.value().inverse() * last.value();
+    }
+    return {};
 }
 
 bool KissICP::HasMoved() {
-    if (poses_.empty()) return false;
-    const double motion = (poses_.front().inverse() * poses_.back()).translation().norm();
-    return motion > 5.0 * config_.min_motion_th;
+    if (poses_.first().has_value() && poses_.last().has_value()) {
+        const double motion =
+            (poses_.first().value().inverse() * poses_.last().value()).translation().norm();
+        return motion > 5.0 * config_.min_motion_th;
+    }
+    return false;
 }
 
 }  // namespace kiss_icp::pipeline

@@ -110,7 +110,7 @@ void OdometryServer::RegisterFrame(const sensor_msgs::PointCloud2 &msg) {
     const auto &[frame, keypoints] = odometry_.RegisterFrame(points, timestamps);
 
     // PublishPose
-    const auto pose = odometry_.poses().back();
+    const auto pose = odometry_.last_pose();
 
     // Convert from Eigen to ROS types
     const Eigen::Vector3d t_current = pose.translation();

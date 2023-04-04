@@ -22,6 +22,8 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <array>
+#include <optional>
 #include <tuple>
 #include <vector>
 
@@ -70,12 +72,33 @@ public:
 
 public:
     // Extra C++ API to facilitate ROS debugging
-    std::vector<Eigen::Vector3d> LocalMap() const { return local_map_.Pointcloud(); };
-    std::vector<Sophus::SE3d> poses() const { return poses_; };
+    std::vector<Eigen::Vector3d> LocalMap() const { return local_map_.Pointcloud(); }
+    Sophus::SE3d last_pose() const {
+        return poses_.last().has_value() ? poses_.last().value() : Sophus::SE3d{};
+    }
 
 private:
     // KISS-ICP pipeline modules
-    std::vector<Sophus::SE3d> poses_;
+    class Poses {
+    public:
+        void push(Sophus::SE3d pose) {
+            if (!first_pose_.has_value()) {
+                first_pose_ = pose;
+            }
+            last_pose_index_ = (last_pose_index_ + 1) % 2;
+            poses_[last_pose_index_] = std::move(pose);
+        }
+        const std::optional<Sophus::SE3d> &first() const { return first_pose_; }
+        const std::optional<Sophus::SE3d> &last() const { return poses_[last_pose_index_ % 2]; }
+        const std::optional<Sophus::SE3d> &next_to_last() const {
+            return poses_[(last_pose_index_ - 1 + 2) % 2];
+        }
+
+    private:
+        std::optional<Sophus::SE3d> first_pose_{};
+        std::array<std::optional<Sophus::SE3d>, 2> poses_{};
+        std::int32_t last_pose_index_{};
+    } poses_;
     KISSConfig config_;
     VoxelHashMap local_map_;
     AdaptiveThreshold adaptive_threshold_;
