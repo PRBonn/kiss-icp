@@ -96,38 +96,29 @@ VoxelHashMap::Vector3dVectorTuple VoxelHashMap::GetCorrespondences(
         tbb::blocked_range<points_iterator>{points.cbegin(), points.cend()},
         // Identity
         ResultTuple(points.size()),
-        // 1st lambda: Paralell computation
-        [&](const tbb::blocked_range<points_iterator> &r, ResultTuple res) -> ResultTuple {
+        // 1st lambda: Parallel computation
+        [max_correspondance_distance, &GetClosestNeighboor](
+            const tbb::blocked_range<points_iterator> &r, ResultTuple res) -> ResultTuple {
             auto &[src, tgt] = res;
-            // Compile in clang for macOS: https://stackoverflow.com/questions/46114214
-            auto &source_private = src;
-            auto &target_private = tgt;
-            source_private.reserve(r.size());
-            target_private.reserve(r.size());
-            std::for_each(r.begin(), r.end(), [&](const auto &point) {
+            src.reserve(r.size());
+            tgt.reserve(r.size());
+            for (auto &point : r) {
                 Eigen::Vector3d closest_neighboors = GetClosestNeighboor(point);
                 if ((closest_neighboors - point).norm() < max_correspondance_distance) {
-                    source_private.emplace_back(point);
-                    target_private.emplace_back(closest_neighboors);
+                    src.emplace_back(point);
+                    tgt.emplace_back(closest_neighboors);
                 }
-            });
+            }
             return res;
         },
-        // 2st lambda: Parallell reduction
-        [&](ResultTuple a, const ResultTuple &b) -> ResultTuple {
+        // 2nd lambda: Parallel reduction
+        [](ResultTuple a, const ResultTuple &b) -> ResultTuple {
             auto &[src, tgt] = a;
             const auto &[srcp, tgtp] = b;
-            // Compile in clang for macOS: https://stackoverflow.com/questions/46114214
-            auto &source = src;
-            auto &target = tgt;
-            auto &source_private = srcp;
-            auto &target_private = tgtp;
-            source.insert(source.end(),  //
-                          std::make_move_iterator(source_private.begin()),
-                          std::make_move_iterator(source_private.end()));
-            target.insert(target.end(),  //
-                          std::make_move_iterator(target_private.begin()),
-                          std::make_move_iterator(target_private.end()));
+            src.insert(src.end(),  //
+                       std::make_move_iterator(srcp.begin()), std::make_move_iterator(srcp.end()));
+            tgt.insert(tgt.end(),  //
+                       std::make_move_iterator(tgtp.begin()), std::make_move_iterator(tgtp.end()));
             return a;
         });
 
