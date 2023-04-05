@@ -20,7 +20,6 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-# TODO(Nacho): Use mainstream repo from OneAPI instead of my own fork
 include(ExternalProject)
 find_package(Threads)
 ExternalProject_Add(
@@ -44,6 +43,6 @@ set(TBB_ROOT ${INSTALL_DIR} CACHE INTERNAL "TBB_ROOT Install directory")
 add_library(TBBHelper INTERFACE)
 add_dependencies(TBBHelper external_tbb)
 target_include_directories(TBBHelper SYSTEM INTERFACE ${INSTALL_DIR}/include)
-target_link_directories(TBBHelper INTERFACE ${INSTALL_DIR}/lib ${INSTALL_DIR}/lib64)
+target_link_directories(TBBHelper INTERFACE ${CMAKE_INSTALL_LIBDIR})
 target_link_libraries(TBBHelper INTERFACE tbb Threads::Threads)
 add_library(TBB::tbb ALIAS TBBHelper)
