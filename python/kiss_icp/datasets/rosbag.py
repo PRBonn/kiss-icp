@@ -46,6 +46,7 @@ class RosbagDataset:
         # Get an iterable
         self.n_scans = self.bag.get_message_count(topic_filters=self.topic)
         self.msgs = self.bag.read_messages(topics=[self.topic])
+        self.timestamps = []
 
         # Visualization Options
         self.use_global_visualizer = True
@@ -54,9 +55,12 @@ class RosbagDataset:
         return self.n_scans
 
     def __getitem__(self, idx):
-        # TODO: implemnt [idx], expose field_names
-        _, msg, _ = next(self.msgs)
+        _, msg, time = next(self.msgs)
+        self.timestamps.append(time.to_sec())
         return self.read_point_cloud(msg)
+
+    def get_frames_timestamps(self) -> list:
+        return self.timestamps
 
     def check_topic(self, topic: str) -> str:
         # when user specified the topic don't check
