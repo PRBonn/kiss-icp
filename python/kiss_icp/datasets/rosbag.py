@@ -55,7 +55,6 @@ class RosbagDataset:
         return self.n_scans
 
     def __getitem__(self, idx):
-        # TODO: implemnt [idx], expose field_names
         _, msg, time = next(self.msgs)
         self.timestamps.append(time.to_sec())
         return self.read_point_cloud(msg)
