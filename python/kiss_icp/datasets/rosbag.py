@@ -59,7 +59,7 @@ class RosbagDataset:
         _, msg, time = next(self.msgs)
         self.timestamps.append(time.to_sec())
         return self.read_point_cloud(msg)
-    
+
     def get_frames_timestamps(self) -> list:
         return self.timestamps
 

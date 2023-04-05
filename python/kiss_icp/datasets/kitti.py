@@ -88,7 +88,7 @@ class KITTIOdometryDataset:
     def get_frames_timestamps(self) -> np.ndarray:
         timestamps = np.loadtxt(os.path.join(self.kitti_sequence_dir, "times.txt")).reshape(-1, 1)
         return timestamps
-    
+
     @staticmethod
     def read_calib_file(file_path: str) -> dict:
         calib_dict = {}
@@ -106,4 +106,3 @@ class KITTIOdometryDataset:
                     key = tokens[0][:-1]
                     calib_dict[key] = values
         return calib_dict
-    
