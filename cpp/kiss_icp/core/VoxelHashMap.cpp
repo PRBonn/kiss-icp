@@ -102,7 +102,7 @@ VoxelHashMap::Vector3dVectorTuple VoxelHashMap::GetCorrespondences(
             auto &[src, tgt] = res;
             src.reserve(r.size());
             tgt.reserve(r.size());
-            for (auto &point : r) {
+            for (const auto &point : r) {
                 Eigen::Vector3d closest_neighboors = GetClosestNeighboor(point);
                 if ((closest_neighboors - point).norm() < max_correspondance_distance) {
                     src.emplace_back(point);
