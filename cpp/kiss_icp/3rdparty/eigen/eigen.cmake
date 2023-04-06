@@ -20,13 +20,18 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+
+# TODO: Yet another manual release dne by nacho. This should be updated whenever the Eigen team
+# release a new version that is not 3.4. That version does not include this necessary changes:
+# - https://gitlab.com/libeigen/eigen/-/merge_requests/893/diffs
+
 include(FetchContent)
-# TODO: Yet another manual release dne by nacho
 FetchContent_Declare(Eigen SYSTEM URL https://github.com/nachovizzo/eigen/archive/refs/tags/3.4.90.tar.gz)
 
 set(EIGEN_BUILD_DOC OFF CACHE BOOL "Don't build Eigen docs")
-set(BUILD_TESTING OFF CACHE BOOL "Don't build Eigen tests")
+set(EIGEN_BUILD_TESTING OFF CACHE BOOL "Don't build Eigen tests")
 set(EIGEN_BUILD_PKGCONFIG OFF CACHE BOOL "Don't build Eigen pkg-config")
 set(EIGEN_BUILD_BLAS OFF CACHE BOOL "Don't build blas module")
 set(EIGEN_BUILD_LAPACK OFF CACHE BOOL "Don't build lapack module")
+
 FetchContent_MakeAvailable(Eigen)
