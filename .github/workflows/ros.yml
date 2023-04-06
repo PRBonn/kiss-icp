@@ -17,7 +17,7 @@ jobs:
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v1.13
         with:
-          cmake-version: "3.24.x"
+          cmake-version: "3.25.x"
       - name: Prepare catkin_ws
         run: mkdir -p catkin_ws/src
       - uses: actions/checkout@v3
