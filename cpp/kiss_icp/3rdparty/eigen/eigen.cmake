@@ -21,7 +21,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 include(FetchContent)
-FetchContent_Declare(Eigen SYSTEM URL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.bz2
-                     URL_HASH SHA256=b4c198460eba6f28d34894e3a5710998818515104d6e74e5cc331ce31e46e626)
-set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+# TODO: Yet another manual release dne by nacho
+FetchContent_Declare(Eigen SYSTEM URL https://github.com/nachovizzo/eigen/archive/refs/tags/3.4.90.tar.gz)
+
+set(EIGEN_BUILD_DOC OFF CACHE BOOL "Don't build Eigen docs")
+set(BUILD_TESTING OFF CACHE BOOL "Don't build Eigen tests")
+set(EIGEN_BUILD_PKGCONFIG OFF CACHE BOOL "Don't build Eigen pkg-config")
+set(EIGEN_BUILD_BLAS OFF CACHE BOOL "Don't build blas module")
+set(EIGEN_BUILD_LAPACK OFF CACHE BOOL "Don't build lapack module")
 FetchContent_MakeAvailable(Eigen)
