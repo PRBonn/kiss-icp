@@ -21,4 +21,4 @@ archs = ["auto64"]
 skip = ["*-musllinux*",  "pp*"]
 
 [tool.cibuildwheel.macos]
-archs = ["auto64", "universal2"]
+archs = ["auto64", "arm64"]
