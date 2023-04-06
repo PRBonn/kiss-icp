@@ -42,7 +42,7 @@ jobs:
           package-dir: ${{github.workspace}}/python/
 
       - name: Build all wheels
-        if: github.event_name == 'release' && github.event.action == 'created'
+        if: github.event_name == 'release'
         uses: pypa/cibuildwheel@v2.12.0
         with:
           package-dir: ${{github.workspace}}/python/
@@ -52,7 +52,7 @@ jobs:
           path: ./wheelhouse/*.whl
 
   pypi:
-    if: github.event_name == 'release' && github.event.action == 'created'
+    if: github.event_name == 'release'
     needs: [cibuildwheel, build_sdist]
     runs-on: ubuntu-latest
     steps:
