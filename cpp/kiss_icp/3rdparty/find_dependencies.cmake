@@ -31,9 +31,6 @@ set(ExternalProject_CMAKE_ARGS
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
     -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON)
 
-# tsl_robin is fast to fetch, don't ask for system-wise installation
-include(${CMAKE_CURRENT_LIST_DIR}/tsl_robin/tsl_robin.cmake)
-
 if(USE_SYSTEM_EIGEN3)
   find_package(Eigen3 QUIET NO_MODULE)
 endif()
