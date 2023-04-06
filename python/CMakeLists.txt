@@ -21,7 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 cmake_minimum_required(VERSION 3.16...3.26)
-project(kiss_icp_pybind VERSION 0.2.4 LANGUAGES CXX)
+project(kiss_icp_pybind VERSION 0.2.5 LANGUAGES CXX)
 
 # Set build type
 set(CMAKE_BUILD_TYPE Release)
