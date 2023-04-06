@@ -15,6 +15,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Build sdist
+        if: github.event_name == 'release'
         run: pipx run build --sdist ${{github.workspace}}/python/
       - name: Move sdist to dist
         run: mkdir -p dist && mv ${{github.workspace}}/python/dist/*.tar.gz dist/
