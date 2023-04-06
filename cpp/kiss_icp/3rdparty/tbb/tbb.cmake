@@ -23,16 +23,17 @@
 include(ExternalProject)
 include(GNUInstallDirs)
 find_package(Threads)
+
 ExternalProject_Add(
   external_tbb
   PREFIX tbb
   URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.8.0.tar.gz
   URL_HASH SHA256=eee380323bb7ce864355ed9431f85c43955faaae9e9bce35c62b372d7ffd9f8b
   UPDATE_COMMAND ""
-  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-             ${ExternalProject_CMAKE_ARGS}
-             ${ExternalProject_CMAKE_CXX_FLAGS}
-             # custom flags
+  CMAKE_ARGS # CMake flags:
+             -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+             -DCMAKE_BUILD_TYPE=Release
+             # custom flags:
              -DBUILD_SHARED_LIBS=OFF
              -DTBB_EXAMPLES=OFF
              -DTBB_STRICT=OFF

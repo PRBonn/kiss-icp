@@ -20,21 +20,19 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-include(ExternalProject)
 
-ExternalProject_Add(
-  external_eigen
-  PREFIX eigen
-  URL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.bz2
-  URL_HASH SHA256=b4c198460eba6f28d34894e3a5710998818515104d6e74e5cc331ce31e46e626
-  UPDATE_COMMAND ""
-  CONFIGURE_COMMAND ""
-  BUILD_COMMAND ""
-  INSTALL_COMMAND "")
+# TODO: Yet another manual release dne by nacho. This should be updated whenever the Eigen team
+# release a new version that is not 3.4. That version does not include this necessary changes:
+# - https://gitlab.com/libeigen/eigen/-/merge_requests/893/diffs
 
-ExternalProject_Get_Property(external_eigen SOURCE_DIR)
-add_library(libEigenHelper INTERFACE)
-add_dependencies(libEigenHelper external_eigen)
-target_include_directories(libEigenHelper SYSTEM INTERFACE $<BUILD_INTERFACE:${SOURCE_DIR}>)
-set_property(TARGET libEigenHelper PROPERTY EXPORT_NAME Eigen3::Eigen)
-add_library(Eigen3::Eigen ALIAS libEigenHelper)
+cmake_minimum_required(VERSION 3.25)
+include(FetchContent)
+FetchContent_Declare(Eigen SYSTEM URL https://github.com/nachovizzo/eigen/archive/refs/tags/3.4.90.tar.gz)
+
+set(EIGEN_BUILD_DOC OFF CACHE BOOL "Don't build Eigen docs")
+set(EIGEN_BUILD_TESTING OFF CACHE BOOL "Don't build Eigen tests")
+set(EIGEN_BUILD_PKGCONFIG OFF CACHE BOOL "Don't build Eigen pkg-config")
+set(EIGEN_BUILD_BLAS OFF CACHE BOOL "Don't build blas module")
+set(EIGEN_BUILD_LAPACK OFF CACHE BOOL "Don't build lapack module")
+
+FetchContent_MakeAvailable(Eigen)

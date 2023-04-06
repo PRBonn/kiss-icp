@@ -19,25 +19,13 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-include(ExternalProject)
+# TODO: after https://github.com/strasdat/Sophus/pull/502 gets merged go back to mainstream
+cmake_minimum_required(VERSION 3.25)
+include(FetchContent)
+FetchContent_Declare(Sophus SYSTEM URL https://github.com/nachovizzo/Sophus/archive/refs/tags/1.22.11.tar.gz)
 
-ExternalProject_Add(
-  external_sophus
-  PREFIX sophus
-  # Uncomment after https://github.com/strasdat/Sophus/pull/502 gets merged
-  # URL https://github.com/strasdat/Sophus/archive/refs/tags/1.22.10.tar.gz
-  URL https://github.com/nachovizzo/Sophus/archive/refs/tags/1.22.11.tar.gz
-  UPDATE_COMMAND ""
-  CONFIGURE_COMMAND ""
-  BUILD_COMMAND ""
-  INSTALL_COMMAND ""
-  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DSOPHUS_USE_BASIC_LOGGING=ON -DBUILD_SOPHUS_EXAMPLES=OFF
-             -DBUILD_SOPHUS_TESTS=OFF -DCMAKE_BUILD_TYPE=Release)
+set(SOPHUS_USE_BASIC_LOGGING ON CACHE BOOL "Don't use fmt for Sophus libraru")
+set(BUILD_SOPHUS_TESTS OFF CACHE BOOL "Don't build Sophus tests")
+set(BUILD_SOPHUS_EXAMPLES OFF CACHE BOOL "Don't build Sophus Examples")
 
-ExternalProject_Get_Property(external_sophus SOURCE_DIR)
-add_library(SophusHelper INTERFACE)
-add_dependencies(SophusHelper external_sophus)
-target_compile_definitions(SophusHelper INTERFACE SOPHUS_USE_BASIC_LOGGING=1)
-target_include_directories(SophusHelper SYSTEM INTERFACE $<BUILD_INTERFACE:${SOURCE_DIR}>)
-set_property(TARGET SophusHelper PROPERTY EXPORT_NAME Sophus::Sophus)
-add_library(Sophus::Sophus ALIAS SophusHelper)
+FetchContent_MakeAvailable(Sophus)
