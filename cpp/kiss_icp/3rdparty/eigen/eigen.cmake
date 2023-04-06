@@ -20,20 +20,8 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-include(ExternalProject)
-include(GNUInstallDirs)
-
-ExternalProject_Add(
-  external_eigen
-  PREFIX eigen
-  URL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.bz2
-  URL_HASH SHA256=b4c198460eba6f28d34894e3a5710998818515104d6e74e5cc331ce31e46e626
-  UPDATE_COMMAND ""
-  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DBUILD_TESTING=OFF -DEIGEN_BUILD_PKGCONFIG=False
-             -DCMAKE_BUILD_TYPE=Release)
-
-ExternalProject_Get_Property(external_eigen INSTALL_DIR)
-add_library(libEigenHelper INTERFACE)
-add_dependencies(libEigenHelper external_eigen)
-target_include_directories(libEigenHelper SYSTEM INTERFACE ${INSTALL_DIR}/${CMAKE_INSTALL_INCLUDEDIR}/eigen3)
-add_library(Eigen3::Eigen ALIAS libEigenHelper)
+include(FetchContent)
+FetchContent_Declare(Eigen SYSTEM URL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.bz2
+                     URL_HASH SHA256=b4c198460eba6f28d34894e3a5710998818515104d6e74e5cc331ce31e46e626)
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+FetchContent_MakeAvailable(Eigen)
