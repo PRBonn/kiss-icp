@@ -1,7 +1,9 @@
 name: Publish to PyPI.org
 on:
-  release:
-    types: [published]
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
 
 jobs:
   build_sdist:
@@ -29,7 +31,16 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Build wheels
+      - name: Build test wheels (only PRs)
+        if: github.event_name != 'release'
+        uses: pypa/cibuildwheel@v2.12.0
+        env: # build 1 build per platform just to make sure we can do it later when releasing
+          CIBW_BUILD: "cp310-*"
+        with:
+          package-dir: ${{github.workspace}}/python/
+
+      - name: Build all wheels
+        if: github.event_name == 'release' && github.event.action == 'created'
         uses: pypa/cibuildwheel@v2.12.0
         with:
           package-dir: ${{github.workspace}}/python/
@@ -39,6 +50,7 @@ jobs:
           path: ./wheelhouse/*.whl
 
   pypi:
+    if: github.event_name == 'release' && github.event.action == 'created'
     needs: [cibuildwheel, build_sdist]
     runs-on: ubuntu-latest
     steps:
