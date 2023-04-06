@@ -21,6 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 include(ExternalProject)
+include(GNUInstallDirs)
 find_package(Threads)
 ExternalProject_Add(
   external_tbb
@@ -37,12 +38,10 @@ ExternalProject_Add(
              -DTBB_STRICT=OFF
              -DTBB_TEST=OFF)
 
-# Simulate importing TBB::tbb for OpenVDBHelper target
 ExternalProject_Get_Property(external_tbb INSTALL_DIR)
-set(TBB_ROOT ${INSTALL_DIR} CACHE INTERNAL "TBB_ROOT Install directory")
 add_library(TBBHelper INTERFACE)
 add_dependencies(TBBHelper external_tbb)
-target_include_directories(TBBHelper SYSTEM INTERFACE ${INSTALL_DIR}/include)
-target_link_directories(TBBHelper INTERFACE ${INSTALL_DIR}/lib ${INSTALL_DIR}/lib64)
+target_include_directories(TBBHelper SYSTEM INTERFACE ${INSTALL_DIR}/${CMAKE_INSTALL_INCLUDEDIR})
+target_link_directories(TBBHelper INTERFACE ${INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR})
 target_link_libraries(TBBHelper INTERFACE tbb Threads::Threads)
 add_library(TBB::tbb ALIAS TBBHelper)
