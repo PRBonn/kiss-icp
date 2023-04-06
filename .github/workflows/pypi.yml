@@ -1,9 +1,9 @@
 name: Publish to PyPI.org
 on:
+  push:
+    branches: ["main"]
   pull_request:
     branches: ["main"]
-  # release:
-    # types: [published]
 
 jobs:
   build_sdist:
@@ -26,12 +26,21 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-22.04, windows-2022, macos-latest]
+        os: [ubuntu-22.04, windows-2022, macos-11]
 
     steps:
       - uses: actions/checkout@v3
 
-      - name: Build wheels
+      - name: Build test wheels (only PRs)
+        if: github.event_name != 'release'
+        uses: pypa/cibuildwheel@v2.12.0
+        env: # build 1 build per platform just to make sure we can do it later when releasing
+          CIBW_BUILD: "cp310-*"
+        with:
+          package-dir: ${{github.workspace}}/python/
+
+      - name: Build all wheels
+        if: github.event_name == 'release' && github.event.action == 'created'
         uses: pypa/cibuildwheel@v2.12.0
         with:
           package-dir: ${{github.workspace}}/python/
@@ -40,15 +49,16 @@ jobs:
         with:
           path: ./wheelhouse/*.whl
 
-  # pypi:
-    # needs: [cibuildwheel, build_sdist]
-    # runs-on: ubuntu-latest
-    # steps:
-      # - uses: actions/download-artifact@v3
-        # with:
-          # name: artifact
-          # path: dist
+  pypi:
+    if: github.event_name == 'release' && github.event.action == 'created'
+    needs: [cibuildwheel, build_sdist]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: artifact
+          path: dist
 
-      # - uses: pypa/gh-action-pypi-publish@release/v1
-        # with:
-          # password: ${{ secrets.PYPI_API_TOKEN }}
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
