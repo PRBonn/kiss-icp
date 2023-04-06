@@ -24,7 +24,7 @@ include(FetchContent)
 FetchContent_Declare(Sophus SYSTEM URL https://github.com/nachovizzo/Sophus/archive/refs/tags/1.22.11.tar.gz)
 
 set(SOPHUS_USE_BASIC_LOGGING ON CACHE BOOL "Don't use fmt for Sophus libraru")
-set(BUILD_TESTS OFF CACHE BOOL "Don't build Sophus tests")
-set(BUILD_EXAMPLES OFF CACHE BOOL "Don't build Sophus Examples")
+set(BUILD_SOPHUS_TESTS OFF CACHE BOOL "Don't build Sophus tests")
+set(BUILD_SOPHUS_EXAMPLES OFF CACHE BOOL "Don't build Sophus Examples")
 
 FetchContent_MakeAvailable(Sophus)
