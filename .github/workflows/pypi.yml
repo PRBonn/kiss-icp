@@ -1,7 +1,9 @@
 name: Publish to PyPI.org
 on:
-  release:
-    types: [published]
+  pull_request:
+    branches: ["main"]
+  # release:
+    # types: [published]
 
 jobs:
   build_sdist:
@@ -24,7 +26,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-22.04, windows-2022, macos-11]
+        os: [ubuntu-22.04, windows-2022, macos-latest]
 
     steps:
       - uses: actions/checkout@v3
@@ -38,15 +40,15 @@ jobs:
         with:
           path: ./wheelhouse/*.whl
 
-  pypi:
-    needs: [cibuildwheel, build_sdist]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@v3
-        with:
-          name: artifact
-          path: dist
+  # pypi:
+    # needs: [cibuildwheel, build_sdist]
+    # runs-on: ubuntu-latest
+    # steps:
+      # - uses: actions/download-artifact@v3
+        # with:
+          # name: artifact
+          # path: dist
 
-      - uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
+      # - uses: pypa/gh-action-pypi-publish@release/v1
+        # with:
+          # password: ${{ secrets.PYPI_API_TOKEN }}
