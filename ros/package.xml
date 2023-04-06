@@ -25,7 +25,7 @@
 -->
 <package format="3">
   <name>kiss_icp</name>
-  <version>0.2.3</version>
+  <version>0.2.4</version>
   <description>KISS-ICP ROS Wrappers</description>
   <maintainer email="ignaciovizzo@gmail.com">ivizzo</maintainer>
   <license>MIT</license>
