@@ -20,30 +20,28 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-# TODO(Nacho): Use mainstream repo from OneAPI instead of my own fork
 include(ExternalProject)
+include(GNUInstallDirs)
 find_package(Threads)
 ExternalProject_Add(
   external_tbb
   PREFIX tbb
-  URL https://github.com/nachovizzo/tbb/archive/refs/tags/tbbstatic.tar.gz
-  URL_HASH SHA256=db5ede77c4bd10ad12fab11ed38b7e8cf80aba85db16a57514073c383e6c8630
+  URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.8.0.tar.gz
+  URL_HASH SHA256=eee380323bb7ce864355ed9431f85c43955faaae9e9bce35c62b372d7ffd9f8b
   UPDATE_COMMAND ""
   CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
              ${ExternalProject_CMAKE_ARGS}
              ${ExternalProject_CMAKE_CXX_FLAGS}
              # custom flags
-             -DTBB_BUILD_TBBMALLOC=ON
-             -DTBB_BUILD_SHARED=OFF
-             -DTBB_BUILD_STATIC=ON
-             -DTBB_BUILD_TESTS=OFF)
+             -DBUILD_SHARED_LIBS=OFF
+             -DTBB_EXAMPLES=OFF
+             -DTBB_STRICT=OFF
+             -DTBB_TEST=OFF)
 
-# Simulate importing TBB::tbb for OpenVDBHelper target
 ExternalProject_Get_Property(external_tbb INSTALL_DIR)
-set(TBB_ROOT ${INSTALL_DIR} CACHE INTERNAL "TBB_ROOT Install directory")
 add_library(TBBHelper INTERFACE)
 add_dependencies(TBBHelper external_tbb)
-target_include_directories(TBBHelper SYSTEM INTERFACE ${INSTALL_DIR}/include)
-target_link_directories(TBBHelper INTERFACE ${INSTALL_DIR}/lib)
+target_include_directories(TBBHelper SYSTEM INTERFACE ${INSTALL_DIR}/${CMAKE_INSTALL_INCLUDEDIR})
+target_link_directories(TBBHelper INTERFACE ${INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR})
 target_link_libraries(TBBHelper INTERFACE tbb Threads::Threads)
 add_library(TBB::tbb ALIAS TBBHelper)
