@@ -49,9 +49,12 @@ def name_callback(value: str):
 
 app = typer.Typer(add_completion=False, rich_markup_mode="rich")
 
-# Remove the clutter for the help
+# Remove from the help those dataloaders we explicitly say how to use
 _available_dl_help = available_dataloaders()
 _available_dl_help.remove("generic")
+_available_dl_help.remove("mcap")
+_available_dl_help.remove("ouster")
+_available_dl_help.remove("rosbag")
 
 docstring = f"""
 :kiss: KISS-ICP, a simple yet effective LiDAR-Odometry estimation pipeline :kiss:\n
@@ -60,13 +63,13 @@ docstring = f"""
 # Process all pointclouds in the given <data-dir> \[{", ".join(supported_file_extensions())}]
 $ kiss_icp_pipeline --visualize <data-dir>:open_file_folder:
 
-# Process a given ROS1/ROS2 rosbag file (directory:open_file_folder:, ".bag":page_facing_up:, or "metadata.yaml":page_facing_up:)
+# Process a given [bold]ROS1/ROS2 [/bold]rosbag file (directory:open_file_folder:, ".bag":page_facing_up:, or "metadata.yaml":page_facing_up:)
 $ kiss_icp_pipeline --visualize <path-to-my-rosbag>[:open_file_folder:/:page_facing_up:]
 
-# Process mcap recording
+# Process [bold]mcap [/bold] recording
 $ kiss_icp_pipeline --visualize <path-to-file.mcap>:page_facing_up:
 
-# Process Ouster pcap recording (requires ouster-sdk Python package installed)
+# Process [bold]Ouster pcap[/bold] recording (requires ouster-sdk Python package installed)
 $ kiss_icp_pipeline --visualize <path-to-ouster.pcap>:page_facing_up: \[--meta <path-to-metadata.json>:page_facing_up:]
 
 # Use a more specific dataloader: {", ".join(_available_dl_help)}
