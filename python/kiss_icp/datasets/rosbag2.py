@@ -20,7 +20,6 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import importlib
 import os
 from pathlib import Path
 import sys
@@ -29,23 +28,21 @@ import sys
 class RosbagDataset:
     def __init__(self, data_dir: Path, topic: str, *_, **__):
         try:
-            from rosbags import rosbag2
-        except ImportError:
-            print('rosbag2 reader is not installed, run "pip install rosbags"')
+            from rosbags import highlevel
+        except ModuleNotFoundError:
+            print('rosbags library not installed, run "pip install -U rosbags"')
             sys.exit(1)
 
         from kiss_icp.tools.point_cloud2 import read_point_cloud
 
         self.read_point_cloud = read_point_cloud
 
-        self.deserialize_cdr = importlib.import_module("rosbags.serde").deserialize_cdr
-
         # Config stuff
         self.sequence_id = os.path.basename(data_dir).split(".")[0]
 
         # bagfile
         self.bagfile = data_dir
-        self.bag = rosbag2.Reader(self.bagfile)
+        self.bag = highlevel.AnyReader([self.bagfile])
         self.bag.open()
         self.topic = self.check_topic(topic)
         self.n_scans = self.bag.topics[self.topic].msgcount
@@ -53,6 +50,7 @@ class RosbagDataset:
         # limit connections to selected topic
         connections = [x for x in self.bag.connections if x.topic == self.topic]
         self.msgs = self.bag.messages(connections=connections)
+        self.timestamps = []
 
         # Visualization Options
         self.use_global_visualizer = True
@@ -65,9 +63,17 @@ class RosbagDataset:
         return self.n_scans
 
     def __getitem__(self, idx):
-        connection, _, rawdata = next(self.msgs)
-        msg = self.deserialize_cdr(rawdata, connection.msgtype)
+        connection, timestamp, rawdata = next(self.msgs)
+        self.timestamps.append(self.to_sec(timestamp))
+        msg = self.bag.deserialize(rawdata, connection.msgtype)
         return self.read_point_cloud(msg)
+
+    @staticmethod
+    def to_sec(nsec: int):
+        return float(nsec) / 1e9
+
+    def get_frames_timestamps(self) -> list:
+        return self.timestamps
 
     def check_topic(self, topic: str) -> str:
         # when user specified the topic don't check
@@ -87,9 +93,9 @@ class RosbagDataset:
 
         # In any other case we consider this an error
         if len(point_cloud_topics) == 0:
-            print("[ERROR] Your bagfile does not contain any sensor_msgs/PointCloud2 topic")
+            print("[ERROR] Your bagfile does not contain any PointCloud2 topic")
         if len(point_cloud_topics) > 1:
-            print("Multiple sensor_msgs/msg/PointCloud2 topics available.")
+            print("Multiple PointCloud2 topics available.")
             print("Please provide one of the following topics with the --topic flag")
             for topic_tuple in point_cloud_topics:
                 print(50 * "-")

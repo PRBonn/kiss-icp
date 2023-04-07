@@ -32,17 +32,15 @@ All rights reserved to the original authors: Tim Field and Florian Vahl.
 """
 
 import sys
+from typing import Iterable, List, Optional, Tuple
+
 import numpy as np
-from typing import Iterable, Optional, List, Tuple
 
 try:
     from rosbags.typesys.types import sensor_msgs__msg__PointField as PointField
     from rosbags.typesys.types import sensor_msgs__msg__PointCloud2 as PointCloud2
-except ImportError:
-    try:
-        from sensor_msgs.msg import PointCloud2, PointField
-    except ImportError as e:
-        raise ImportError("Neither 'rosbags' nor 'sensor_msgs' was found on pythonpath") from e
+except ImportError as e:
+    raise ImportError("'rosbags' was found on pythonpath") from e
 
 
 _DATATYPES = {}
