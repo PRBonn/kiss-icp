@@ -60,8 +60,11 @@ docstring = f"""
 # Process all pointclouds in the given <data-dir> \[{", ".join(supported_file_extensions())}]
 $ kiss_icp_pipeline --visualize <data-dir>:open_file_folder:
 
-# Process a given rosbag file
-$ kiss_icp_pipeline --topic /cloud_node --visualize <path-to-my-rosbag.bag>:page_facing_up:
+# Process a given ROS1/ROS2 rosbag file (directory:open_file_folder:, ".bag":page_facing_up:, or "metadata.yaml":page_facing_up:)
+$ kiss_icp_pipeline --visualize <path-to-my-rosbag>[:open_file_folder:/:page_facing_up:]
+
+# Process mcap recording
+$ kiss_icp_pipeline --visualize <path-to-file.mcap>:page_facing_up:
 
 # Process Ouster pcap recording (requires ouster-sdk Python package installed)
 $ kiss_icp_pipeline --visualize <path-to-ouster.pcap>:page_facing_up: \[--meta <path-to-metadata.json>:page_facing_up:]
@@ -168,15 +171,23 @@ def kiss_icp_pipeline(
         print('You must specify a sequence "--sequence"')
         raise typer.Exit(code=1)
 
+    # Attempt to guess some common file extensions to avoid using the --dataloader flag
     if data.is_file():
-        # Check if the main source is a bagfile, then automatically fallback to RosbagDataset
-        if data.name.split(".")[-1] == "bag":
+        if data.name == "metadata.yaml":
             dataloader = "rosbag"
-        # or to Ouster pcap dataloader
+            data = data.parent  # database is in directory, not in .yml
+        elif data.name.split(".")[-1] in "bag":
+            dataloader = "rosbag"
+        elif data.name.split(".")[-1] == "pcap":
+            dataloader = "ouster"
         elif data.name.split(".")[-1] == "pcap":
             dataloader = "ouster"
         elif data.name.split(".")[-1] == "mcap":
             dataloader = "mcap"
+
+    # Try to guess ROS2 bagfile directory
+    if data.is_dir() and (data / "metadata.yaml").exists():
+        dataloader = "rosbag"
 
     # Lazy-loading for faster CLI
     from kiss_icp.datasets import dataset_factory
