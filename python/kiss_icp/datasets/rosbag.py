@@ -27,6 +27,11 @@ import sys
 
 class RosbagDataset:
     def __init__(self, data_dir: Path, topic: str, *_, **__):
+        """ROS1 / ROS2 bagfile dataloader.
+
+        It can take either one ROS2 bag file or one or more ROS1 bag files belonging to a split bag.
+        The reader will replay ROS1 split bags in correct timestamp order.
+        """
         try:
             from rosbags import highlevel
         except ModuleNotFoundError:
@@ -41,8 +46,8 @@ class RosbagDataset:
         self.sequence_id = os.path.basename(data_dir).split(".")[0]
 
         # bagfile
-        self.bagfile = data_dir
-        self.bag = highlevel.AnyReader([self.bagfile])
+        # TODO: Propagate Sequence[Path] thorugh the API to support reading mulitple rosbag1 files
+        self.bag = highlevel.AnyReader([data_dir])
         self.bag.open()
         self.topic = self.check_topic(topic)
         self.n_scans = self.bag.topics[self.topic].msgcount
