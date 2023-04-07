@@ -95,6 +95,7 @@ class RosbagDataset:
             for topic in self.bag.topics.items()
             if topic[1].msgtype == "sensor_msgs/msg/PointCloud2"
         ]
+
         def print_available_topics_and_exit():
             print(50 * "-")
             for t in point_cloud_topics:
@@ -117,8 +118,6 @@ class RosbagDataset:
             print_available_topics_and_exit()
 
         if len(point_cloud_topics) == 0:
-            print(
-                "[ERROR] Your dataset does not contain any sensor_msgs/msg/PointCloud2 topic"
-            )
+            print("[ERROR] Your dataset does not contain any sensor_msgs/msg/PointCloud2 topic")
         if len(point_cloud_topics) == 1:
             return point_cloud_topics[0]
