@@ -20,6 +20,8 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import glob
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -30,6 +32,33 @@ from kiss_icp.datasets import (
     sequence_dataloaders,
     supported_file_extensions,
 )
+
+
+def guess_dataloader(data: Path, default_dataloader: str):
+    """Guess which dataloader to use in case the user didn't specify with --dataloader flag.
+
+    TODO: Avoid having to return again the data Path. But when guessing multiple .bag files or the
+    metadata.yaml file, we need to change the Path specifed by the user.
+    """
+    if data.is_file():
+        if data.name == "metadata.yaml":
+            return "rosbag", data.parent  # database is in directory, not in .yml
+        if data.name.split(".")[-1] in "bag":
+            return "rosbag", data
+        if data.name.split(".")[-1] == "pcap":
+            return "ouster", data
+        if data.name.split(".")[-1] == "pcap":
+            return "ouster", data
+        if data.name.split(".")[-1] == "mcap":
+            return "mcap", data
+    elif data.is_dir():
+        if (data / "metadata.yaml").exists():
+            # a directory with a metadata.yaml must be a ROS2 bagfile
+            return "rosbag", data
+        bagfiles = [Path(path) for path in glob.glob(os.path.join(data, "*.bag"))]
+        if len(bagfiles) > 0:
+            return "rosbag", bagfiles
+    return default_dataloader
 
 
 def version_callback(value: bool):
@@ -175,22 +204,7 @@ def kiss_icp_pipeline(
         raise typer.Exit(code=1)
 
     # Attempt to guess some common file extensions to avoid using the --dataloader flag
-    if data.is_file():
-        if data.name == "metadata.yaml":
-            dataloader = "rosbag"
-            data = data.parent  # database is in directory, not in .yml
-        elif data.name.split(".")[-1] in "bag":
-            dataloader = "rosbag"
-        elif data.name.split(".")[-1] == "pcap":
-            dataloader = "ouster"
-        elif data.name.split(".")[-1] == "pcap":
-            dataloader = "ouster"
-        elif data.name.split(".")[-1] == "mcap":
-            dataloader = "mcap"
-
-    # Try to guess ROS2 bagfile directory
-    if data.is_dir() and (data / "metadata.yaml").exists():
-        dataloader = "rosbag"
+    dataloader, data = guess_dataloader(data, default_dataloader="generic")
 
     # Lazy-loading for faster CLI
     from kiss_icp.datasets import dataset_factory
