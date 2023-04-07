@@ -39,8 +39,8 @@ class McapDataloader:
 
         # we expect `data_dir` param to be a path to the .mcap file, so rename for clarity
         assert os.path.isfile(data_dir), "mcap dataloader expects an existing MCAP file"
+        self.sequence_id = os.path.basename(data_dir).split(".")[0]
         mcap_file = str(data_dir)
-        self.data_dir = os.path.dirname(data_dir)
 
         self.bag = make_reader(open(mcap_file, "rb"))
         self.summary = self.bag.get_summary()
@@ -69,10 +69,6 @@ class McapDataloader:
         )
 
     def check_topic(self, topic: str) -> str:
-        # when user specified the topic don't check
-        if topic:
-            return topic
-
         # Extract schema id from the .mcap file that encodes the PointCloud2 msg
         schema_id = [
             schema.id
@@ -80,18 +76,36 @@ class McapDataloader:
             if schema.name == "sensor_msgs/msg/PointCloud2"
         ][0]
 
-        point_cloud_channels = [
-            channel for channel in self.summary.channels.values() if channel.schema_id == schema_id
+        point_cloud_topics = [
+            channel.topic
+            for channel in self.summary.channels.values()
+            if channel.schema_id == schema_id
         ]
-        if len(point_cloud_channels) == 0:
-            print("[ERROR] Your mcap does not contain any sensor_msgs/msg/PointCloud2 topic")
-        if len(point_cloud_channels) == 1:
-            return point_cloud_channels[0].topic
-        if len(point_cloud_channels) > 1:
-            print("Multiple sensor_msgs/msg/PointCloud2 topics available.")
-            print("Please select one of the following topics with the --topic flag")
+
+        def print_available_topics_and_exit():
             print(50 * "-")
-            for channel in point_cloud_channels:
-                print(f"--topic {channel.topic}")
+            for t in point_cloud_topics:
+                print(f"--topic {t}")
             print(50 * "-")
-        sys.exit(1)
+            sys.exit(1)
+
+        if topic and topic in point_cloud_topics:
+            return topic
+        # when user specified the topic check that exists
+        if topic and topic not in point_cloud_topics:
+            print(
+                f'[ERROR] Dataset does not containg any msg with the topic name "{topic}". '
+                "Please select one of the following topics with the --topic flag"
+            )
+            print_available_topics_and_exit()
+        if len(point_cloud_topics) > 1:
+            print(
+                "Multiple sensor_msgs/msg/PointCloud2 topics available."
+                "Please select one of the following topics with the --topic flag"
+            )
+            print_available_topics_and_exit()
+
+        if len(point_cloud_topics) == 0:
+            print("[ERROR] Your dataset does not contain any sensor_msgs/msg/PointCloud2 topic")
+        if len(point_cloud_topics) == 1:
+            return point_cloud_topics[0]

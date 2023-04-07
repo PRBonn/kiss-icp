@@ -23,72 +23,103 @@
 import os
 from pathlib import Path
 import sys
+from typing import Sequence
+
+import natsort
 
 
 class RosbagDataset:
-    def __init__(self, data_dir: Path, topic: str, *_, **__):
+    def __init__(self, data_dir: Sequence[Path], topic: str, *_, **__):
+        """ROS1 / ROS2 bagfile dataloader.
+
+        It can take either one ROS2 bag file or one or more ROS1 bag files belonging to a split bag.
+        The reader will replay ROS1 split bags in correct timestamp order.
+
+        TODO: Merge mcap and rosbag dataloaders into 1
+        """
         try:
-            import rosbag
+            from rosbags.highlevel import AnyReader
         except ModuleNotFoundError:
-            print('python rosbag is not installed, run "sudo apt install python3-rosbag"')
+            print('rosbags library not installed, run "pip install -U rosbags"')
             sys.exit(1)
 
         from kiss_icp.tools.point_cloud2 import read_point_cloud
 
         self.read_point_cloud = read_point_cloud
-        self.sequence_id = os.path.basename(data_dir).split(".")[0]
 
-        # bagfile
-        self.bagfile = data_dir
-        self.bag = rosbag.Bag(data_dir, mode="r")
+        # FIXME: This is quite hacky, trying to guess if we have multiple .bag, one or a dir
+        if isinstance(data_dir, Path):
+            self.sequence_id = os.path.basename(data_dir).split(".")[0]
+            self.bag = AnyReader([data_dir])
+        else:
+            self.sequence_id = os.path.basename(data_dir[0]).split(".")[0]
+            self.bag = AnyReader(data_dir)
+            print("Reading multiple .bag files in directory:")
+            print("\n".join(natsort.natsorted([path.name for path in self.bag.paths])))
+        self.bag.open()
         self.topic = self.check_topic(topic)
+        self.n_scans = self.bag.topics[self.topic].msgcount
 
-        # Get an iterable
-        self.n_scans = self.bag.get_message_count(topic_filters=self.topic)
-        self.msgs = self.bag.read_messages(topics=[self.topic])
+        # limit connections to selected topic
+        connections = [x for x in self.bag.connections if x.topic == self.topic]
+        self.msgs = self.bag.messages(connections=connections)
         self.timestamps = []
 
         # Visualization Options
         self.use_global_visualizer = True
 
+    def __del__(self):
+        if hasattr(self, "bag"):
+            self.bag.close()
+
     def __len__(self):
         return self.n_scans
 
     def __getitem__(self, idx):
-        _, msg, time = next(self.msgs)
-        self.timestamps.append(time.to_sec())
+        connection, timestamp, rawdata = next(self.msgs)
+        self.timestamps.append(self.to_sec(timestamp))
+        msg = self.bag.deserialize(rawdata, connection.msgtype)
         return self.read_point_cloud(msg)
+
+    @staticmethod
+    def to_sec(nsec: int):
+        return float(nsec) / 1e9
 
     def get_frames_timestamps(self) -> list:
         return self.timestamps
 
     def check_topic(self, topic: str) -> str:
-        # when user specified the topic don't check
-        if topic:
-            return topic
-
         # Extract all PointCloud2 msg topics from the bagfile
         point_cloud_topics = [
-            topic
-            for topic in self.bag.get_type_and_topic_info().topics.items()
-            if topic[1].msg_type == "sensor_msgs/PointCloud2"
+            topic[0]
+            for topic in self.bag.topics.items()
+            if topic[1].msgtype == "sensor_msgs/msg/PointCloud2"
         ]
 
-        if len(point_cloud_topics) == 1:
-            # this is the string topic name, go figure out
-            return point_cloud_topics[0][0]
-
-        # In any other case we consider this an error
-        if len(point_cloud_topics) == 0:
-            print("[ERROR] Your bagfile does not contain any sensor_msgs/PointCloud2 topic")
-        if len(point_cloud_topics) > 1:
-            print("Multiple sensor_msgs/PointCloud2 topics available.")
-            print("Please provide one of the following topics with the --topic flag")
-            for topic_tuple in point_cloud_topics:
-                print(50 * "-")
-                print(f"Topic   {topic_tuple[0]}")
-                print(f"\tType      {topic_tuple[1].msg_type}")
-                print(f"\tMessages  {topic_tuple[1].message_count}")
-                print(f"\tFrequency {topic_tuple[1].frequency}")
+        def print_available_topics_and_exit():
             print(50 * "-")
-        sys.exit(1)
+            for t in point_cloud_topics:
+                print(f"--topic {t}")
+            print(50 * "-")
+            sys.exit(1)
+
+        if topic and topic in point_cloud_topics:
+            return topic
+        # when user specified the topic check that exists
+        if topic and topic not in point_cloud_topics:
+            print(
+                f'[ERROR] Dataset does not containg any msg with the topic name "{topic}". '
+                "Please select one of the following topics with the --topic flag"
+            )
+            print_available_topics_and_exit()
+        if len(point_cloud_topics) > 1:
+            print(
+                "Multiple sensor_msgs/msg/PointCloud2 topics available."
+                "Please select one of the following topics with the --topic flag"
+            )
+            print_available_topics_and_exit()
+
+        if len(point_cloud_topics) == 0:
+            print("[ERROR] Your dataset does not contain any sensor_msgs/msg/PointCloud2 topic")
+        if len(point_cloud_topics) == 1:
+            return point_cloud_topics[0]
