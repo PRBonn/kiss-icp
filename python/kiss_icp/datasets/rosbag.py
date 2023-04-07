@@ -97,10 +97,8 @@ class RosbagDataset:
         if len(point_cloud_topics) > 1:
             print("Multiple PointCloud2 topics available.")
             print("Please provide one of the following topics with the --topic flag")
+            print(50 * "-")
             for topic_tuple in point_cloud_topics:
-                print(50 * "-")
-                print(f"Topic {topic_tuple[0]}")
-                print(f"\tType      {topic_tuple[1].msgtype}")
-                print(f"\tMessages  {topic_tuple[1].count}")
+                print(f"--topic {topic_tuple[0]}")
             print(50 * "-")
         sys.exit(1)
