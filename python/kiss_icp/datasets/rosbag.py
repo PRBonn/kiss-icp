@@ -89,29 +89,36 @@ class RosbagDataset:
         return self.timestamps
 
     def check_topic(self, topic: str) -> str:
-        # when user specified the topic don't check
-        if topic:
-            return topic
-
         # Extract all PointCloud2 msg topics from the bagfile
         point_cloud_topics = [
-            topic
+            topic[0]
             for topic in self.bag.topics.items()
             if topic[1].msgtype == "sensor_msgs/msg/PointCloud2"
         ]
+        def print_available_topics_and_exit():
+            print(50 * "-")
+            for t in point_cloud_topics:
+                print(f"--topic {t}")
+            print(50 * "-")
+            sys.exit(1)
 
-        if len(point_cloud_topics) == 1:
-            # this is the string topic name, go figure out
-            return point_cloud_topics[0][0]
-
-        # In any other case we consider this an error
-        if len(point_cloud_topics) == 0:
-            print("[ERROR] Your bagfile does not contain any PointCloud2 topic")
+        # when user specified the topic check that exists
+        if topic and topic not in point_cloud_topics:
+            print(
+                f'[ERROR] Dataset does not containg any msg with the topic name "{topic}". '
+                "Please select one of the following topics with the --topic flag"
+            )
+            print_available_topics_and_exit()
         if len(point_cloud_topics) > 1:
-            print("Multiple PointCloud2 topics available.")
-            print("Please provide one of the following topics with the --topic flag")
-            print(50 * "-")
-            for topic_tuple in point_cloud_topics:
-                print(f"--topic {topic_tuple[0]}")
-            print(50 * "-")
-        sys.exit(1)
+            print(
+                "Multiple sensor_msgs/msg/PointCloud2 topics available."
+                "Please select one of the following topics with the --topic flag"
+            )
+            print_available_topics_and_exit()
+
+        if len(point_cloud_topics) == 0:
+            print(
+                "[ERROR] Your dataset does not contain any sensor_msgs/msg/PointCloud2 topic"
+            )
+        if len(point_cloud_topics) == 1:
+            return point_cloud_topics[0]
