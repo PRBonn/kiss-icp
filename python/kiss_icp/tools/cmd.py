@@ -47,8 +47,6 @@ def guess_dataloader(data: Path, default_dataloader: str):
             return "rosbag", data
         if data.name.split(".")[-1] == "pcap":
             return "ouster", data
-        if data.name.split(".")[-1] == "pcap":
-            return "ouster", data
         if data.name.split(".")[-1] == "mcap":
             return "mcap", data
     elif data.is_dir():
