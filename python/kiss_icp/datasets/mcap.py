@@ -39,8 +39,8 @@ class McapDataloader:
 
         # we expect `data_dir` param to be a path to the .mcap file, so rename for clarity
         assert os.path.isfile(data_dir), "mcap dataloader expects an existing MCAP file"
+        self.sequence_id = os.path.basename(data_dir).split(".")[0]
         mcap_file = str(data_dir)
-        self.data_dir = os.path.dirname(data_dir)
 
         self.bag = make_reader(open(mcap_file, "rb"))
         self.summary = self.bag.get_summary()
