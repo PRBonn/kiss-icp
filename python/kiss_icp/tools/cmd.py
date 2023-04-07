@@ -176,7 +176,7 @@ def kiss_icp_pipeline(
         elif data.name.split(".")[-1] == "pcap":
             dataloader = "ouster"
         elif data.name.split(".")[-1] == "mcap":
-            dataloader = "macp"
+            dataloader = "mcap"
 
     # Lazy-loading for faster CLI
     from kiss_icp.datasets import dataset_factory
