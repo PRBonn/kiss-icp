@@ -103,6 +103,8 @@ class RosbagDataset:
             print(50 * "-")
             sys.exit(1)
 
+        if topic and topic in point_cloud_topics:
+            return topic
         # when user specified the topic check that exists
         if topic and topic not in point_cloud_topics:
             print(
