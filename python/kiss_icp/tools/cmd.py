@@ -68,6 +68,8 @@ def version_callback(value: bool):
 
 
 def name_callback(value: str):
+    if not value:
+        return value
     dl = available_dataloaders()
     if value not in dl:
         raise typer.BadParameter(f"Supported dataloaders are:\n{', '.join(dl)}")
@@ -112,7 +114,7 @@ def kiss_icp_pipeline(
         show_default=False,
     ),
     dataloader: str = typer.Option(
-        "generic",
+        None,
         show_default=False,
         case_sensitive=False,
         autocompletion=available_dataloaders,
@@ -196,13 +198,14 @@ def kiss_icp_pipeline(
         is_eager=True,
     ),
 ):
+    # Attempt to guess some common file extensions to avoid using the --dataloader flag
+    if not dataloader:
+        dataloader, data = guess_dataloader(data, default_dataloader="generic")
+
     # Validate some options
     if dataloader in sequence_dataloaders() and sequence is None:
         print('You must specify a sequence "--sequence"')
         raise typer.Exit(code=1)
-
-    # Attempt to guess some common file extensions to avoid using the --dataloader flag
-    dataloader, data = guess_dataloader(data, default_dataloader="generic")
 
     # Lazy-loading for faster CLI
     from kiss_icp.datasets import dataset_factory
