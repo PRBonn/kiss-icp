@@ -20,16 +20,16 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 from dataclasses import dataclass
-from typing import Callable, Dict
-from typing import List
+from typing import Callable, Dict, List
 
-from IPython.display import display_markdown
+import matplotlib.pyplot as plt
+import numpy as np
 from evo.core.trajectory import PosePath3D
 from evo.tools import plot
 from evo.tools.settings import SETTINGS
+from IPython.display import display_markdown
+
 from kiss_icp.pipeline import OdometryPipeline
-import matplotlib.pyplot as plt
-import numpy as np
 
 
 @dataclass

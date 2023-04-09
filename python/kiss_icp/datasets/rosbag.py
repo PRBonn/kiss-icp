@@ -21,8 +21,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import os
-from pathlib import Path
 import sys
+from pathlib import Path
 from typing import Sequence
 
 import natsort
