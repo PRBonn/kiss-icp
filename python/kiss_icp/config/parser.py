@@ -22,9 +22,10 @@
 # SOFTWARE.
 # NOTE: This module was contributed by Markus Pielmeier on PR #63
 from __future__ import annotations
+
 import importlib
-from pathlib import Path
 import sys
+from pathlib import Path
 from typing import Any, Dict, Optional
 
 from pydantic import BaseSettings, PrivateAttr

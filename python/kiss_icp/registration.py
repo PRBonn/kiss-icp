@@ -22,8 +22,8 @@
 # SOFTWARE.
 import numpy as np
 
-from kiss_icp.pybind import kiss_icp_pybind
 from kiss_icp.mapping import VoxelHashMap
+from kiss_icp.pybind import kiss_icp_pybind
 
 
 def register_frame(

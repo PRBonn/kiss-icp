@@ -19,3 +19,8 @@ repos:
     rev: 8e52fb6506f169dddfaa87f88600d765fca48386
     hooks:
     - id: cmake-format
+-   repo: https://github.com/pycqa/isort
+    rev: 5.6.4
+    hooks:
+     - id: isort
+       args: ["--profile", "black", "--filter-files"]

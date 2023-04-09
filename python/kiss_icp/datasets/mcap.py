@@ -29,8 +29,8 @@ class McapDataloader:
         """Standalone .mcap dataloader withouth any ROS distribution."""
         # Conditional imports to avoid injecting dependencies for non mcap users
         try:
-            from mcap_ros2.reader import read_ros2_messages
             from mcap.reader import make_reader
+            from mcap_ros2.reader import read_ros2_messages
         except ImportError as e:
             print("mcap plugins not installed: 'pip install mcap-ros2-support'")
             exit(1)

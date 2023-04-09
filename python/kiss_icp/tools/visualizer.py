@@ -20,11 +20,11 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from abc import ABC
 import copy
-from functools import partial
 import importlib
 import os
+from abc import ABC
+from functools import partial
 from typing import Callable, List
 
 import numpy as np
