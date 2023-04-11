@@ -50,6 +50,14 @@ def available_dataloaders() -> List:
     return [name for _, name, _ in pkgutil.iter_modules([pkgpath])]
 
 
+def jumpable_dataloaders():
+    _jumpable_dataloaders = available_dataloaders()
+    _jumpable_dataloaders.remove("mcap")
+    _jumpable_dataloaders.remove("ouster")
+    _jumpable_dataloaders.remove("rosbag")
+    return _jumpable_dataloaders
+
+
 def dataloader_types() -> Dict:
     import ast
     import importlib

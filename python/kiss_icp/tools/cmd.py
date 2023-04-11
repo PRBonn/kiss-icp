@@ -29,6 +29,7 @@ import typer
 
 from kiss_icp.datasets import (
     available_dataloaders,
+    jumpable_dataloaders,
     sequence_dataloaders,
     supported_file_extensions,
 )
@@ -207,8 +208,8 @@ def kiss_icp_pipeline(
         print('You must specify a sequence "--sequence"')
         raise typer.Exit(code=1)
 
-    if dataloader == "rosbag" and jump != 0:
-        print("[WARNING] Rosbag dataloaders does not support 'jump', starting from first message")
+    if jump != 0 and dataloader not in jumpable_dataloaders():
+        print(f"[WARNING] '{dataloader}' does not support '--jump', starting from first frame")
         jump = 0
 
     # Lazy-loading for faster CLI
