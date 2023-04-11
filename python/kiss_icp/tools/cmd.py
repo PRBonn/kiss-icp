@@ -207,6 +207,10 @@ def kiss_icp_pipeline(
         print('You must specify a sequence "--sequence"')
         raise typer.Exit(code=1)
 
+    if dataloader == "rosbag" and jump != 0:
+        print("[WARNING] Rosbag dataloaders does not support 'jump', starting from first message")
+        jump = 0
+
     # Lazy-loading for faster CLI
     from kiss_icp.datasets import dataset_factory
     from kiss_icp.pipeline import OdometryPipeline
