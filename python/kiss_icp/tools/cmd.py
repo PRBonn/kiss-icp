@@ -56,7 +56,7 @@ def guess_dataloader(data: Path, default_dataloader: str):
         bagfiles = [Path(path) for path in glob.glob(os.path.join(data, "*.bag"))]
         if len(bagfiles) > 0:
             return "rosbag", bagfiles
-    return default_dataloader
+    return default_dataloader, data
 
 
 def version_callback(value: bool):
