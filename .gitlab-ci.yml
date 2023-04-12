@@ -1,0 +1,48 @@
+stages:
+  - format
+  - build
+cache:
+  paths:
+    - .cache/pip
+
+#----- format stage --------------------------------------------------------------------------------
+black:
+  image: python:3.8
+  stage: format
+  before_script:
+    - pip install black
+  script:
+    - black --line-length 100 --check $CI_PROJECT_DIR
+
+clang-format:
+  image: ubuntu:22.04
+  stage: format
+  before_script:
+    - apt-get update && apt-get install --no-install-recommends -y clang-format
+  script:
+    - clang-format -Werror --dry-run $(find . -regextype posix-extended -regex ".*\.(cpp|hpp|h)")
+
+#----- build stage ---------------------------------------------------------------------------------
+pip_package:
+  image: python:3.8
+  stage: build
+  script:
+    - VERBOSE=1 pip install --verbose ./python/
+    - kiss_icp_pipeline --version
+
+ros1_noetic:
+  image: osrf/ros:noetic-desktop-full
+  stage: build
+  before_script:
+    - rm -rf ~/catkin_ws/
+    - mkdir -p ~/catkin_ws/
+    - cp -r ${CI_PROJECT_DIR} ~/catkin_ws/src
+  script:
+    - cd ~/catkin_ws/
+    - catkin_make
+
+ros2_humble:
+  image: osrf/ros:humble-desktop
+  stage: build
+  script:
+    - colcon build --event-handlers console_direct+
