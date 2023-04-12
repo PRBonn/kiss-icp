@@ -24,7 +24,7 @@
 # TODO: Yet another manual release dne by nacho. This should be updated whenever the Eigen team
 # release a new version that is not 3.4. That version does not include this necessary changes:
 # - https://gitlab.com/libeigen/eigen/-/merge_requests/893/diffs
-
+# If you do not have EIGEN installed, the build will fail due the warning comming from the library.
 cmake_minimum_required(VERSION 3.25)
 include(FetchContent)
 FetchContent_Declare(Eigen SYSTEM URL https://github.com/nachovizzo/eigen/archive/refs/tags/3.4.90.tar.gz)

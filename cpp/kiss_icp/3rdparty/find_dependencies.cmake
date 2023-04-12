@@ -58,3 +58,13 @@ if(NOT USE_SYSTEM_TSLMAP OR NOT TARGET tsl::robin_map)
   set(USE_SYSTEM_TSLMAP OFF)
   include(${CMAKE_CURRENT_LIST_DIR}/tsl_robin/tsl_robin.cmake)
 endif()
+
+# In https://github.com/PRBonn/kiss-icp/pull/129 we introduced the min version of cmake to be 3.25.
+# Nevertheless, in most systems this will still compile. The only problem is when the 3rdparty
+# libraries are not installed on the system, and the SYSTEM flag is not working properly. Therefore
+# all warnings comming for the 3rdparty libaries will be treated as errors and thus, the build will
+# fail.
+if(NOT USE_SYSTEM_TSLMAP OR NOT USE_SYSTEM_SOPHUS AND ${CMAKE_VERSION} VERSION_LESS 3.25)
+  message(WARNING "Please consider to upgrade to CMake>=3.25. You can now easily do this by running\n"
+                  "pip install --upgrade cmake\n")
+endif()
