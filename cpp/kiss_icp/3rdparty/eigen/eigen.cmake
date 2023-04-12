@@ -27,11 +27,11 @@
 include(FetchContent)
 FetchContent_Declare(Eigen SYSTEM URL https://github.com/nachovizzo/eigen/archive/refs/tags/3.4.90.tar.gz)
 
-option(EIGEN_BUILD_DOC OFF)
-option(EIGEN_BUILD_TESTING OFF)
-option(EIGEN_BUILD_PKGCONFIG OFF)
-option(EIGEN_BUILD_BLAS OFF)
-option(EIGEN_BUILD_LAPACK OFF)
+set(EIGEN_BUILD_DOC OFF CACHE BOOL "Don't build Eigen docs")
+set(EIGEN_BUILD_TESTING OFF CACHE BOOL "Don't build Eigen tests")
+set(EIGEN_BUILD_PKGCONFIG OFF CACHE BOOL "Don't build Eigen pkg-config")
+set(EIGEN_BUILD_BLAS OFF CACHE BOOL "Don't build blas module")
+set(EIGEN_BUILD_LAPACK OFF CACHE BOOL "Don't build lapack module")
 
 FetchContent_MakeAvailable(Eigen)
 
