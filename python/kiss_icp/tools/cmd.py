@@ -62,10 +62,20 @@ def guess_dataloader(data: Path, default_dataloader: str):
 
 def version_callback(value: bool):
     if value:
+        try:
+            # Check that the python bindings are properly built and can be loaded at runtime
+            from kiss_icp.pybind import kiss_icp_pybind
+        except ImportError as e:
+            print(80 * "*")
+            print(f"[ERRROR] Python bindings not properly built! Please open a issue on github")
+            print(f"[ERRROR] '{e}'")
+            print(80 * "*")
+            raise typer.Exit(1)
+
         import kiss_icp
 
         print(f"KISS-ICP Version: {kiss_icp.__version__}")
-        raise typer.Exit()
+        raise typer.Exit(0)
 
 
 def name_callback(value: str):
