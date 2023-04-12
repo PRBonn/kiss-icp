@@ -20,36 +20,17 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-include(ExternalProject)
-include(GNUInstallDirs)
-find_package(Threads)
+cmake_minimum_required(VERSION 3.25)
+include(FetchContent)
+FetchContent_Declare(tbb SYSTEM URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.8.0.tar.gz
+                     URL_HASH SHA256=eee380323bb7ce864355ed9431f85c43955faaae9e9bce35c62b372d7ffd9f8b)
 
-ExternalProject_Add(
-  external_tbb
-  PREFIX tbb
-  URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.8.0.tar.gz
-  URL_HASH SHA256=eee380323bb7ce864355ed9431f85c43955faaae9e9bce35c62b372d7ffd9f8b
-  UPDATE_COMMAND ""
-  CMAKE_ARGS # CMake flags:
-             -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-             -DCMAKE_BUILD_TYPE=Release
-             # custom flags:
-             -DBUILD_SHARED_LIBS=ON
-             -DTBB_EXAMPLES=OFF
-             -DTBB_STRICT=OFF
-             -DTBBMALLOC_BUILD=OFF
-             -DTBB_TEST=OFF)
+set(BUILD_SHARED_LIBS ON CACHE BOOL "Compile only shared library")
+set(TBBMALLOC_BUILD OFF CACHE BOOL "Don't build TBB malloc library")
+set(TBB_EXAMPLES OFF CACHE BOOL "Don't build TBB examples")
+set(TBB_STRICT OFF CACHE BOOL "Don't build TBB in strict mode")
+set(TBB_TEST OFF CACHE BOOL "Don't build TBB tests")
 
-ExternalProject_Get_Property(external_tbb INSTALL_DIR)
-add_library(TBBHelper INTERFACE)
-add_dependencies(TBBHelper external_tbb)
-target_include_directories(TBBHelper SYSTEM INTERFACE ${INSTALL_DIR}/${CMAKE_INSTALL_INCLUDEDIR})
-target_link_directories(TBBHelper INTERFACE ${INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR})
-target_link_libraries(TBBHelper INTERFACE tbb Threads::Threads)
-add_library(TBB::tbb ALIAS TBBHelper)
+FetchContent_MakeAvailable(tbb)
 
-# This adds an "install" target in the top-level directory. The
-# target will simply include the install rules associated with the
-# inner build
-ExternalProject_Get_Property(external_tbb BINARY_DIR)
-install(SCRIPT ${BINARY_DIR}/src/tbb/cmake_install.cmake)
+install(TARGETS tbb DESTINATION .)
