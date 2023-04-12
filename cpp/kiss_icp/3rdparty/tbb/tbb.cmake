@@ -37,6 +37,7 @@ ExternalProject_Add(
              -DBUILD_SHARED_LIBS=ON
              -DTBB_EXAMPLES=OFF
              -DTBB_STRICT=OFF
+             -DTBBMALLOC_BUILD=OFF
              -DTBB_TEST=OFF)
 
 ExternalProject_Get_Property(external_tbb INSTALL_DIR)
