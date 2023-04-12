@@ -20,7 +20,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 # TODO: after https://github.com/strasdat/Sophus/pull/502 gets merged go back to mainstream
-cmake_minimum_required(VERSION 3.25)
 include(FetchContent)
 FetchContent_Declare(Sophus SYSTEM URL https://github.com/nachovizzo/Sophus/archive/refs/tags/1.22.11.tar.gz)
 
