@@ -24,7 +24,7 @@
   <br />
   <br />
 
-[KISS-ICP](https://www.ipb.uni-bonn.de/wp-content/papercite-data/pdf/vizzo2023ral.pdf) is a LiDAR Odometry pipeline that **just works** on most of the cases withouth tunning any parameter.
+[KISS-ICP](https://www.ipb.uni-bonn.de/wp-content/papercite-data/pdf/vizzo2023ral.pdf) is a LiDAR Odometry pipeline that **just works** on most of the cases without tunning any parameter.
 
   <p align="center">
     <a href="https://user-images.githubusercontent.com/21349875/219626075-d67e9165-31a2-4a1b-8c26-9f04e7d195ec.mp4"><img alt="KISS-ICP Demo" src="https://user-images.githubusercontent.com/21349875/211829074-474bec08-0129-4e34-85e7-62265e44a7de.png"></a>
@@ -94,7 +94,7 @@ If you use this library for any academic work, please cite our original [paper](
 
 ## Contributing
 
-We envision KISS-ICP as a comunity-driven project, we love to see how the project is growing thanks to the contributions from the comunity. We would love to see your face in the list below, just open a Pull Request!
+We envision KISS-ICP as a community-driven project, we love to see how the project is growing thanks to the contributions from the community. We would love to see your face in the list below, just open a Pull Request!
 
 <a href="https://github.com/PRBonn/kiss-icp/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=PRBonn/kiss-icp" />
