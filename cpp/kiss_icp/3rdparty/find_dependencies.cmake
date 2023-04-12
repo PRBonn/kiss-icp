@@ -59,8 +59,3 @@ if(NOT USE_SYSTEM_TSLMAP OR NOT TARGET tsl::robin_map)
   include(${CMAKE_CURRENT_LIST_DIR}/tsl_robin/tsl_robin.cmake)
 endif()
 
-# See https://github.com/PRBonn/kiss-icp/pull/129 and https://github.com/PRBonn/kiss-icp/pull/141
-if(NOT USE_SYSTEM_TSLMAP OR NOT USE_SYSTEM_SOPHUS AND ${CMAKE_VERSION} VERSION_LESS 3.25)
-  message(WARNING "Please consider to upgrade to CMake>=3.25. You can now easily do this by running\n"
-                  "pip install --upgrade cmake\n")
-endif()

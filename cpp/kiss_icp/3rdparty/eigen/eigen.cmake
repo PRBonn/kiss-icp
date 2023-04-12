@@ -24,15 +24,19 @@
 # TODO: Yet another manual release dne by nacho. This should be updated whenever the Eigen team
 # release a new version that is not 3.4. That version does not include this necessary changes:
 # - https://gitlab.com/libeigen/eigen/-/merge_requests/893/diffs
-# If you do not have EIGEN installed, the build will fail due the warning comming from the library.
-cmake_minimum_required(VERSION 3.25)
 include(FetchContent)
 FetchContent_Declare(Eigen SYSTEM URL https://github.com/nachovizzo/eigen/archive/refs/tags/3.4.90.tar.gz)
 
-set(EIGEN_BUILD_DOC OFF CACHE BOOL "Don't build Eigen docs")
-set(EIGEN_BUILD_TESTING OFF CACHE BOOL "Don't build Eigen tests")
-set(EIGEN_BUILD_PKGCONFIG OFF CACHE BOOL "Don't build Eigen pkg-config")
-set(EIGEN_BUILD_BLAS OFF CACHE BOOL "Don't build blas module")
-set(EIGEN_BUILD_LAPACK OFF CACHE BOOL "Don't build lapack module")
+option(EIGEN_BUILD_DOC OFF)
+option(EIGEN_BUILD_TESTING OFF)
+option(EIGEN_BUILD_PKGCONFIG OFF)
+option(EIGEN_BUILD_BLAS OFF)
+option(EIGEN_BUILD_LAPACK OFF)
 
 FetchContent_MakeAvailable(Eigen)
+
+if(${CMAKE_VERSION} VERSION_LESS 3.25)
+  # FetchContent_Declare(SYSTEM) has no effect
+  get_target_property(eigen_include_dirs eigen INTERFACE_INCLUDE_DIRECTORIES)
+  set_target_properties(eigen PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${eigen_include_dirs}")
+endif()
