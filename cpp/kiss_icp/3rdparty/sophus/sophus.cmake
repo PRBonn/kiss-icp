@@ -21,13 +21,10 @@
 # SOFTWARE.
 # TODO: after https://github.com/strasdat/Sophus/pull/502 gets merged go back to mainstream
 include(FetchContent)
-FetchContent_Declare(sophus SYSTEM URL https://github.com/nachovizzo/Sophus/archive/refs/tags/1.22.11.tar.gz)
+FetchContent_Declare(Sophus SYSTEM URL https://github.com/nachovizzo/Sophus/archive/refs/tags/1.22.11.tar.gz)
 
 set(SOPHUS_USE_BASIC_LOGGING ON CACHE BOOL "Don't use fmt for Sophus libraru")
 set(BUILD_SOPHUS_TESTS OFF CACHE BOOL "Don't build Sophus tests")
 set(BUILD_SOPHUS_EXAMPLES OFF CACHE BOOL "Don't build Sophus Examples")
 
-if(NOT sophus_POPULATED)
-  FetchContent_Populate(sophus)
-  add_subdirectory(${sophus_SOURCE_DIR} ${sophus_BINARY_DIR} EXCLUDE_FROM_ALL)
-endif()
+FetchContent_MakeAvailable(Sophus)
