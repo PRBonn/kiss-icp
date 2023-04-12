@@ -30,7 +30,10 @@ option(TBB_EXAMPLES OFF)
 option(TBB_STRICT OFF)
 option(TBB_TEST OFF)
 
-FetchContent_MakeAvailable(tbb)
+if(NOT tbb_POPULATED)
+  FetchContent_Populate(tbb)
+  add_subdirectory(${tbb_SOURCE_DIR} ${tbb_BINARY_DIR} EXCLUDE_FROM_ALL)
+endif()
 
 if(${CMAKE_VERSION} VERSION_LESS 3.25)
   get_target_property(tbb_include_dirs tbb INTERFACE_INCLUDE_DIRECTORIES)
