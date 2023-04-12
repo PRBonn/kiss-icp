@@ -36,7 +36,6 @@ option(EIGEN_BUILD_LAPACK OFF)
 FetchContent_MakeAvailable(Eigen)
 
 if(${CMAKE_VERSION} VERSION_LESS 3.25)
-  # FetchContent_Declare(SYSTEM) has no effect
   get_target_property(eigen_include_dirs eigen INTERFACE_INCLUDE_DIRECTORIES)
   set_target_properties(eigen PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${eigen_include_dirs}")
 endif()

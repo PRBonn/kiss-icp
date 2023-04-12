@@ -32,9 +32,6 @@ option(TBB_TEST OFF)
 FetchContent_MakeAvailable(tbb)
 
 if(${CMAKE_VERSION} VERSION_LESS 3.25)
-  # FetchContent_Declare(SYSTEM) has no effect
   get_target_property(tbb_include_dirs tbb INTERFACE_INCLUDE_DIRECTORIES)
   set_target_properties(tbb PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${tbb_include_dirs}")
 endif()
-
-install(TARGETS tbb DESTINATION .)
