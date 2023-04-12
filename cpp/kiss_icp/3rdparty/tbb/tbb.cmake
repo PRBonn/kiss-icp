@@ -34,7 +34,7 @@ ExternalProject_Add(
              -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
              -DCMAKE_BUILD_TYPE=Release
              # custom flags:
-             -DBUILD_SHARED_LIBS=OFF
+             -DBUILD_SHARED_LIBS=ON
              -DTBB_EXAMPLES=OFF
              -DTBB_STRICT=OFF
              -DTBB_TEST=OFF)
@@ -46,3 +46,9 @@ target_include_directories(TBBHelper SYSTEM INTERFACE ${INSTALL_DIR}/${CMAKE_INS
 target_link_directories(TBBHelper INTERFACE ${INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR})
 target_link_libraries(TBBHelper INTERFACE tbb Threads::Threads)
 add_library(TBB::tbb ALIAS TBBHelper)
+
+# This adds an "install" target in the top-level directory. The
+# target will simply include the install rules associated with the
+# inner build
+ExternalProject_Get_Property(external_tbb BINARY_DIR)
+install(SCRIPT ${BINARY_DIR}/src/tbb/cmake_install.cmake)

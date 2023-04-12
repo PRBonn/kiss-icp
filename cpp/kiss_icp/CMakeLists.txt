@@ -27,7 +27,7 @@ project(kiss_icp_cpp VERSION 0.2.8 LANGUAGES CXX)
 option(USE_SYSTEM_EIGEN3 "Use system pre-installed Eigen" ON)
 option(USE_SYSTEM_SOPHUS "Use system pre-installed Sophus" ON)
 option(USE_SYSTEM_TSLMAP "Use system pre-installed tsl_robin" ON)
-option(USE_SYSTEM_TBB "Use system pre-installed oneAPI/tbb" ON)
+option(USE_SYSTEM_TBB "Use system pre-installed oneAPI/tbb" OFF)
 
 # Set build type (repeat here for C++ only consumers)
 set(CMAKE_BUILD_TYPE Release)
