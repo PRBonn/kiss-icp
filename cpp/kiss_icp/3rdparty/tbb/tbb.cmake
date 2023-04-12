@@ -24,6 +24,7 @@ include(FetchContent)
 FetchContent_Declare(tbb SYSTEM URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.8.0.tar.gz
                      URL_HASH SHA256=eee380323bb7ce864355ed9431f85c43955faaae9e9bce35c62b372d7ffd9f8b)
 
+option(BUILD_SHARED_LIBS OFF)
 option(TBBMALLOC_BUILD OFF)
 option(TBB_EXAMPLES OFF)
 option(TBB_STRICT OFF)
