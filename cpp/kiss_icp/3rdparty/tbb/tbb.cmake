@@ -24,12 +24,18 @@ include(FetchContent)
 FetchContent_Declare(tbb SYSTEM URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.8.0.tar.gz
                      URL_HASH SHA256=eee380323bb7ce864355ed9431f85c43955faaae9e9bce35c62b372d7ffd9f8b)
 
+# option(BUILD_SHARED_LIBS ON)
+option(BUILD_SHARED_LIBS OFF)
 option(TBBMALLOC_BUILD OFF)
 option(TBB_EXAMPLES OFF)
 option(TBB_STRICT OFF)
 option(TBB_TEST OFF)
 
-FetchContent_MakeAvailable(tbb)
+FetchContent_GetProperties(tbb)
+if(NOT tbb_POPULATED)
+  FetchContent_Populate(tbb)
+  add_subdirectory(${tbb_SOURCE_DIR} ${tbb_BINARY_DIR} EXCLUDE_FROM_ALL)
+endif()
 
 if(${CMAKE_VERSION} VERSION_LESS 3.25)
   get_target_property(tbb_include_dirs tbb INTERFACE_INCLUDE_DIRECTORIES)

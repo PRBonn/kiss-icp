@@ -22,4 +22,8 @@
 # SOFTWARE.
 include(FetchContent)
 FetchContent_Declare(tessil SYSTEM URL https://github.com/Tessil/robin-map/archive/refs/tags/v1.0.1.tar.gz)
-FetchContent_MakeAvailable(tessil)
+FetchContent_GetProperties(tessil)
+if(NOT tessil_POPULATED)
+  FetchContent_Populate(tessil)
+  add_subdirectory(${tessil_SOURCE_DIR} ${tessil_BINARY_DIR} EXCLUDE_FROM_ALL)
+endif()
