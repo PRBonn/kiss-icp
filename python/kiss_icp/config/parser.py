@@ -52,7 +52,7 @@ class KISSConfig(BaseSettings):
             except ModuleNotFoundError:
                 print(
                     "Custom configuration file specified but PyYAML is not installed on your system,"
-                    ' run "pip install kiss-icp[all]". You can also modify the config.py if your '
+                    ' run `pip install "kiss-icp[all]"`. You can also modify the config.py if your '
                     "system does not support PyYaml "
                 )
                 sys.exit(1)
