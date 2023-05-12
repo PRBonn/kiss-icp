@@ -108,4 +108,5 @@ We envision KISS-ICP as a comunity-driven project, we love to see how the projec
 <a href="https://github.com/PRBonn/kiss-icp/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=PRBonn/kiss-icp" />
 </a>
+
 [![Star History Chart](https://api.star-history.com/svg?repos=PRBonn/kiss-icp&type=Date)](https://star-history.com/#PRBonn/kiss-icp&Date)
