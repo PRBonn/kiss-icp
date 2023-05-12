@@ -2,7 +2,7 @@
 requires = [
     "cmake",
     "ninja",
-    "scikit-build",
+    "scikit-build>=0.17.4",
     "setuptools<66.0.0", # https://github.com/pypa/setuptools/issues/3772
 ]
 build-backend = "setuptools.build_meta"
