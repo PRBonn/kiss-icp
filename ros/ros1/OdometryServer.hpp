@@ -23,11 +23,13 @@
 #pragma once
 
 // KISS-ICP
+#include "kiss_icp/SaveTrajectory.h"
 #include "kiss_icp/pipeline/KissICP.hpp"
-
 // ROS
 #include "nav_msgs/Path.h"
 #include "ros/ros.h"
+#include "ros/service_client.h"
+#include "ros/service_server.h"
 #include "sensor_msgs/PointCloud2.h"
 #include "tf2_ros/transform_broadcaster.h"
 
@@ -41,6 +43,8 @@ public:
 private:
     /// Register new frame
     void RegisterFrame(const sensor_msgs::PointCloud2 &msg);
+    bool SaveTrajectory(kiss_icp::SaveTrajectory::Request &path,
+                        kiss_icp::SaveTrajectory::Response &response);
 
     /// Ros node stuff
     ros::NodeHandle nh_;
@@ -60,6 +64,7 @@ private:
     ros::Publisher frame_publisher_;
     ros::Publisher kpoints_publisher_;
     ros::Publisher local_map_publisher_;
+    ros::ServiceServer save_traj_srv_;
 
     /// KISS-ICP
     kiss_icp::pipeline::KissICP odometry_;

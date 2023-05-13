@@ -51,8 +51,12 @@ if("$ENV{ROS_VERSION}" STREQUAL "1")
                rosbag
                std_msgs
                tf2
-               tf2_ros)
+               tf2_ros
+               genmsg)
+  add_service_files(FILES SaveTrajectory.srv)
+  generate_messages(DEPENDENCIES std_msgs)
   catkin_package()
+
 
   # ROS1 node
   add_executable(odometry_node ros1/OdometryServer.cpp)
