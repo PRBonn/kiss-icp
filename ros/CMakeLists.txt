@@ -57,7 +57,6 @@ if("$ENV{ROS_VERSION}" STREQUAL "1")
   generate_messages(DEPENDENCIES std_msgs)
   catkin_package()
 
-
   # ROS1 node
   add_executable(odometry_node ros1/OdometryServer.cpp)
   target_include_directories(odometry_node PUBLIC include ${catkin_INCLUDE_DIRS})
