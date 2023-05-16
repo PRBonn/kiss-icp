@@ -73,7 +73,7 @@ rosbag play <path>*.bag
 to save,
 
 ```sh
-rosservice call /SaveTrajectory "path: '<path>'" 
+rosservice call /SaveTrajectory "path: '<path>'"
 ```
 
 ## Out of source builds
