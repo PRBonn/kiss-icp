@@ -80,7 +80,7 @@ OdometryServer::OdometryServer(const ros::NodeHandle &nh, const ros::NodeHandle 
     traj_publisher_ = pnh_.advertise<nav_msgs::Path>("trajectory", queue_size_);
 
     // Advertise save service
-    save_traj_srv_ = nh_.advertiseService("/SaveTrajectory", &OdometryServer::SaveTrajectory, this);
+    save_traj_srv_ = pnh_.advertiseService("SaveTrajectory", &OdometryServer::SaveTrajectory, this);
 
     // Broadcast a static transformation that links with identity the specified base link to the
     // pointcloud_frame, basically to always be able to visualize the frame in rviz
@@ -167,6 +167,7 @@ void OdometryServer::RegisterFrame(const sensor_msgs::PointCloud2 &msg) {
     local_map_header.frame_id = odom_frame_;
     local_map_publisher_.publish(utils::EigenToPointCloud2(odometry_.LocalMap(), local_map_header));
 }
+
 bool OdometryServer::SaveTrajectory(kiss_icp::SaveTrajectory::Request &path,
                                     kiss_icp::SaveTrajectory::Response &response) {
     std::string kittipath = path.path + "_kitti.txt";
@@ -174,22 +175,20 @@ bool OdometryServer::SaveTrajectory(kiss_icp::SaveTrajectory::Request &path,
     std::ofstream out_tum(tumpath);
     std::ofstream out_kitti(kittipath);
     for (const auto &pose : path_msg_.poses) {
+        const auto &t = pose.pose.position;
+        const auto &q = pose.pose.orientation;
         // Write to tum format, ts,x,y,z,qx,qy,qz,qw
-        out_tum << std::fixed << std::setprecision(9) << pose.header.stamp << " "
-                << pose.pose.position.x << " " << pose.pose.position.y << " "
-                << pose.pose.position.z << " " << pose.pose.orientation.x << " "
-                << pose.pose.orientation.y << " " << pose.pose.orientation.z << " "
-                << pose.pose.orientation.w << std::endl;
-
+        out_tum << std::fixed << std::setprecision(9) << pose.header.stamp << " " << t.x << " "
+                << t.y << " " << t.z << " " << q.x << " " << q.y << " " << q.z << " " << q.w
+                << "\n";
         // Write to Kitti Format
-        Eigen::Quaterniond quat(pose.pose.orientation.w, pose.pose.orientation.x,
-                                pose.pose.orientation.y, pose.pose.orientation.z);
+        Eigen::Quaterniond quat(q.w, q.x, q.y, q.z);
         auto R = quat.normalized().toRotationMatrix();
 
         out_kitti << std::fixed << std::setprecision(9) << R(0, 0) << " " << R(0, 1) << " "
-                  << R(0, 2) << " " << pose.pose.position.x << " " << R(1, 0) << " " << R(1, 1)
-                  << " " << R(1, 2) << " " << pose.pose.position.y << " " << R(2, 0) << " "
-                  << R(2, 1) << " " << R(2, 2) << " " << pose.pose.position.z << std::endl;
+                  << R(0, 2) << " " << t.x << " " << R(1, 0) << " " << R(1, 1) << " " << R(1, 2)
+                  << " " << t.y << " " << R(2, 0) << " " << R(2, 1) << " " << R(2, 2) << " " << t.z
+                  << "\n";
     }
     ROS_INFO("Saved Trajectory");
     return true;
