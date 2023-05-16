@@ -70,6 +70,12 @@ and then,
 rosbag play <path>*.bag
 ```
 
+to save,
+
+```sh
+rosservice call /SaveTrajectory "path: '<path>'" 
+```
+
 ## Out of source builds
 
 Good news! If you don't have git or you don't need to change the core KISS-ICP library, you can just
