@@ -19,7 +19,7 @@ source ./install/setup.bash
 
 ### How to run
 
-The only required argument to provide is the **topic name** so KISS-ICP knows which PointCloud2 to proces:
+The only required argument to provide is the **topic name** so KISS-ICP knows which PointCloud2 to process:
 
 ```sh
 ros2 launch kiss_icp odometry.launch.py bagfile:=<path_to_rosbag> topic:=<topic_name>
