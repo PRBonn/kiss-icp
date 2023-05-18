@@ -44,7 +44,8 @@
 
 namespace kiss_icp_ros {
 
-OdometryServer::OdometryServer() : rclcpp::Node("odometry_node") {
+OdometryServer::OdometryServer(const rclcpp::NodeOptions & options)
+: rclcpp::Node("odometry_node", options) {
     // clang-format off
     child_frame_ = declare_parameter<std::string>("child_frame", child_frame_);
     odom_frame_ = declare_parameter<std::string>("odom_frame", odom_frame_);
@@ -171,10 +172,3 @@ void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::SharedPt
     map_publisher_->publish(utils::EigenToPointCloud2(odometry_.LocalMap(), local_map_header));
 }
 }  // namespace kiss_icp_ros
-
-int main(int argc, char **argv) {
-    rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<kiss_icp_ros::OdometryServer>());
-    rclcpp::shutdown();
-    return 0;
-}
