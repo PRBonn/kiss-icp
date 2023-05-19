@@ -37,7 +37,7 @@ namespace kiss_icp_ros {
 class OdometryServer : public rclcpp::Node {
 public:
     /// OdometryServer constructor
-    explicit OdometryServer(const rclcpp::NodeOptions & options);
+    explicit OdometryServer(const rclcpp::NodeOptions &options);
 
 private:
     /// Register new frame

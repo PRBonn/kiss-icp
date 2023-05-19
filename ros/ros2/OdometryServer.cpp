@@ -44,8 +44,8 @@
 
 namespace kiss_icp_ros {
 
-OdometryServer::OdometryServer(const rclcpp::NodeOptions & options)
-: rclcpp::Node("odometry_node", options) {
+OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
+    : rclcpp::Node("odometry_node", options) {
     // clang-format off
     child_frame_ = declare_parameter<std::string>("child_frame", child_frame_);
     odom_frame_ = declare_parameter<std::string>("odom_frame", odom_frame_);
