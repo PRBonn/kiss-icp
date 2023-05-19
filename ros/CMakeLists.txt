@@ -76,12 +76,12 @@ elseif("$ENV{ROS_VERSION}" STREQUAL "2")
   target_include_directories(odometry_component PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
   target_link_libraries(odometry_component kiss_icp::pipeline)
   ament_target_dependencies(
-    odometry_component 
-    rcutils 
-    rclcpp 
-    rclcpp_components 
-    nav_msgs 
-    sensor_msgs 
+    odometry_component
+    rcutils
+    rclcpp
+    rclcpp_components
+    nav_msgs
+    sensor_msgs
     tf2_ros)
 
   rclcpp_components_register_node(odometry_component PLUGIN "kiss_icp_ros::OdometryServer" EXECUTABLE odometry_node)
