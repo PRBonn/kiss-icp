@@ -37,11 +37,12 @@ namespace kiss_icp_ros {
 class OdometryServer : public rclcpp::Node {
 public:
     /// OdometryServer constructor
+    OdometryServer() = delete;
     explicit OdometryServer(const rclcpp::NodeOptions &options);
 
 private:
     /// Register new frame
-    void RegisterFrame(const sensor_msgs::msg::PointCloud2::SharedPtr msg_ptr);
+    void RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSharedPtr msg_ptr);
 
 private:
     /// Ros node stuff
