@@ -84,14 +84,15 @@ std::vector<double> ExtractTimestampsFromMsg(const PointCloud2 &msg) {
         auto timestamp_field = GetTimestampField(msg);
 
         // According to the type of the timestamp == type, return a PointCloud2ConstIterator<type>
-        if (timestamp_field.datatype == PointField::UINT32) {
-            return sensor_msgs::PointCloud2ConstIterator<uint32_t>(msg, timestamp_field.name);
-        } else if (timestamp_field.datatype == PointField::FLOAT32) {
-            return sensor_msgs::PointCloud2ConstIterator<float>(msg, timestamp_field.name);
-        } else if (timestamp_field.datatype == PointField::FLOAT64) {
-            return sensor_msgs::PointCloud2ConstIterator<double>(msg, timestamp_field.name);
-        } else {
-            throw std::runtime_error("timestamp field type not supported");
+        switch (timestamp_field.datatype) {
+            case PointField::UINT32:
+                return sensor_msgs::PointCloud2ConstIterator<uint32_t>(msg, timestamp_field.name);
+            case PointField::FLOAT32:
+                return sensor_msgs::PointCloud2ConstIterator<float>(msg, timestamp_field.name);
+            case PointField::FLOAT64:
+                return sensor_msgs::PointCloud2ConstIterator<double>(msg, timestamp_field.name);
+            default:
+                throw std::runtime_error("timestamp field type not supported");
         }
     }();
 
