@@ -103,7 +103,7 @@ void OdometryServer::RegisterFrame(const sensor_msgs::PointCloud2 &msg) {
     const auto points = utils::PointCloud2ToEigen(msg);
     const auto timestamps = [&]() -> std::vector<double> {
         if (!config_.deskew) return {};
-        return utils::GetTimestamps(msg);
+        return utils::ExtractTimestampsFromMsg(msg);
     }();
 
     // Register frame, main entry point to KISS-ICP pipeline
