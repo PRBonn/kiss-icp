@@ -44,7 +44,8 @@
 
 namespace kiss_icp_ros {
 
-OdometryServer::OdometryServer() : rclcpp::Node("odometry_node") {
+OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
+    : rclcpp::Node("odometry_node", options) {
     // clang-format off
     child_frame_ = declare_parameter<std::string>("child_frame", child_frame_);
     odom_frame_ = declare_parameter<std::string>("odom_frame", odom_frame_);
@@ -104,7 +105,7 @@ OdometryServer::OdometryServer() : rclcpp::Node("odometry_node") {
     RCLCPP_INFO(this->get_logger(), "KISS-ICP ROS2 odometry node initialized");
 }
 
-void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::SharedPtr msg_ptr) {
+void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSharedPtr msg_ptr) {
     // ROS2::Foxy can't handle a callback to const MessageT&, so we hack it here
     // https://github.com/ros2/rclcpp/pull/1598
     const sensor_msgs::msg::PointCloud2 &msg = *msg_ptr;
@@ -171,10 +172,3 @@ void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::SharedPt
     map_publisher_->publish(utils::EigenToPointCloud2(odometry_.LocalMap(), local_map_header));
 }
 }  // namespace kiss_icp_ros
-
-int main(int argc, char **argv) {
-    rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<kiss_icp_ros::OdometryServer>());
-    rclcpp::shutdown();
-    return 0;
-}

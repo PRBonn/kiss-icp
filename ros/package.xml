@@ -39,6 +39,7 @@
 
   <!-- ROS2 dependencies -->
   <buildtool_depend condition="$ROS_VERSION == 2">ament_cmake</buildtool_depend>
+  <depend condition="$ROS_VERSION == 2">rcutils</depend>
   <depend condition="$ROS_VERSION == 2">rclcpp</depend>
   <depend condition="$ROS_VERSION == 2">rclcpp_components</depend>
   <exec_depend condition="$ROS_VERSION == 2">ros2launch</exec_depend>
