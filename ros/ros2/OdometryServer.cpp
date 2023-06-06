@@ -21,9 +21,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 #include <Eigen/Core>
-#include <vector>
 #include <memory>
 #include <utility>
+#include <vector>
 
 // KISS-ICP-ROS
 #include "OdometryServer.hpp"
@@ -172,6 +172,7 @@ void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSha
     // Map is referenced to the odometry_frame
     auto local_map_header = msg.header;
     local_map_header.frame_id = odom_frame_;
-    map_publisher_->publish(std::move(utils::EigenToPointCloud2(odometry_.LocalMap(), local_map_header)));
+    map_publisher_->publish(
+        std::move(utils::EigenToPointCloud2(odometry_.LocalMap(), local_map_header)));
 }
 }  // namespace kiss_icp_ros
