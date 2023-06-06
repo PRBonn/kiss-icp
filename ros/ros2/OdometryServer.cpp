@@ -22,6 +22,8 @@
 // SOFTWARE.
 #include <Eigen/Core>
 #include <vector>
+#include <memory>
+#include <utility>
 
 // KISS-ICP-ROS
 #include "OdometryServer.hpp"
@@ -139,36 +141,37 @@ void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSha
     transform_msg.transform.translation.z = t_current.z();
     tf_broadcaster_->sendTransform(transform_msg);
 
-    // publish odometry msg
-    nav_msgs::msg::Odometry odom_msg;
-    odom_msg.header.stamp = msg.header.stamp;
-    odom_msg.header.frame_id = odom_frame_;
-    odom_msg.child_frame_id = child_frame_;
-    odom_msg.pose.pose.orientation.x = q_current.x();
-    odom_msg.pose.pose.orientation.y = q_current.y();
-    odom_msg.pose.pose.orientation.z = q_current.z();
-    odom_msg.pose.pose.orientation.w = q_current.w();
-    odom_msg.pose.pose.position.x = t_current.x();
-    odom_msg.pose.pose.position.y = t_current.y();
-    odom_msg.pose.pose.position.z = t_current.z();
-    odom_publisher_->publish(odom_msg);
-
     // publish trajectory msg
     geometry_msgs::msg::PoseStamped pose_msg;
-    pose_msg.pose = odom_msg.pose.pose;
-    pose_msg.header = odom_msg.header;
+    pose_msg.pose.orientation.x = q_current.x();
+    pose_msg.pose.orientation.y = q_current.y();
+    pose_msg.pose.orientation.z = q_current.z();
+    pose_msg.pose.orientation.w = q_current.w();
+    pose_msg.pose.position.x = t_current.x();
+    pose_msg.pose.position.y = t_current.y();
+    pose_msg.pose.position.z = t_current.z();
+    pose_msg.header.stamp = msg.header.stamp;
+    pose_msg.header.frame_id = odom_frame_;
+
     path_msg_.poses.push_back(pose_msg);
     traj_publisher_->publish(path_msg_);
+
+    // publish odometry msg
+    auto odom_msg = std::make_unique<nav_msgs::msg::Odometry>();
+    odom_msg->header = pose_msg.header;
+    odom_msg->child_frame_id = child_frame_;
+    odom_msg->pose.pose = pose_msg.pose;
+    odom_publisher_->publish(std::move(odom_msg));
 
     // Publish KISS-ICP internal data, just for debugging
     std_msgs::msg::Header frame_header = msg.header;
     frame_header.frame_id = child_frame_;
-    frame_publisher_->publish(utils::EigenToPointCloud2(frame, frame_header));
-    kpoints_publisher_->publish(utils::EigenToPointCloud2(keypoints, frame_header));
+    frame_publisher_->publish(std::move(utils::EigenToPointCloud2(frame, frame_header)));
+    kpoints_publisher_->publish(std::move(utils::EigenToPointCloud2(keypoints, frame_header)));
 
     // Map is referenced to the odometry_frame
     auto local_map_header = msg.header;
     local_map_header.frame_id = odom_frame_;
-    map_publisher_->publish(utils::EigenToPointCloud2(odometry_.LocalMap(), local_map_header));
+    map_publisher_->publish(std::move(utils::EigenToPointCloud2(odometry_.LocalMap(), local_map_header)));
 }
 }  // namespace kiss_icp_ros
