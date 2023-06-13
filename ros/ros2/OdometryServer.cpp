@@ -89,7 +89,15 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
     // Broadcast a static transformation that links with identity the specified base link to the
     // pointcloud_frame, basically to always be able to visualize the frame in rviz
     if (child_frame_ != "base_link") {
-        static auto br = std::make_shared<tf2_ros::StaticTransformBroadcaster>(*this);
+        rclcpp::PublisherOptionsWithAllocator<std::allocator<void>> options;
+        options.qos_overriding_options = rclcpp::QosOverridingOptions{
+            rclcpp::QosPolicyKind::Depth, rclcpp::QosPolicyKind::History,
+            rclcpp::QosPolicyKind::Reliability};
+        options.use_intra_process_comm = rclcpp::IntraProcessSetting::Disable;
+
+        static auto br = std::make_shared<tf2_ros::StaticTransformBroadcaster>(
+            *this, tf2_ros::StaticBroadcasterQoS(), options);
+
         geometry_msgs::msg::TransformStamped alias_transform_msg;
         alias_transform_msg.header.stamp = this->get_clock()->now();
         alias_transform_msg.transform.translation.x = 0.0;
