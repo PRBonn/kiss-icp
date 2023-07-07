@@ -36,6 +36,15 @@ namespace kiss_icp::pipeline {
 
 KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vector3d> &frame,
                                                     const std::vector<double> &timestamps) {
+    const auto prediction = GetPredictionModel();
+    const auto last_pose = !poses_.empty() ? poses_.back() : Sophus::SE3d();
+    const auto initial_guess = last_pose * prediction;
+    return RegisterFrame(frame, timestamps, initial_guess);                                                
+}
+
+KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vector3d> &frame,
+                                                    const std::vector<double> &timestamps,
+                                                    const Sophus::SE3d &initial_guess) {
     const auto &deskew_frame = [&]() -> std::vector<Eigen::Vector3d> {
         if (!config_.deskew) return frame;
         // TODO(Nacho) Add some asserts here to sanitize the timestamps
@@ -49,10 +58,18 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
         const auto &finish_pose = poses_[N - 1];
         return DeSkewScan(frame, timestamps, start_pose, finish_pose);
     }();
-    return RegisterFrame(deskew_frame);
+    return RegisterFrame(deskew_frame, initial_guess);
 }
 
 KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vector3d> &frame) {
+    // Compute initial_guess for ICP
+    const auto prediction = GetPredictionModel();
+    const auto last_pose = !poses_.empty() ? poses_.back() : Sophus::SE3d();
+    const auto initial_guess = last_pose * prediction;
+    return RegisterFrame(frame, initial_guess);
+}
+
+KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vector3d> &frame, const Sophus::SE3d &initial_guess) {
     // Preprocess the input cloud
     const auto &cropped_frame = Preprocess(frame, config_.max_range, config_.min_range);
 
@@ -61,11 +78,6 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
 
     // Get motion prediction and adaptive_threshold
     const double sigma = GetAdaptiveThreshold();
-
-    // Compute initial_guess for ICP
-    const auto prediction = GetPredictionModel();
-    const auto last_pose = !poses_.empty() ? poses_.back() : Sophus::SE3d();
-    const auto initial_guess = last_pose * prediction;
 
     // Run icp
     const Sophus::SE3d new_pose = kiss_icp::RegisterFrame(source,         //
