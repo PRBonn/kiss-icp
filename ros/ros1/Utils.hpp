@@ -67,28 +67,32 @@ inline auto NormalizeTimestamps(const std::vector<double> &timestamps) {
 }
 
 inline auto ExtractTimestampsFromMsg(const PointCloud2::ConstPtr msg, const PointField &field) {
-    // Extract timestamps from cloud_msg
-    const size_t n_points = msg->height * msg->width;
-    std::vector<double> timestamps;
-    timestamps.reserve(n_points);
-
-    // Option 1: Timestamps are unsigned integers -> epoch time.
-    if (field.name == "t" || field.name == "timestamp") {
-        sensor_msgs::PointCloud2ConstIterator<uint32_t> msg_t(*msg, field.name);
-        for (size_t i = 0; i < n_points; ++i, ++msg_t) {
-            timestamps.emplace_back(static_cast<double>(*msg_t));
+    auto extract_timestamps =
+        [&msg]<typename T>(sensor_msgs::PointCloud2ConstIterator<T> &&it) -> std::vector<double> {
+        const size_t n_points = msg->height * msg->width;
+        std::vector<double> timestamps;
+        timestamps.reserve(n_points);
+        for (size_t i = 0; i < n_points; ++i, ++it) {
+            timestamps.emplace_back(static_cast<double>(*it));
         }
-        // Covert to normalized time, between 0.0 and 1.0
         return NormalizeTimestamps(timestamps);
+    };
+
+    // Get timestamp field that must be one of the following : {t, timestamp, time}
+    auto timestamp_field = GetTimestampField(msg);
+
+    // According to the type of the timestamp == type, return a PointCloud2ConstIterator<type>
+    using sensor_msgs::PointCloud2ConstIterator;
+    if (timestamp_field.datatype == PointField::UINT32) {
+        return extract_timestamps(PointCloud2ConstIterator<uint32_t>(*msg, timestamp_field.name));
+    } else if (timestamp_field.datatype == PointField::FLOAT32) {
+        return extract_timestamps(PointCloud2ConstIterator<float>(*msg, timestamp_field.name));
+    } else if (timestamp_field.datatype == PointField::FLOAT64) {
+        return extract_timestamps(PointCloud2ConstIterator<double>(*msg, timestamp_field.name));
     }
 
-    // Option 2: Timestamps are floating point values between 0.0 and 1.0
-    // field.name == "timestamp"
-    sensor_msgs::PointCloud2ConstIterator<double> msg_t(*msg, field.name);
-    for (size_t i = 0; i < n_points; ++i, ++msg_t) {
-        timestamps.emplace_back(*msg_t);
-    }
-    return timestamps;
+    // timestamp type not supported, please open an issue :)
+    throw std::runtime_error("timestamp field type not supported");
 }
 
 inline std::unique_ptr<PointCloud2> CreatePointCloud2Msg(const size_t n_points,

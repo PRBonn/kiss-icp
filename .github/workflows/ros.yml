@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        release: [melodic, noetic]
+        release: [noetic]
     container: osrf/ros:${{ matrix.release }}-desktop-full
     steps:
       - name: Setup cmake
