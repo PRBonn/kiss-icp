@@ -32,7 +32,7 @@
 // KISS-ICP
 #include "kiss_icp/pipeline/KissICP.hpp"
 
-// ROS2 headers
+// ROS 2 headers
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
@@ -116,7 +116,7 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
         br->sendTransform(alias_transform_msg);
     }
 
-    RCLCPP_INFO(this->get_logger(), "KISS-ICP ROS2 odometry node initialized");
+    RCLCPP_INFO(this->get_logger(), "KISS-ICP ROS 2 odometry node initialized");
 }
 
 void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSharedPtr msg_ptr) {
@@ -164,7 +164,6 @@ void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSha
     pose_msg.pose.position.z = t_current.z();
     pose_msg.header.stamp = msg.header.stamp;
     pose_msg.header.frame_id = odom_frame_;
-
     path_msg_.poses.push_back(pose_msg);
     traj_publisher_->publish(path_msg_);
 

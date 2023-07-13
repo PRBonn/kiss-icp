@@ -92,9 +92,9 @@ inline auto ExtractTimestampsFromMsg(const PointCloud2 &msg, const PointField &f
     return timestamps;
 }
 
-inline PointCloud2::UniquePtr CreatePointCloud2Msg(const size_t n_points,
-                                                   const Header &header,
-                                                   bool timestamp = false) {
+inline std::unique_ptr<PointCloud2> CreatePointCloud2Msg(const size_t n_points,
+                                                         const Header &header,
+                                                         bool timestamp = false) {
     auto cloud_msg = std::make_unique<PointCloud2>();
     sensor_msgs::PointCloud2Modifier modifier(*cloud_msg);
     cloud_msg->header = header;
@@ -157,16 +157,16 @@ inline std::vector<Eigen::Vector3d> PointCloud2ToEigen(const PointCloud2 &msg) {
     return points;
 }
 
-inline PointCloud2::UniquePtr EigenToPointCloud2(const std::vector<Eigen::Vector3d> &points,
-                                                 const Header &header) {
+inline std::unique_ptr<PointCloud2> EigenToPointCloud2(const std::vector<Eigen::Vector3d> &points,
+                                                       const Header &header) {
     auto msg = CreatePointCloud2Msg(points.size(), header);
     FillPointCloud2XYZ(points, *msg);
     return msg;
 }
 
-inline PointCloud2::UniquePtr EigenToPointCloud2(const std::vector<Eigen::Vector3d> &points,
-                                                 const std::vector<double> &timestamps,
-                                                 const Header &header) {
+inline std::unique_ptr<PointCloud2> EigenToPointCloud2(const std::vector<Eigen::Vector3d> &points,
+                                                       const std::vector<double> &timestamps,
+                                                       const Header &header) {
     auto msg = CreatePointCloud2Msg(points.size(), header, true);
     FillPointCloud2XYZ(points, *msg);
     FillPointCloud2Timestamp(timestamps, *msg);

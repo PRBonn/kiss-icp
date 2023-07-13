@@ -25,6 +25,7 @@
 #include <Eigen/Core>
 #include <algorithm>
 #include <cstddef>
+#include <memory>
 #include <regex>
 #include <string>
 #include <vector>
@@ -90,29 +91,29 @@ inline auto ExtractTimestampsFromMsg(const PointCloud2 &msg, const PointField &f
     return timestamps;
 }
 
-inline auto CreatePointCloud2Msg(const size_t n_points,
-                                 const Header &header,
-                                 bool timestamp = false) {
-    PointCloud2 cloud_msg;
-    sensor_msgs::PointCloud2Modifier modifier(cloud_msg);
-    cloud_msg.header = header;
-    cloud_msg.header.frame_id = FixFrameId(cloud_msg.header.frame_id);
-    cloud_msg.fields.clear();
+inline std::unique_ptr<PointCloud2> CreatePointCloud2Msg(const size_t n_points,
+                                                         const Header &header,
+                                                         bool timestamp = false) {
+    auto cloud_msg = std::make_unique<PointCloud2>();
+    sensor_msgs::PointCloud2Modifier modifier(*cloud_msg);
+    cloud_msg->header = header;
+    cloud_msg->header.frame_id = FixFrameId(cloud_msg->header.frame_id);
+    cloud_msg->fields.clear();
     int offset = 0;
-    offset = addPointField(cloud_msg, "x", 1, PointField::FLOAT32, offset);
-    offset = addPointField(cloud_msg, "y", 1, PointField::FLOAT32, offset);
-    offset = addPointField(cloud_msg, "z", 1, PointField::FLOAT32, offset);
+    offset = addPointField(*cloud_msg, "x", 1, PointField::FLOAT32, offset);
+    offset = addPointField(*cloud_msg, "y", 1, PointField::FLOAT32, offset);
+    offset = addPointField(*cloud_msg, "z", 1, PointField::FLOAT32, offset);
     offset += sizeOfPointField(PointField::FLOAT32);
     if (timestamp) {
         // asuming timestamp on a velodyne fashion for now (between 0.0 and 1.0)
-        offset = addPointField(cloud_msg, "time", 1, PointField::FLOAT64, offset);
+        offset = addPointField(*cloud_msg, "time", 1, PointField::FLOAT64, offset);
         offset += sizeOfPointField(PointField::FLOAT64);
     }
 
     // Resize the point cloud accordingly
-    cloud_msg.point_step = offset;
-    cloud_msg.row_step = cloud_msg.width * cloud_msg.point_step;
-    cloud_msg.data.resize(cloud_msg.height * cloud_msg.row_step);
+    cloud_msg->point_step = offset;
+    cloud_msg->row_step = cloud_msg->width * cloud_msg->point_step;
+    cloud_msg->data.resize(cloud_msg->height * cloud_msg->row_step);
     modifier.resize(n_points);
     return cloud_msg;
 }
@@ -155,19 +156,19 @@ inline std::vector<Eigen::Vector3d> PointCloud2ToEigen(const PointCloud2 &msg) {
     return points;
 }
 
-inline PointCloud2 EigenToPointCloud2(const std::vector<Eigen::Vector3d> &points,
-                                      const Header &header) {
-    PointCloud2 msg = CreatePointCloud2Msg(points.size(), header);
-    FillPointCloud2XYZ(points, msg);
+inline std::unique_ptr<PointCloud2> EigenToPointCloud2(const std::vector<Eigen::Vector3d> &points,
+                                                       const Header &header) {
+    auto msg = CreatePointCloud2Msg(points.size(), header);
+    FillPointCloud2XYZ(points, *msg);
     return msg;
 }
 
-inline PointCloud2 EigenToPointCloud2(const std::vector<Eigen::Vector3d> &points,
-                                      const std::vector<double> &timestamps,
-                                      const Header &header) {
-    PointCloud2 msg = CreatePointCloud2Msg(points.size(), header, true);
-    FillPointCloud2XYZ(points, msg);
-    FillPointCloud2Timestamp(timestamps, msg);
+inline std::unique_ptr<PointCloud2> EigenToPointCloud2(const std::vector<Eigen::Vector3d> &points,
+                                                       const std::vector<double> &timestamps,
+                                                       const Header &header) {
+    auto msg = CreatePointCloud2Msg(points.size(), header, true);
+    FillPointCloud2XYZ(points, *msg);
+    FillPointCloud2Timestamp(timestamps, *msg);
     return msg;
 }
 
