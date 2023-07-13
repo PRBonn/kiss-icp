@@ -46,6 +46,10 @@
 
 namespace kiss_icp_ros {
 
+using utils::EigenToPointCloud2;
+using utils::GetTimestamps;
+using utils::PointCloud2ToEigen;
+
 OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
     : rclcpp::Node("odometry_node", options) {
     // clang-format off
@@ -119,10 +123,10 @@ void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSha
     // ROS2::Foxy can't handle a callback to const MessageT&, so we hack it here
     // https://github.com/ros2/rclcpp/pull/1598
     const sensor_msgs::msg::PointCloud2 &msg = *msg_ptr;
-    const auto points = utils::PointCloud2ToEigen(msg);
+    const auto points = PointCloud2ToEigen(msg);
     const auto timestamps = [&]() -> std::vector<double> {
         if (!config_.deskew) return {};
-        return utils::GetTimestamps(msg);
+        return GetTimestamps(msg);
     }();
 
     // Register frame, main entry point to KISS-ICP pipeline
@@ -174,13 +178,12 @@ void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSha
     // Publish KISS-ICP internal data, just for debugging
     std_msgs::msg::Header frame_header = msg.header;
     frame_header.frame_id = child_frame_;
-    frame_publisher_->publish(std::move(utils::EigenToPointCloud2(frame, frame_header)));
-    kpoints_publisher_->publish(std::move(utils::EigenToPointCloud2(keypoints, frame_header)));
+    frame_publisher_->publish(std::move(EigenToPointCloud2(frame, frame_header)));
+    kpoints_publisher_->publish(std::move(EigenToPointCloud2(keypoints, frame_header)));
 
     // Map is referenced to the odometry_frame
     auto local_map_header = msg.header;
     local_map_header.frame_id = odom_frame_;
-    map_publisher_->publish(
-        std::move(utils::EigenToPointCloud2(odometry_.LocalMap(), local_map_header)));
+    map_publisher_->publish(std::move(EigenToPointCloud2(odometry_.LocalMap(), local_map_header)));
 }
 }  // namespace kiss_icp_ros
