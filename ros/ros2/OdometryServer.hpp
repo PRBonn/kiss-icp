@@ -25,7 +25,7 @@
 // KISS-ICP
 #include "kiss_icp/pipeline/KissICP.hpp"
 
-// ROS2
+// ROS 2
 #include "nav_msgs/msg/odometry.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "rclcpp/rclcpp.hpp"
