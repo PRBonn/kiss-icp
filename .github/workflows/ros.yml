@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        release: [foxy, humble]
+        release: [humble, iron]
     container: osrf/ros:${{ matrix.release }}-desktop
     steps:
       - name: Setup cmake
