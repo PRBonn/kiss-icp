@@ -25,7 +25,7 @@
 // KISS-ICP
 #include "kiss_icp/pipeline/KissICP.hpp"
 
-// ROS2
+// ROS 2
 #include "nav_msgs/msg/odometry.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -42,7 +42,7 @@ public:
 
 private:
     /// Register new frame
-    void RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSharedPtr msg_ptr);
+    void RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msg);
 
 private:
     /// Ros node stuff

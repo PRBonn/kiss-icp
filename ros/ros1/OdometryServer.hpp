@@ -40,7 +40,7 @@ public:
 
 private:
     /// Register new frame
-    void RegisterFrame(const sensor_msgs::PointCloud2 &msg);
+    void RegisterFrame(const sensor_msgs::PointCloud2::ConstPtr &msg);
 
     /// Ros node stuff
     ros::NodeHandle nh_;
@@ -59,7 +59,7 @@ private:
     nav_msgs::Path path_msg_;
     ros::Publisher frame_publisher_;
     ros::Publisher kpoints_publisher_;
-    ros::Publisher local_map_publisher_;
+    ros::Publisher map_publisher_;
 
     /// KISS-ICP
     kiss_icp::pipeline::KissICP odometry_;

@@ -33,11 +33,11 @@
   <!-- Common ROS 1 / ROS 2 dependencies -->
   <build_depend>ros_environment</build_depend>
 
-  <!-- ROS1 dependencies -->
+  <!-- ROS 1 dependencies -->
   <buildtool_depend condition="$ROS_VERSION == 1">catkin</buildtool_depend>
   <depend condition="$ROS_VERSION == 1">roscpp</depend>
 
-  <!-- ROS2 dependencies -->
+  <!-- ROS 2 dependencies -->
   <buildtool_depend condition="$ROS_VERSION == 2">ament_cmake</buildtool_depend>
   <depend condition="$ROS_VERSION == 2">rcutils</depend>
   <depend condition="$ROS_VERSION == 2">rclcpp</depend>
