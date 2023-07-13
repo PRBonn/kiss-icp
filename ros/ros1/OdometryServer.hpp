@@ -40,7 +40,7 @@ public:
 
 private:
     /// Register new frame
-    void RegisterFrame(const sensor_msgs::PointCloud2 &msg);
+    void RegisterFrame(const sensor_msgs::PointCloud2::ConstPtr &msg);
 
     /// Ros node stuff
     ros::NodeHandle nh_;
