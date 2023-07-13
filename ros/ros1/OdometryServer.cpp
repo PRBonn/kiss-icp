@@ -151,22 +151,22 @@ void OdometryServer::RegisterFrame(const sensor_msgs::PointCloud2 &msg) {
     traj_publisher_.publish(path_msg_);
 
     // publish odometry msg
-    nav_msgs::Odometry odom_msg;
-    odom_msg.header = pose_msg.header;
-    odom_msg.child_frame_id = child_frame_;
-    odom_msg.pose.pose = pose_msg.pose;
-    odom_publisher_.publish(odom_msg);
+    auto odom_msg = std::make_unique<nav_msgs::Odometry>();
+    odom_msg->header = pose_msg.header;
+    odom_msg->child_frame_id = child_frame_;
+    odom_msg->pose.pose = pose_msg.pose;
+    odom_publisher_.publish(*std::move(odom_msg));
 
     // Publish KISS-ICP internal data, just for debugging
     auto frame_header = msg.header;
     frame_header.frame_id = child_frame_;
-    frame_publisher_.publish(std::move(EigenToPointCloud2(frame, frame_header)));
-    kpoints_publisher_.publish(std::move(EigenToPointCloud2(keypoints, frame_header)));
+    frame_publisher_.publish(*std::move(EigenToPointCloud2(frame, frame_header)));
+    kpoints_publisher_.publish(*std::move(EigenToPointCloud2(keypoints, frame_header)));
 
     // Map is referenced to the odometry_frame
     auto local_map_header = msg.header;
     local_map_header.frame_id = odom_frame_;
-    map_publisher_.publish(std::move(EigenToPointCloud2(odometry_.LocalMap(), local_map_header)));
+    map_publisher_.publish(*std::move(EigenToPointCloud2(odometry_.LocalMap(), local_map_header)));
 }
 
 }  // namespace kiss_icp_ros

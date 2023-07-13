@@ -175,7 +175,7 @@ void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSha
     odom_publisher_->publish(std::move(odom_msg));
 
     // Publish KISS-ICP internal data, just for debugging
-    std_msgs::msg::Header frame_header = msg.header;
+    auto frame_header = msg.header;
     frame_header.frame_id = child_frame_;
     frame_publisher_->publish(std::move(EigenToPointCloud2(frame, frame_header)));
     kpoints_publisher_->publish(std::move(EigenToPointCloud2(keypoints, frame_header)));
