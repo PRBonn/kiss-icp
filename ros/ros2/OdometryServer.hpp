@@ -42,7 +42,7 @@ public:
 
 private:
     /// Register new frame
-    void RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSharedPtr msg);
+    void RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msg);
 
 private:
     /// Ros node stuff
