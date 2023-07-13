@@ -28,7 +28,6 @@
 #include <memory>
 #include <regex>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "sensor_msgs/msg/point_cloud2.hpp"
@@ -117,7 +116,7 @@ PointCloud2::UniquePtr CreatePointCloud2Msg(const size_t n_points,
     cloud_msg->row_step = cloud_msg->width * cloud_msg->point_step;
     cloud_msg->data.resize(cloud_msg->height * cloud_msg->row_step);
     modifier.resize(n_points);
-    return std::move(cloud_msg);
+    return cloud_msg;
 }
 
 void FillPointCloud2XYZ(const std::vector<Eigen::Vector3d> &points, PointCloud2 &msg) {
@@ -162,7 +161,7 @@ PointCloud2::UniquePtr EigenToPointCloud2(const std::vector<Eigen::Vector3d> &po
                                           const Header &header) {
     auto msg = CreatePointCloud2Msg(points.size(), header);
     FillPointCloud2XYZ(points, *msg);
-    return std::move(msg);
+    return msg;
 }
 
 PointCloud2::UniquePtr EigenToPointCloud2(const std::vector<Eigen::Vector3d> &points,
@@ -171,7 +170,7 @@ PointCloud2::UniquePtr EigenToPointCloud2(const std::vector<Eigen::Vector3d> &po
     auto msg = CreatePointCloud2Msg(points.size(), header, true);
     FillPointCloud2XYZ(points, *msg);
     FillPointCloud2Timestamp(timestamps, *msg);
-    return std::move(msg);
+    return msg;
 }
 
 }  // namespace kiss_icp_ros::utils
