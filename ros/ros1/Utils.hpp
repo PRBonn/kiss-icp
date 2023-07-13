@@ -86,22 +86,19 @@ std::vector<double> ExtractTimestampsFromMsg(const PointCloud2 &msg) {
     // Get timestamp field that must be one of the following : {t, timestamp, time}
     auto timestamp_field = GetTimestampField(msg);
     // According to the type of the timestamp == type, return a PointCloud2ConstIterator<type>
-    switch (timestamp_field.datatype) {
-        case PointField::UINT32:
-            auto it = sensor_msgs::PointCloud2ConstIterator<uint32_t>(msg, timestamp_field.name);
-            extract_timestamps(it);
-            NormalizeTimestamps(timestamps);
-        case PointField::FLOAT32:
-            auto it = sensor_msgs::PointCloud2ConstIterator<float>(msg, timestamp_field.name);
-            extract_timestamps(it);
-        case PointField::FLOAT64:
-            auto it = sensor_msgs::PointCloud2ConstIterator<double>(msg, timestamp_field.name);
-            extract_timestamps(it);
-        default:
-            throw std::runtime_error("timestamp field type not supported");
+    if (timestamp_field.datatype == PointField::UINT32) {
+        auto it = sensor_msgs::PointCloud2ConstIterator<uint32_t>(msg, timestamp_field.name);
+        extract_timestamps(it);
+        NormalizeTimestamps(timestamps);
+    } else if (timestamp_field.datatype == PointField::FLOAT32) {
+        auto it = sensor_msgs::PointCloud2ConstIterator<float>(msg, timestamp_field.name);
+        extract_timestamps(it);
+    } else if (timestamp_field.datatype == PointField::FLOAT64) {
+        auto it = sensor_msgs::PointCloud2ConstIterator<double>(msg, timestamp_field.name);
+        extract_timestamps(it);
+    } else {
+        throw std::runtime_error("timestamp field type not supported");
     }
-
-    // Extract timestamps from iterator
     return timestamps;
 }
 
