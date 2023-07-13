@@ -56,6 +56,7 @@ if("$ENV{ROS_VERSION}" STREQUAL "1")
 
   # ROS1 node
   add_executable(odometry_node ros1/OdometryServer.cpp)
+  target_compile_features(odometry_node PUBLIC cxx_std_20)
   target_include_directories(odometry_node PUBLIC include ${catkin_INCLUDE_DIRS})
   target_link_libraries(odometry_node kiss_icp::pipeline ${catkin_LIBRARIES})
   install(TARGETS odometry_node RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
@@ -71,6 +72,7 @@ elseif("$ENV{ROS_VERSION}" STREQUAL "2")
 
   # ROS2 node
   add_executable(odometry_node ros2/OdometryServer.cpp)
+  target_compile_features(odometry_node PUBLIC cxx_std_20)
   target_include_directories(odometry_node PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
   target_link_libraries(odometry_node kiss_icp::pipeline)
   install(TARGETS odometry_node RUNTIME DESTINATION lib/${PROJECT_NAME})
