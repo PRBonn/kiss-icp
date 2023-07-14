@@ -49,13 +49,13 @@ class BoreasDataset:
     def load_poses(self, poses_file):
         data = np.loadtxt(poses_file, delimiter=",", skiprows=1)
         n, m = data.shape
-        t, x, y, z, vx, vy, vz, r, p, y, wz, wy, wx = data[0, :]
-        first_pose = self.get_transformation_matrix(x, y, z, y, p, r)
+        t, x, y, z, vx, vy, vz, r, p, ya, wz, wy, wx = data[0, :]
+        first_pose = self.get_transformation_matrix(x, y, z, ya, p, r)
         poses = np.empty((n, 4, 4), dtype=np.float32)
         poses[0, :, :] = np.identity(4, dtype=np.float32)
         for i in range(n):
-            t, x, y, z, vx, vy, vz, r, p, y, wz, wy, wx = data[i, :]
-            current_pose = self.get_transformation_matrix(x, y, z, y, p, r)
+            t, x, y, z, vx, vy, vz, r, p, ya, wz, wy, wx = data[i, :]
+            current_pose = self.get_transformation_matrix(x, y, z, ya, p, r)
             poses[i, :, :] = np.linalg.inv(first_pose) @ current_pose
         return poses
 
