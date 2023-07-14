@@ -54,6 +54,8 @@ OdometryServer::OdometryServer(const ros::NodeHandle &nh, const ros::NodeHandle 
     : nh_(nh), pnh_(pnh) {
     pnh_.param("child_frame", child_frame_, child_frame_);
     pnh_.param("odom_frame", odom_frame_, odom_frame_);
+    pnh_.param("publish_alias_tf", publish_alias_tf_, true);
+    pnh_.param("publish_odom_tf", publish_odom_tf_, true);
     pnh_.param("max_range", config_.max_range, config_.max_range);
     pnh_.param("min_range", config_.min_range, config_.min_range);
     pnh_.param("deskew", config_.deskew, config_.deskew);
@@ -61,9 +63,6 @@ OdometryServer::OdometryServer(const ros::NodeHandle &nh, const ros::NodeHandle 
     pnh_.param("max_points_per_voxel", config_.max_points_per_voxel, config_.max_points_per_voxel);
     pnh_.param("initial_threshold", config_.initial_threshold, config_.initial_threshold);
     pnh_.param("min_motion_th", config_.min_motion_th, config_.min_motion_th);
-    pnh_.param("publish_alias_tf", publish_alias_tf_, true);
-    pnh_.param("publish_odom_tf", publish_odom_tf_, true);
-
     if (config_.max_range < config_.min_range) {
         ROS_WARN("[WARNING] max_range is smaller than min_range, setting min_range to 0.0");
         config_.min_range = 0.0;
@@ -173,7 +172,6 @@ void OdometryServer::RegisterFrame(const sensor_msgs::PointCloud2::ConstPtr &msg
     local_map_header.frame_id = odom_frame_;
     map_publisher_.publish(*std::move(EigenToPointCloud2(odometry_.LocalMap(), local_map_header)));
 }
-
 }  // namespace kiss_icp_ros
 
 int main(int argc, char **argv) {

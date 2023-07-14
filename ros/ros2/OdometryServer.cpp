@@ -55,6 +55,8 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
     // clang-format off
     child_frame_ = declare_parameter<std::string>("child_frame", child_frame_);
     odom_frame_ = declare_parameter<std::string>("odom_frame", odom_frame_);
+    publish_alias_tf_ = declare_parameter<bool>("publish_alias_tf", publish_alias_tf_);
+    publish_odom_tf_ = declare_parameter<bool>("publish_odom_tf", publish_alias_tf_);
     config_.max_range = declare_parameter<double>("max_range", config_.max_range);
     config_.min_range = declare_parameter<double>("min_range", config_.min_range);
     config_.deskew = declare_parameter<bool>("deskew", config_.deskew);
@@ -92,7 +94,7 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
 
     // Broadcast a static transformation that links with identity the specified base link to the
     // pointcloud_frame, basically to always be able to visualize the frame in rviz
-    if (child_frame_ != "base_link") {
+    if (publish_alias_tf_ && child_frame_ != "base_link") {
         rclcpp::PublisherOptionsWithAllocator<std::allocator<void>> options;
         options.qos_overriding_options = rclcpp::QosOverridingOptions{
             rclcpp::QosPolicyKind::Depth, rclcpp::QosPolicyKind::History,
@@ -137,18 +139,20 @@ void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSha
     const Eigen::Quaterniond q_current = pose.unit_quaternion();
 
     // Broadcast the tf
-    geometry_msgs::msg::TransformStamped transform_msg;
-    transform_msg.header.stamp = msg->header.stamp;
-    transform_msg.header.frame_id = odom_frame_;
-    transform_msg.child_frame_id = child_frame_;
-    transform_msg.transform.rotation.x = q_current.x();
-    transform_msg.transform.rotation.y = q_current.y();
-    transform_msg.transform.rotation.z = q_current.z();
-    transform_msg.transform.rotation.w = q_current.w();
-    transform_msg.transform.translation.x = t_current.x();
-    transform_msg.transform.translation.y = t_current.y();
-    transform_msg.transform.translation.z = t_current.z();
-    tf_broadcaster_->sendTransform(transform_msg);
+    if (publish_odom_tf_) {
+        geometry_msgs::msg::TransformStamped transform_msg;
+        transform_msg.header.stamp = msg->header.stamp;
+        transform_msg.header.frame_id = odom_frame_;
+        transform_msg.child_frame_id = child_frame_;
+        transform_msg.transform.rotation.x = q_current.x();
+        transform_msg.transform.rotation.y = q_current.y();
+        transform_msg.transform.rotation.z = q_current.z();
+        transform_msg.transform.rotation.w = q_current.w();
+        transform_msg.transform.translation.x = t_current.x();
+        transform_msg.transform.translation.y = t_current.y();
+        transform_msg.transform.translation.z = t_current.z();
+        tf_broadcaster_->sendTransform(transform_msg);
+    }
 
     // publish trajectory msg
     geometry_msgs::msg::PoseStamped pose_msg;
