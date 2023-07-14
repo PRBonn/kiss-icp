@@ -1,6 +1,6 @@
 # MIT License
 #
-# Copyright (c) 2022 Ignacio Vizzo, Tiziano Guadagnino, Benedikt Mersch, Cyrill
+# Copyright (c) 2023 Ignacio Vizzo, Tiziano Guadagnino, Benedikt Mersch, Cyrill
 # Stachniss.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -22,78 +22,64 @@
 # SOFTWARE.
 import os
 import sys
-from pathlib import Path
-from typing import Sequence
-
-import natsort
 
 
-class RosbagDataset:
-    def __init__(self, data_dir: Sequence[Path], topic: str, *_, **__):
-        """ROS1 / ROS2 bagfile dataloader.
-
-        It can take either one ROS2 bag file or one or more ROS1 bag files belonging to a split bag.
-        The reader will replay ROS1 split bags in correct timestamp order.
-
-        TODO: Merge mcap and rosbag dataloaders into 1
-        """
+class McapDataloader:
+    def __init__(self, data_dir: str, topic: str, *_, **__):
+        """Standalone .mcap dataloader withouth any ROS distribution."""
+        # Conditional imports to avoid injecting dependencies for non mcap users
         try:
-            from rosbags.highlevel import AnyReader
-        except ModuleNotFoundError:
-            print('rosbags library not installed, run "pip install -U rosbags"')
-            sys.exit(1)
+            from mcap.reader import make_reader
+            from mcap_ros2.reader import read_ros2_messages
+        except ImportError as e:
+            print("mcap plugins not installed: 'pip install mcap-ros2-support'")
+            exit(1)
 
         from kiss_icp.tools.point_cloud2 import read_point_cloud
 
-        self.read_point_cloud = read_point_cloud
+        # we expect `data_dir` param to be a path to the .mcap file, so rename for clarity
+        assert os.path.isfile(data_dir), "mcap dataloader expects an existing MCAP file"
+        self.sequence_id = os.path.basename(data_dir).split(".")[0]
+        mcap_file = str(data_dir)
 
-        # FIXME: This is quite hacky, trying to guess if we have multiple .bag, one or a dir
-        if isinstance(data_dir, Path):
-            self.sequence_id = os.path.basename(data_dir).split(".")[0]
-            self.bag = AnyReader([data_dir])
-        else:
-            self.sequence_id = os.path.basename(data_dir[0]).split(".")[0]
-            self.bag = AnyReader(data_dir)
-            print("Reading multiple .bag files in directory:")
-            print("\n".join(natsort.natsorted([path.name for path in self.bag.paths])))
-        self.bag.open()
+        self.bag = make_reader(open(mcap_file, "rb"))
+        self.summary = self.bag.get_summary()
         self.topic = self.check_topic(topic)
-        self.n_scans = self.bag.topics[self.topic].msgcount
-
-        # limit connections to selected topic
-        connections = [x for x in self.bag.connections if x.topic == self.topic]
-        self.msgs = self.bag.messages(connections=connections)
-        self.timestamps = []
-
-        # Visualization Options
+        self.n_scans = self._get_n_scans()
+        self.msgs = read_ros2_messages(mcap_file, topics=topic)
+        self.read_point_cloud = read_point_cloud
         self.use_global_visualizer = True
 
     def __del__(self):
         if hasattr(self, "bag"):
-            self.bag.close()
+            del self.bag
+
+    def __getitem__(self, idx):
+        msg = next(self.msgs).ros_msg
+        return self.read_point_cloud(msg)
 
     def __len__(self):
         return self.n_scans
 
-    def __getitem__(self, idx):
-        connection, timestamp, rawdata = next(self.msgs)
-        self.timestamps.append(self.to_sec(timestamp))
-        msg = self.bag.deserialize(rawdata, connection.msgtype)
-        return self.read_point_cloud(msg)
-
-    @staticmethod
-    def to_sec(nsec: int):
-        return float(nsec) / 1e9
-
-    def get_frames_timestamps(self) -> list:
-        return self.timestamps
+    def _get_n_scans(self) -> int:
+        return sum(
+            count
+            for (id, count) in self.summary.statistics.channel_message_counts.items()
+            if self.summary.channels[id].topic == self.topic
+        )
 
     def check_topic(self, topic: str) -> str:
-        # Extract all PointCloud2 msg topics from the bagfile
+        # Extract schema id from the .mcap file that encodes the PointCloud2 msg
+        schema_id = [
+            schema.id
+            for schema in self.summary.schemas.values()
+            if schema.name == "sensor_msgs/msg/PointCloud2"
+        ][0]
+
         point_cloud_topics = [
-            topic[0]
-            for topic in self.bag.topics.items()
-            if topic[1].msgtype == "sensor_msgs/msg/PointCloud2"
+            channel.topic
+            for channel in self.summary.channels.values()
+            if channel.schema_id == schema_id
         ]
 
         def print_available_topics_and_exit():

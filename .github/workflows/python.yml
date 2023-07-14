@@ -1,0 +1,27 @@
+name: Python API
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  python_package:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, ubuntu-20.04, windows-2022, macos-11]
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python3
+        uses: actions/setup-python@v3
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+      - name: Build pip package
+        run: |
+          python -m pip install --verbose ./python/
+      - name: Test installation
+        run: |
+          kiss_icp_pipeline --version

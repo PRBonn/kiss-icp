@@ -23,8 +23,8 @@
 import glob
 import importlib
 import os
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import natsort
 import numpy as np

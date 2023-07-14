@@ -20,8 +20,6 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-#define _USE_MATH_DEFINES  // fix Windows build
-
 #include "Preprocessing.hpp"
 
 #include <tbb/parallel_for.h>
@@ -55,7 +53,8 @@ std::vector<Eigen::Vector3d> VoxelDownsample(const std::vector<Eigen::Vector3d> 
     }
     std::vector<Eigen::Vector3d> frame_dowsampled;
     frame_dowsampled.reserve(grid.size());
-    for (const auto &[_, point] : grid) {
+    for (const auto &[voxel, point] : grid) {
+        (void)voxel;
         frame_dowsampled.emplace_back(point);
     }
     return frame_dowsampled;

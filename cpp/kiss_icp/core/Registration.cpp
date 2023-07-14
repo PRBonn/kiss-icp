@@ -83,10 +83,10 @@ Sophus::SE3d AlignClouds(const std::vector<Eigen::Vector3d> &source,
             auto Weight = [&](double residual2) { return square(th) / square(th + residual2); };
             auto &[JTJ_private, JTr_private] = J;
             for (auto i = r.begin(); i < r.end(); ++i) {
-                const auto &[J_r, r] = compute_jacobian_and_residual(i);
-                const double w = Weight(r.squaredNorm());
+                const auto &[J_r, residual] = compute_jacobian_and_residual(i);
+                const double w = Weight(residual.squaredNorm());
                 JTJ_private.noalias() += J_r.transpose() * w * J_r;
-                JTr_private.noalias() += J_r.transpose() * w * r;
+                JTr_private.noalias() += J_r.transpose() * w * residual;
             }
             return J;
         },

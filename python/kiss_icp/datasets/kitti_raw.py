@@ -20,13 +20,12 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from collections import namedtuple
 import glob
 import os
+from collections import namedtuple
 from pathlib import Path
 
 import numpy as np
-
 
 __raw_to_odometry_mapping__ = {
     0: "2011_10_03/2011_10_03_drive_0027_sync/",

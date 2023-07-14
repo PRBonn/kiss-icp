@@ -1,0 +1,26 @@
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+    -   id: trailing-whitespace
+    -   id: end-of-file-fixer
+    -   id: check-yaml
+    -   id: check-added-large-files
+-   repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v14.0.0
+    hooks:
+    -   id: clang-format
+-   repo: https://github.com/psf/black
+    rev: 23.1.0
+    hooks:
+    -   id: black
+        args: [--config=python/pyproject.toml]
+-   repo: https://github.com/ahans/cmake-format-precommit
+    rev: 8e52fb6506f169dddfaa87f88600d765fca48386
+    hooks:
+    - id: cmake-format
+-   repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+     - id: isort
+       args: ["--settings-path=python/pyproject.toml"]

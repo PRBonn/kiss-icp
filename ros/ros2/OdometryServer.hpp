@@ -25,7 +25,7 @@
 // KISS-ICP
 #include "kiss_icp/pipeline/KissICP.hpp"
 
-// ROS2
+// ROS 2
 #include "nav_msgs/msg/odometry.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -37,11 +37,12 @@ namespace kiss_icp_ros {
 class OdometryServer : public rclcpp::Node {
 public:
     /// OdometryServer constructor
-    OdometryServer();
+    OdometryServer() = delete;
+    explicit OdometryServer(const rclcpp::NodeOptions &options);
 
 private:
     /// Register new frame
-    void RegisterFrame(const sensor_msgs::msg::PointCloud2::SharedPtr msg_ptr);
+    void RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msg);
 
 private:
     /// Ros node stuff
@@ -73,3 +74,10 @@ private:
 };
 
 }  // namespace kiss_icp_ros
+
+#include "rclcpp_components/register_node_macro.hpp"
+
+// Register the component with class_loader.
+// This acts as a sort of entry point, allowing the component to be
+// discoverable when its library is being loaded into a running process.
+RCLCPP_COMPONENTS_REGISTER_NODE(kiss_icp_ros::OdometryServer)

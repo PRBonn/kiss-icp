@@ -22,11 +22,11 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import glob
 import os
 from typing import Optional
 
 import numpy as np
-import glob
 
 
 def find_metadata_json(pcap_file: str) -> str:
@@ -83,8 +83,8 @@ class OusterDataloader:
         """
 
         try:
-            from ouster import client
             import ouster.pcap as pcap
+            from ouster import client
         except ImportError:
             print(f'ouster-sdk is not installed on your system, run "pip install ouster-sdk"')
             exit(1)

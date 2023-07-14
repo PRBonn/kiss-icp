@@ -26,14 +26,6 @@ if(CMAKE_VERSION VERSION_GREATER 3.24)
   cmake_policy(SET CMP0135 OLD)
 endif()
 
-# CMake arguments for configuring ExternalProjects.
-set(ExternalProject_CMAKE_ARGS
-    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
-    -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON)
-
-# tsl_robin is fast to fetch, don't ask for system-wise installation
-include(${CMAKE_CURRENT_LIST_DIR}/tsl_robin/tsl_robin.cmake)
-
 if(USE_SYSTEM_EIGEN3)
   find_package(Eigen3 QUIET NO_MODULE)
 endif()
@@ -57,4 +49,12 @@ endif()
 if(NOT USE_SYSTEM_TBB OR NOT TARGET TBB::tbb)
   set(USE_SYSTEM_TBB OFF)
   include(${CMAKE_CURRENT_LIST_DIR}/tbb/tbb.cmake)
+endif()
+
+if(USE_SYSTEM_TSLMAP)
+  find_package(tsl-robin-map QUIET NO_MODULE)
+endif()
+if(NOT USE_SYSTEM_TSLMAP OR NOT TARGET tsl::robin_map)
+  set(USE_SYSTEM_TSLMAP OFF)
+  include(${CMAKE_CURRENT_LIST_DIR}/tsl_robin/tsl_robin.cmake)
 endif()

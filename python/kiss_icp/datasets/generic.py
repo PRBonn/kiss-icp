@@ -21,8 +21,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import os
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import natsort
 import numpy as np
@@ -77,7 +77,7 @@ class GenericDataset:
             print("[WARNING] Reading .bin files, the only format supported is the KITTI format")
             return lambda file: np.fromfile(file, dtype=np.float32).reshape((-1, 4))[:, :3]
 
-        print('Trying to guess how to read your data: "pip install kiss-icp[all]" is required')
+        print('Trying to guess how to read your data: `pip install "kiss-icp[all]"` is required')
         first_scan_file = self.scan_files[0]
 
         # first try trimesh

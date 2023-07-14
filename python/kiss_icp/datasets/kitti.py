@@ -85,6 +85,10 @@ class KITTIOdometryDataset:
         poses = poses.reshape((n, 4, 4))  # [N, 4, 4]
         return _lidar_pose_gt(poses)
 
+    def get_frames_timestamps(self) -> np.ndarray:
+        timestamps = np.loadtxt(os.path.join(self.kitti_sequence_dir, "times.txt")).reshape(-1, 1)
+        return timestamps
+
     @staticmethod
     def read_calib_file(file_path: str) -> dict:
         calib_dict = {}

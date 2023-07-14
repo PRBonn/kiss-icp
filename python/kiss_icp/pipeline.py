@@ -23,8 +23,8 @@
 import contextlib
 import datetime
 import os
-from pathlib import Path
 import time
+from pathlib import Path
 from typing import List, Optional
 
 import numpy as np
@@ -125,7 +125,7 @@ class OdometryPipeline:
                 for idx in range(len(poses)):
                     tx, ty, tz = poses[idx][:3, -1].flatten()
                     qw, qx, qy, qz = Quaternion(matrix=poses[idx], atol=0.01).elements
-                    tum_data.append([timestamps[idx], tx, ty, tz, qx, qy, qz, qw])
+                    tum_data.append([float(timestamps[idx]), tx, ty, tz, qx, qy, qz, qw])
             return np.array(tum_data).astype(np.float64)
 
         np.savetxt(fname=f"{filename}_tum.txt", X=_to_tum_format(poses, timestamps), fmt="%.4f")

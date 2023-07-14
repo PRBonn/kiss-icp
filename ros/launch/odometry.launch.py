@@ -37,7 +37,7 @@ def generate_launch_description():
     current_pkg = FindPackageShare("kiss_icp")
     return LaunchDescription(
         [
-            # ROS2 parameters
+            # ROS 2 parameters
             DeclareLaunchArgument("topic", description="sensor_msg/PointCloud2 topic to process"),
             DeclareLaunchArgument("bagfile", default_value=""),
             DeclareLaunchArgument("visualize", default_value="true"),

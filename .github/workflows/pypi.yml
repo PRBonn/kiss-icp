@@ -1,0 +1,66 @@
+name: Publish to PyPI.org
+on:
+  release:
+    types: [published]
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build_sdist:
+    name: Build source distribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build sdist
+        run: pipx run build --sdist ${{github.workspace}}/python/
+      - name: Move sdist to dist
+        run: mkdir -p dist && mv ${{github.workspace}}/python/dist/*.tar.gz dist/
+
+      - uses: actions/upload-artifact@v3
+        with:
+          path: dist/*.tar.gz
+
+  cibuildwheel:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, windows-2022, macos-11]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build test wheels (only PRs)
+        if: github.event_name != 'release'
+        uses: pypa/cibuildwheel@v2.12.0
+        env: # build 1 build per platform just to make sure we can do it later when releasing
+          CIBW_BUILD: "cp310-*"
+        with:
+          package-dir: ${{github.workspace}}/python/
+
+      - name: Build all wheels
+        if: github.event_name == 'release'
+        uses: pypa/cibuildwheel@v2.12.0
+        with:
+          package-dir: ${{github.workspace}}/python/
+
+      - uses: actions/upload-artifact@v3
+        with:
+          path: ./wheelhouse/*.whl
+
+  pypi:
+    if: github.event_name == 'release'
+    needs: [cibuildwheel, build_sdist]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: artifact
+          path: dist
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
