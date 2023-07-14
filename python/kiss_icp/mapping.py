@@ -59,6 +59,12 @@ class VoxelHashMap:
         """
         self._internal_map._update(kiss_icp_pybind._Vector3dVector(points), pose)
 
+    def add_points(self, points):
+        self._internal_map._add_points(kiss_icp_pybind._Vector3dVector(points))
+
+    def remove_far_away_points(self, origin):
+        self._internal_map._remove_far_away_points(origin)
+
     def point_cloud(self) -> np.ndarray:
         """Return the internal representaion as a np.array (pointcloud)."""
         return np.asarray(self._internal_map._point_cloud())

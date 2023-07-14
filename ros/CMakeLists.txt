@@ -21,7 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 cmake_minimum_required(VERSION 3.16...3.26)
-project(kiss_icp VERSION 0.2.9 LANGUAGES CXX)
+project(kiss_icp VERSION 0.2.10 LANGUAGES CXX)
 
 set(ignore ${CATKIN_INSTALL_INTO_PREFIX_ROOT})
 set(CMAKE_BUILD_TYPE Release)
@@ -41,7 +41,7 @@ else()
 endif()
 
 if("$ENV{ROS_VERSION}" STREQUAL "1")
-  message(STATUS "KISS-ICP-ROS1 wrapper will be compiled")
+  message(STATUS "KISS-ICP ROS 1 wrapper will be compiled")
   find_package(
     catkin REQUIRED
     COMPONENTS geometry_msgs
@@ -54,14 +54,15 @@ if("$ENV{ROS_VERSION}" STREQUAL "1")
                tf2_ros)
   catkin_package()
 
-  # ROS1 node
+  # ROS 1 node
   add_executable(odometry_node ros1/OdometryServer.cpp)
+  target_compile_features(odometry_node PUBLIC cxx_std_20)
   target_include_directories(odometry_node PUBLIC include ${catkin_INCLUDE_DIRS})
   target_link_libraries(odometry_node kiss_icp::pipeline ${catkin_LIBRARIES})
   install(TARGETS odometry_node RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
   install(DIRECTORY launch DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 elseif("$ENV{ROS_VERSION}" STREQUAL "2")
-  message(STATUS "KISS-ICP-ROS2 wrapper will be compiled")
+  message(STATUS "KISS-ICP ROS 2 wrapper will be compiled")
 
   find_package(ament_cmake REQUIRED)
   find_package(nav_msgs REQUIRED)
@@ -71,8 +72,9 @@ elseif("$ENV{ROS_VERSION}" STREQUAL "2")
   find_package(sensor_msgs REQUIRED)
   find_package(tf2_ros REQUIRED)
 
-  # ROS2 node
+  # ROS 2 node
   add_library(odometry_component SHARED ros2/OdometryServer.cpp)
+  target_compile_features(odometry_component PUBLIC cxx_std_20)
   target_include_directories(odometry_component PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
   target_link_libraries(odometry_component kiss_icp::pipeline)
   ament_target_dependencies(

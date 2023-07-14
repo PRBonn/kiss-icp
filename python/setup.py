@@ -32,7 +32,7 @@ setup(
         "natsort",
         "numpy",
         "plyfile",
-        "pydantic",
+        "pydantic <2",
         "pyquaternion",
         "rich",
         "tqdm",

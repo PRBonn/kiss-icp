@@ -37,12 +37,14 @@ def generate_launch_description():
     current_pkg = FindPackageShare("kiss_icp")
     return LaunchDescription(
         [
-            # ROS2 parameters
+            # ROS 2 parameters
             DeclareLaunchArgument("topic", description="sensor_msg/PointCloud2 topic to process"),
             DeclareLaunchArgument("bagfile", default_value=""),
             DeclareLaunchArgument("visualize", default_value="true"),
             DeclareLaunchArgument("odom_frame", default_value="odom"),
             DeclareLaunchArgument("child_frame", default_value="base_link"),
+            DeclareLaunchArgument("publish_odom_tf", default_value="true"),
+            DeclareLaunchArgument("publish_alias_tf", default_value="true"),
             # KISS-ICP parameters
             DeclareLaunchArgument("deskew", default_value="false"),
             DeclareLaunchArgument("max_range", default_value="100.0"),
