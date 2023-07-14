@@ -52,7 +52,6 @@ using utils::PointCloud2ToEigen;
 
 OdometryServer::OdometryServer(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
     : nh_(nh), pnh_(pnh) {
-    bool alias_transform;
     pnh_.param("child_frame", child_frame_, child_frame_);
     pnh_.param("odom_frame", odom_frame_, odom_frame_);
     pnh_.param("max_range", config_.max_range, config_.max_range);
@@ -62,7 +61,7 @@ OdometryServer::OdometryServer(const ros::NodeHandle &nh, const ros::NodeHandle 
     pnh_.param("max_points_per_voxel", config_.max_points_per_voxel, config_.max_points_per_voxel);
     pnh_.param("initial_threshold", config_.initial_threshold, config_.initial_threshold);
     pnh_.param("min_motion_th", config_.min_motion_th, config_.min_motion_th);
-    pnh_.param("publish_alias_tf", alias_transform, true);
+    pnh_.param("publish_alias_tf", publish_alias_tf_, true);
     pnh_.param("publish_odom_tf", publish_odom_tf_, true);
 
     if (config_.max_range < config_.min_range) {
@@ -89,7 +88,7 @@ OdometryServer::OdometryServer(const ros::NodeHandle &nh, const ros::NodeHandle 
 
     // Broadcast a static transformation that links with identity the specified base link to the
     // pointcloud_frame, basically to always be able to visualize the frame in rviz
-    if (alias_transform && child_frame_ != "base_link") {
+    if (publish_alias_tf_ && child_frame_ != "base_link") {
         static tf2_ros::StaticTransformBroadcaster br;
         geometry_msgs::TransformStamped alias_transform_msg;
         alias_transform_msg.header.stamp = ros::Time::now();
