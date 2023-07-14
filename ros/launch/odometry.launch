@@ -22,7 +22,7 @@
     <param name="odom_frame" value="$(arg odom_frame)"/>
     <param name="child_frame" value="$(arg child_frame)"/>
     <param name="publish_odom_tf" value="$(arg publish_odom_tf)"/>
-    <param name="publish_alias_tf" value="$(arg publish_alias_tf)"/>    
+    <param name="publish_alias_tf" value="$(arg publish_alias_tf)"/>
     <!-- KISS-ICP params -->
     <param name="max_range" value="$(arg max_range)"/>
     <param name="min_range" value="$(arg min_range)"/>
