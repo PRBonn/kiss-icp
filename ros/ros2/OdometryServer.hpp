@@ -50,6 +50,8 @@ private:
 
     /// Tools for broadcasting TFs.
     std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+    bool publish_odom_tf_;
+    bool publish_alias_tf_;
 
     /// Data subscribers.
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_sub_;

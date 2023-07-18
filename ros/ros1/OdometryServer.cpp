@@ -54,6 +54,8 @@ OdometryServer::OdometryServer(const ros::NodeHandle &nh, const ros::NodeHandle 
     : nh_(nh), pnh_(pnh) {
     pnh_.param("child_frame", child_frame_, child_frame_);
     pnh_.param("odom_frame", odom_frame_, odom_frame_);
+    pnh_.param("publish_alias_tf", publish_alias_tf_, true);
+    pnh_.param("publish_odom_tf", publish_odom_tf_, true);
     pnh_.param("max_range", config_.max_range, config_.max_range);
     pnh_.param("min_range", config_.min_range, config_.min_range);
     pnh_.param("deskew", config_.deskew, config_.deskew);
@@ -85,7 +87,7 @@ OdometryServer::OdometryServer(const ros::NodeHandle &nh, const ros::NodeHandle 
 
     // Broadcast a static transformation that links with identity the specified base link to the
     // pointcloud_frame, basically to always be able to visualize the frame in rviz
-    if (child_frame_ != "base_link") {
+    if (publish_alias_tf_ && child_frame_ != "base_link") {
         static tf2_ros::StaticTransformBroadcaster br;
         geometry_msgs::TransformStamped alias_transform_msg;
         alias_transform_msg.header.stamp = ros::Time::now();
@@ -123,18 +125,20 @@ void OdometryServer::RegisterFrame(const sensor_msgs::PointCloud2::ConstPtr &msg
     const Eigen::Quaterniond q_current = pose.unit_quaternion();
 
     // Broadcast the tf
-    geometry_msgs::TransformStamped transform_msg;
-    transform_msg.header.stamp = msg->header.stamp;
-    transform_msg.header.frame_id = odom_frame_;
-    transform_msg.child_frame_id = child_frame_;
-    transform_msg.transform.rotation.x = q_current.x();
-    transform_msg.transform.rotation.y = q_current.y();
-    transform_msg.transform.rotation.z = q_current.z();
-    transform_msg.transform.rotation.w = q_current.w();
-    transform_msg.transform.translation.x = t_current.x();
-    transform_msg.transform.translation.y = t_current.y();
-    transform_msg.transform.translation.z = t_current.z();
-    tf_broadcaster_.sendTransform(transform_msg);
+    if (publish_odom_tf_) {
+        geometry_msgs::TransformStamped transform_msg;
+        transform_msg.header.stamp = msg->header.stamp;
+        transform_msg.header.frame_id = odom_frame_;
+        transform_msg.child_frame_id = child_frame_;
+        transform_msg.transform.rotation.x = q_current.x();
+        transform_msg.transform.rotation.y = q_current.y();
+        transform_msg.transform.rotation.z = q_current.z();
+        transform_msg.transform.rotation.w = q_current.w();
+        transform_msg.transform.translation.x = t_current.x();
+        transform_msg.transform.translation.y = t_current.y();
+        transform_msg.transform.translation.z = t_current.z();
+        tf_broadcaster_.sendTransform(transform_msg);
+    }
 
     // publish trajectory msg
     geometry_msgs::PoseStamped pose_msg;
@@ -168,7 +172,6 @@ void OdometryServer::RegisterFrame(const sensor_msgs::PointCloud2::ConstPtr &msg
     local_map_header.frame_id = odom_frame_;
     map_publisher_.publish(*std::move(EigenToPointCloud2(odometry_.LocalMap(), local_map_header)));
 }
-
 }  // namespace kiss_icp_ros
 
 int main(int argc, char **argv) {
