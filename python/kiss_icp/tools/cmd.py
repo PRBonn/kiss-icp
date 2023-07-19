@@ -148,7 +148,7 @@ def kiss_icp_pipeline(
     deskew: bool = typer.Option(
         False,
         "--deskew",
-        help="[Optional] Wheter or not to deskew the scan or not",
+        help="[Optional] Whether or not to deskew the scan or not",
         show_default=False,
         is_flag=True,
     ),
