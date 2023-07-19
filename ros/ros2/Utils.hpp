@@ -58,12 +58,15 @@ inline auto GetTimestampField(const PointCloud2::ConstSharedPtr msg) {
 
 // Normalize timestamps from 0.0 to 1.0
 inline auto NormalizeTimestamps(const std::vector<double> &timestamps) {
-    const double max_timestamp = *std::max_element(timestamps.cbegin(), timestamps.cend());
-    // check if already normalized
-    if (max_timestamp < 1.0) return timestamps;
+    const auto [min_it, max_it] = std::minmax_element(timestamps.cbegin(), timestamps.cend());
+    const double min_timestamp = *min_it;
+    const double max_timestamp = *max_it;
+
     std::vector<double> timestamps_normalized(timestamps.size());
     std::transform(timestamps.cbegin(), timestamps.cend(), timestamps_normalized.begin(),
-                   [&](const auto &timestamp) { return timestamp / max_timestamp; });
+                   [&](const auto &timestamp) {
+                       return (timestamp - min_timestamp) / (max_timestamp - min_timestamp);
+                   });
     return timestamps_normalized;
 }
 
