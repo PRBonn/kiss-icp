@@ -182,8 +182,8 @@ class OdometryPipeline:
 
         self.results.append(desc="Average Translation Error", units="%", value=avg_tra)
         self.results.append(desc="Average Rotational Error", units="deg/m", value=avg_rot)
-        self.results.append(desc="Absoulte Trajectory Error (ATE)", units="m", value=ate_trans)
-        self.results.append(desc="Absoulte Rotational Error (ARE)", units="rad", value=ate_rot)
+        self.results.append(desc="Absolute Trajectory Error (ATE)", units="m", value=ate_trans)
+        self.results.append(desc="Absolute Rotational Error (ARE)", units="rad", value=ate_rot)
         self.results.append(desc="Average Frequency", units="Hz", value=avg_fps, trunc=True)
         self.results.append(desc="Average Runtime", units="ms", value=avg_ms, trunc=True)
 
