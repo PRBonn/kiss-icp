@@ -73,12 +73,12 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
     // Construct the main KISS-ICP odometry node
     odometry_ = kiss_icp::pipeline::KissICP(config_);
 
-    // Intialize subscribers
+    // Initialize subscribers
     pointcloud_sub_ = create_subscription<sensor_msgs::msg::PointCloud2>(
         "pointcloud_topic", rclcpp::SensorDataQoS(),
         std::bind(&OdometryServer::RegisterFrame, this, std::placeholders::_1));
 
-    // Intialize publishers
+    // Initialize publishers
     rclcpp::QoS qos(rclcpp::KeepLast{queue_size_});
     odom_publisher_ = create_publisher<nav_msgs::msg::Odometry>("odometry", qos);
     frame_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("frame", qos);
@@ -88,7 +88,7 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
     // Initialize the transform broadcaster
     tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
 
-    // Intialize trajectory publisher
+    // Initialize trajectory publisher
     path_msg_.header.frame_id = odom_frame_;
     traj_publisher_ = create_publisher<nav_msgs::msg::Path>("trajectory", qos);
 
