@@ -20,10 +20,6 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-set(PYBIND11_NEWPYTHON ON)
-find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
-find_package(pybind11 CONFIG REQUIRED)
-
 pybind11_add_module(kiss_icp_pybind MODULE kiss_icp_pybind.cpp)
 target_link_libraries(kiss_icp_pybind PRIVATE kiss_icp::core kiss_icp::metrics)
 install(TARGETS kiss_icp_pybind DESTINATION .)
