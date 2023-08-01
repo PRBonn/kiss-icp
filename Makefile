@@ -1,7 +1,7 @@
 .PHONY: cpp
 
 editable:
-	@pip install scikit-build-core pyproject_metadata pathspec pybind11
+	@pip install scikit-build-core pyproject_metadata pathspec pybind11 ninja cmake
 	@pip install --no-build-isolation -ve ./python/
 
 install:
