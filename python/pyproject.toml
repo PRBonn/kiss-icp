@@ -1,11 +1,78 @@
 [build-system]
-requires = [
-    "cmake",
-    "ninja",
-    "scikit-build>=0.17.4",
-    "setuptools<66.0.0", # https://github.com/pypa/setuptools/issues/3772
+requires = ["scikit_build_core"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "kiss-icp"
+version = "0.2.10"
+description = "Simple yet effective 3D LiDAR-Odometry registration pipeline"
+readme = "README.md"
+# license = ["MIT"]
+authors = [
+    { name = "Ignacio Vizzo", email = "ignaciovizzo@gmail.com" },
 ]
-build-backend = "setuptools.build_meta"
+keywords = [
+    "LiDAR",
+    "Localization",
+    "Odometry",
+    "SLAM",
+]
+classifiers = [
+    "Intended Audience :: Developers",
+    "Intended Audience :: Education",
+    "Intended Audience :: Other Audience",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: Unix",
+    "Programming Language :: C++",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+dependencies = [
+    "natsort",
+    "numpy",
+    "plyfile",
+    "pydantic <2",
+    "pyquaternion",
+    "rich",
+    "tqdm",
+    "typer[all]>=0.6.0",
+]
+
+[project.optional-dependencies]
+all = [
+    "open3d>=0.13",
+    "ouster-sdk>=0.7.1",
+    "pyntcloud",
+    "PyYAML",
+    "trimesh",
+]
+visualizer = [
+    "open3d>=0.13",
+]
+
+[project.scripts]
+kiss_icp_pipeline = "kiss_icp.tools.cmd:run"
+
+[project.urls]
+Homepage = "https://github.com/PRBonn/kiss-icp"
+
+[tool.scikit-build]
+build-dir = "build/{wheel_tag}"
+cmake.verbose = false
+editable.mode = "redirect"
+editable.rebuild = true
+editable.verbose = true
+ninja.make-fallback = true
+strict-config = true
+sdist.exclude = ["pybind/"]
+wheel.install-dir = "kiss_icp/pybind/"
 
 [tool.black]
 line-length = 100
