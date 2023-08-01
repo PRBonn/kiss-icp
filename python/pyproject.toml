@@ -7,10 +7,10 @@ name = "kiss-icp"
 version = "0.2.10"
 description = "Simple yet effective 3D LiDAR-Odometry registration pipeline"
 readme = "README.md"
-# license = ["MIT"]
 authors = [
     { name = "Ignacio Vizzo", email = "ignaciovizzo@gmail.com" },
 ]
+requires-python = ">=3.7"
 keywords = [
     "LiDAR",
     "Localization",
