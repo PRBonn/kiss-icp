@@ -1,7 +1,7 @@
 .PHONY: cpp
 
 editable:
-	@pip install --verbose --editable ./python/
+	@pip install --no-build-isolation -ve ./python/
 
 install:
 	@pip install --verbose ./python/

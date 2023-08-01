@@ -69,8 +69,6 @@ cmake.verbose = false
 editable.mode = "redirect"
 editable.rebuild = true
 editable.verbose = true
-ninja.make-fallback = true
-strict-config = true
 sdist.exclude = ["pybind/"]
 wheel.install-dir = "kiss_icp/pybind/"
 
