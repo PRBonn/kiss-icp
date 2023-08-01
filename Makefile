@@ -1,7 +1,7 @@
 .PHONY: cpp
 
 editable:
-	SETUPTOOLS_ENABLE_FEATURES="legacy-editable" pip install --verbose --prefix=$(shell python3 -m site --user-base) --editable ./python/
+	@pip install --verbose --editable ./python/
 
 install:
 	@pip install --verbose ./python/
