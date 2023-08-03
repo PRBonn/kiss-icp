@@ -58,9 +58,9 @@ This should print the following help message:
 
 ### Install Python API (developer mode)
 
-If you plan to modify the code then you need to setup the dev dependencies, luckilly, the only real
+If you plan to modify the code then you need to setup the dev dependencies, luckily, the only real
 requirements are a modern C++ compiler and the `pip` package manager, nothing else!, in Ubuntu-based
-sytems this can be done with:
+systems this can be done with:
 
 ```sh
 sudo apt install g++ python3-pip
@@ -71,7 +71,7 @@ After that you can clone the code and install the python api:
 ```sh
 git clone https://github.com/PRBonn/kiss-icp.git
 cd kiss-icp
-pip install --verbose .
+make editable
 ```
 
 ### Install Python API (expert mode)
@@ -108,5 +108,3 @@ We envision KISS-ICP as a comunity-driven project, we love to see how the projec
 <a href="https://github.com/PRBonn/kiss-icp/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=PRBonn/kiss-icp" />
 </a>
-
-[![Star History Chart](https://api.star-history.com/svg?repos=PRBonn/kiss-icp&type=Date)](https://star-history.com/#PRBonn/kiss-icp&Date)

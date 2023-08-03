@@ -32,8 +32,11 @@ set(EIGEN_BUILD_BLAS OFF CACHE BOOL "Don't build blas module")
 set(EIGEN_BUILD_LAPACK OFF CACHE BOOL "Don't build lapack module")
 
 include(FetchContent)
-FetchContent_Declare(eigen SYSTEM URL https://github.com/nachovizzo/eigen/archive/refs/tags/3.4.90.tar.gz)
-FetchContent_MakeAvailable(eigen)
+FetchContent_Declare(eigen URL https://github.com/nachovizzo/eigen/archive/refs/tags/3.4.90.tar.gz)
+if(NOT eigen_POPULATED)
+  FetchContent_Populate(eigen)
+  add_subdirectory(${eigen_SOURCE_DIR} ${eigen_BINARY_DIR} SYSTEM EXCLUDE_FROM_ALL)
+endif()
 
 if(${CMAKE_VERSION} VERSION_LESS 3.25)
   get_target_property(eigen_include_dirs eigen INTERFACE_INCLUDE_DIRECTORIES)
