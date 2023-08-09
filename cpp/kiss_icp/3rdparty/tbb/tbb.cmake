@@ -28,7 +28,7 @@ option(TBB_STRICT OFF)
 option(TBB_TEST OFF)
 
 include(FetchContent)
-FetchContent_Declare(tbb URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.9.0.tar.gz)
+FetchContent_Declare(tbb URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.8.0.tar.gz)
 if(NOT tbb_POPULATED)
   FetchContent_Populate(tbb)
   if(${CMAKE_VERSION} VERSION_LESS 3.25)
