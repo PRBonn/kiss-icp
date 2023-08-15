@@ -38,4 +38,6 @@ find_external_dependecy("USE_SYSTEM_SOPHUS" "Sophus" "Sophus::Sophus" "${CMAKE_C
 find_external_dependecy("USE_SYSTEM_TBB" "TBB" "TBB::tbb" "${CMAKE_CURRENT_LIST_DIR}/tbb/tbb.cmake")
 
 # tsl_robin
-find_external_dependecy("USE_SYSTEM_TSLMAP" "tsl-robin-map" "tsl::robin_map" "${CMAKE_CURRENT_LIST_DIR}/tsl_robin/tsl_robin.cmake")
+
+find_external_dependecy("USE_SYSTEM_TSLMAP" "tsl-robin-map" "tsl::robin_map"
+                        "${CMAKE_CURRENT_LIST_DIR}/tsl_robin/tsl_robin.cmake")
