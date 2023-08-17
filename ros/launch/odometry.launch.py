@@ -68,6 +68,8 @@ def generate_launch_description():
                         "max_points_per_voxel": 20,
                         "initial_threshold": 2.0,
                         "min_motion_th": 0.1,
+                        "publish_odom_tf": LaunchConfiguration("publish_odom_tf"),
+                        "publish_alias_tf": LaunchConfiguration("publish_alias_tf"),
                     }
                 ],
             ),
