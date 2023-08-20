@@ -21,11 +21,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 # option(BUILD_SHARED_LIBS ON)
-option(BUILD_SHARED_LIBS OFF)
 option(TBBMALLOC_BUILD OFF)
 option(TBB_EXAMPLES OFF)
 option(TBB_STRICT OFF)
 option(TBB_TEST OFF)
+
+set(BUILD_SHARED_LIBS ON)
 
 include(FetchContent)
 FetchContent_Declare(tbb URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.8.0.tar.gz)
