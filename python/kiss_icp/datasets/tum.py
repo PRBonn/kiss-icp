@@ -36,7 +36,7 @@ class TUMDataset:
             print(f'open3d is not installed on your system, run "pip install open3d"')
             exit(1)
 
-        self.data_dir = data_dir
+        self.data_dir = Path(data_dir)
         self.sequence_id = os.path.basename(data_dir)
 
         # Load depth frames
@@ -54,14 +54,16 @@ class TUMDataset:
         return len(self.depth_frames)
 
     def load_poses(self, gt_list):
-        indices = np.abs(
-            (
-                np.subtract.outer(
-                    gt_list[:, 0].astype(np.float64),
-                    self.depth_frames[:, 0].astype(np.float64),
+        indices = np.unique(
+            np.abs(
+                (
+                    np.subtract.outer(
+                        gt_list[:, 0].astype(np.float64),
+                        self.depth_frames[:, 0].astype(np.float64),
+                    )
                 )
-            )
-        ).argmin(0)
+            ).argmin(0)
+        )
         xyz = gt_list[indices][:, 1:4]
 
         rotations = np.array(
