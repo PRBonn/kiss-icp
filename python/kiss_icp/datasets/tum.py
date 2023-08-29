@@ -36,7 +36,7 @@ class TUMDataset:
             print(f'open3d is not installed on your system, run "pip install open3d"')
             exit(1)
 
-        self.data_dir = data_dir
+        self.data_dir = Path(data_dir)
         self.sequence_id = os.path.basename(data_dir)
 
         # Load depth frames
