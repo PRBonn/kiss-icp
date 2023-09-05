@@ -178,7 +178,7 @@ class OdometryPipeline:
         avg_tra, avg_rot = sequence_error(self.gt_poses, self.poses)
         ate_rot, ate_trans = absolute_trajectory_error(self.gt_poses, self.poses)
         avg_fps = int(np.floor(_get_fps()))
-        avg_ms = 1e3 * (1 / avg_fps)
+        avg_ms = 1e3 * (1 / _get_fps())
 
         self.results.append(desc="Average Translation Error", units="%", value=avg_tra)
         self.results.append(desc="Average Rotational Error", units="deg/m", value=avg_rot)
