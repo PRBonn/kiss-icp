@@ -27,7 +27,6 @@ from pydantic import BaseModel
 
 class DataConfig(BaseModel):
     preprocess: bool = True
-    correct_scan: bool = True
     max_range: float = 100.0
     min_range: float = 5.0
     deskew: bool = False
