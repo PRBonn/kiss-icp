@@ -31,8 +31,7 @@ def sequence_error(
     gt_poses: List[np.ndarray], results_poses: List[np.ndarray]
 ) -> Tuple[float, float]:
     """Sptis the sequence error for a given trajectory in camera coordinate frames."""
-    ate_kitti, are_kitti = kiss_icp_pybind._kitti_seq_error(gt_poses, results_poses)
-    return ate_kitti, are_kitti / 100.0
+    return kiss_icp_pybind._kitti_seq_error(gt_poses, results_poses)
 
 
 def absolute_trajectory_error(

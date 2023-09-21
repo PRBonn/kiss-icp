@@ -149,7 +149,7 @@ std::tuple<float, float> SeqError(const std::vector<Eigen::Matrix4d> &poses_gt,
     }
 
     double avg_trans_error = 100.0 * (t_err / static_cast<double>(err.size()));
-    double avg_rot_error = 100.0 * (r_err / static_cast<double>(err.size())) / 3.14 * 180.0;
+    double avg_rot_error = (r_err / static_cast<double>(err.size())) / 3.14 * 180.0;
 
     return std::make_tuple(avg_trans_error, avg_rot_error);
 }
