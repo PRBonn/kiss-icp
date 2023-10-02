@@ -30,8 +30,9 @@
 #include <string>
 #include <vector>
 
-#include "sensor_msgs/PointCloud2.h"
-#include "sensor_msgs/point_cloud2_iterator.h"
+// ROS 1 headers
+#include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/point_cloud2_iterator.h>
 
 namespace kiss_icp_ros::utils {
 using PointCloud2 = sensor_msgs::PointCloud2;
