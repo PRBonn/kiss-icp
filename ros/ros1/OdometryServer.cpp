@@ -51,7 +51,7 @@ using utils::GetTimestamps;
 using utils::PointCloud2ToEigen;
 
 OdometryServer::OdometryServer(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
-    : nh_(nh), pnh_(pnh) {
+    : nh_(nh), pnh_(pnh) , tf_buffer_(new tf2_ros::Buffer()), tf2_listener_(new tf2_ros::TransformListener(*tf_buffer_)){
     pnh_.param("child_frame", child_frame_, child_frame_);
     pnh_.param("odom_frame", odom_frame_, odom_frame_);
     pnh_.param("publish_alias_tf", publish_alias_tf_, true);
@@ -103,6 +103,16 @@ OdometryServer::OdometryServer(const ros::NodeHandle &nh, const ros::NodeHandle 
         br.sendTransform(alias_transform_msg);
     }
 
+    try
+    {
+        tf_buffer_->canTransform("os_sensor", "base_link", ros::Time::now(), ros::Duration(5.0));
+        os_to_base_link_tf_ = tf_buffer_->lookupTransform("os_sensor", "base_link", ros::Time(0));
+    }
+    catch (tf2::TransformException& ex)
+    {
+        ROS_ERROR("Failed to wait for transform: %s", ex.what());
+    }
+
     // publish odometry msg
     ROS_INFO("KISS-ICP ROS 1 Odometry Node Initialized");
 }
@@ -125,6 +135,7 @@ void OdometryServer::RegisterFrame(const sensor_msgs::PointCloud2::ConstPtr &msg
     const Eigen::Quaterniond q_current = pose.unit_quaternion();
 
     // Broadcast the tf
+    geometry_msgs::TransformStamped result_transform ;
     if (publish_odom_tf_) {
         geometry_msgs::TransformStamped transform_msg;
         transform_msg.header.stamp = msg->header.stamp;
@@ -137,18 +148,32 @@ void OdometryServer::RegisterFrame(const sensor_msgs::PointCloud2::ConstPtr &msg
         transform_msg.transform.translation.x = t_current.x();
         transform_msg.transform.translation.y = t_current.y();
         transform_msg.transform.translation.z = t_current.z();
-        tf_broadcaster_.sendTransform(transform_msg);
+
+        tf2::Transform odom_to_sensor_tf;
+        tf2::fromMsg(transform_msg.transform, odom_to_sensor_tf);
+
+        tf2::Transform os_to_base_link_tf;
+        tf2::fromMsg(os_to_base_link_tf_.transform, os_to_base_link_tf);
+
+        tf2::Transform result_transform_tf = odom_to_sensor_tf * os_to_base_link_tf;
+        result_transform.transform = tf2::toMsg(result_transform_tf);
+
+        result_transform.header.stamp = msg->header.stamp;
+        result_transform.header.frame_id = odom_frame_;
+        result_transform.child_frame_id = child_frame_;
+        result_transform.transform.translation.z = t_current.z();
+        tf_broadcaster_.sendTransform(result_transform);
     }
 
     // publish trajectory msg
     geometry_msgs::PoseStamped pose_msg;
-    pose_msg.pose.orientation.x = q_current.x();
-    pose_msg.pose.orientation.y = q_current.y();
-    pose_msg.pose.orientation.z = q_current.z();
-    pose_msg.pose.orientation.w = q_current.w();
-    pose_msg.pose.position.x = t_current.x();
-    pose_msg.pose.position.y = t_current.y();
-    pose_msg.pose.position.z = t_current.z();
+    pose_msg.pose.orientation.x = result_transform.transform.rotation.x;
+    pose_msg.pose.orientation.y = result_transform.transform.rotation.y;
+    pose_msg.pose.orientation.z = result_transform.transform.rotation.z;
+    pose_msg.pose.orientation.w = result_transform.transform.rotation.w;
+    pose_msg.pose.position.x = result_transform.transform.translation.x;
+    pose_msg.pose.position.y = result_transform.transform.translation.y;
+    pose_msg.pose.position.z = result_transform.transform.translation.z;
     pose_msg.header.stamp = msg->header.stamp;
     pose_msg.header.frame_id = odom_frame_;
     path_msg_.poses.push_back(pose_msg);

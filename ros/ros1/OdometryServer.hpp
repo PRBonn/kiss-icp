@@ -31,6 +31,10 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <tf2_ros/transform_broadcaster.h>
 
+#include <tf2/transform_datatypes.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+
 namespace kiss_icp_ros {
 
 class OdometryServer {
@@ -70,6 +74,11 @@ private:
     /// Global/map coordinate frame.
     std::string odom_frame_{"odom"};
     std::string child_frame_{"base_link"};
+
+    //necessary for changing frames
+    std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+    std::shared_ptr<tf2_ros::TransformListener> tf2_listener_;
+    geometry_msgs::TransformStamped os_to_base_link_tf_;
 };
 
 }  // namespace kiss_icp_ros
