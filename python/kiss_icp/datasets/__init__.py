@@ -34,6 +34,7 @@ def supported_file_extensions():
         "ctm",
         "off",
         "stl",
+        "las",
     ]
 
 

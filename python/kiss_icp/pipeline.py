@@ -26,6 +26,8 @@ import os
 import time
 from pathlib import Path
 from typing import List, Optional
+import open3d as o3d
+import laspy
 
 import numpy as np
 from pyquaternion import Quaternion
@@ -75,6 +77,12 @@ class OdometryPipeline:
             else os.path.basename(self._dataset.data_dir)
         )
 
+        self._cloud_map = o3d.geometry.PointCloud()
+        self.intensities = np.empty(0)
+        self.timestamps = np.empty(0)
+        self.scan_nbr = 0
+        self.points_to_scan = np.zeros(self._n_scans) # Dictionary to store which points belong to which scan
+
         # Visualizer
         self.visualizer = RegistrationVisualizer() if visualize else StubVisualizer()
         if hasattr(self._dataset, "use_global_visualizer"):
@@ -89,26 +97,65 @@ class OdometryPipeline:
         self._write_gt_poses()
         self._write_cfg()
         self._write_log()
+        self._write_las()
         return self.results
+
+    # def transform(self, pcd, matrix):
+
+
 
     # Private interface  ------
     def _run_pipeline(self):
         for idx in get_progress_bar(self._first, self._last):
-            raw_frame, timestamps = self._next(idx)
+            raw_frame, timestamps, intensities  = self._next(idx)
             start_time = time.perf_counter_ns()
-            source, keypoints = self.odometry.register_frame(raw_frame, timestamps)
+            source, keypoints, raw_frame_deskewed = self.odometry.register_frame(raw_frame, timestamps)
+            raw_frame_deskewed_transformed = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(raw_frame_deskewed))
+            # if intensities is not None:
+            #     intensities = np.clip(intensities, 0, 80)
+            #     normalized_intensities = np.interp(intensities, (intensities.min(), intensities.max()), (0, 1)).astype(float)
+            #     colors = np.zeros((raw_frame_deskewed.shape[0], 3))
+            #     colors[:, :] = normalized_intensities.reshape(-1, 1)
+            #     raw_frame_deskewed_transformed.colors = o3d.utility.Vector3dVector(colors)
+            
+            raw_frame_deskewed_transformed.transform(self.poses[-1])
+            self._cloud_map += raw_frame_deskewed_transformed
+
             self.times.append(time.perf_counter_ns() - start_time)
             self.visualizer.update(source, keypoints, self.odometry.local_map, self.poses[-1])
 
     def _next(self, idx):
         """TODO: re-arrange this logic"""
         dataframe = self._dataset[idx]
+        intensities = None
+        timestamps = None
         try:
             frame, timestamps = dataframe
         except ValueError:
-            frame = dataframe
-            timestamps = np.zeros(frame.shape[0])
-        return frame, timestamps
+            try :
+                frame, timestamps, intensities = dataframe
+            except ValueError:
+                frame = dataframe
+                timestamps = np.zeros(frame.shape[0])
+
+        if frame.shape[1] == 4:
+            timestamps = frame[:, 3]
+            frame = frame[:, :3]
+        if frame.shape[1] == 5:
+            timestamps = frame[:, 3]
+            intensities = frame[:, 4]
+            # print("min :", np.min(intensities))
+            # print("max :", np.max(intensities))
+
+            frame = frame[:, :3]
+
+        self.points_to_scan[self.scan_nbr] = frame.shape[0]
+        self.scan_nbr += 1
+        self.intensities = np.concatenate((self.intensities, intensities))
+        self.timestamps = np.concatenate((self.timestamps, timestamps))
+        return frame, timestamps, intensities
+
+
 
     @staticmethod
     def save_poses_kitti_format(filename: str, poses: List[np.ndarray]):
@@ -194,6 +241,45 @@ class OdometryPipeline:
 
     def _write_cfg(self):
         write_config(self.config, os.path.join(self.results_dir, "config.yml"))
+
+    def _write_ply(self):
+        output_path = "/home/andrew/datasets/SHERPA/ia4markings/kiss_icp_pointclouds"
+        os.makedirs(output_path, exist_ok=True)
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        filename = os.path.join(output_path, timestamp) + ".ply"
+        o3d.io.write_point_cloud(filename, self._cloud_map)
+
+        # Also store an array to know which points belong to which scan
+        filename = os.path.join(output_path, timestamp) + ".npy"
+        np.save(filename, self.points_to_scan)
+
+    def _write_las(self):
+        """Save a las file with the point clouds with intensities and timestamps"""
+        output_path = "/home/andrew/datasets/SHERPA/ia4markings/kiss_icp_pointclouds"
+        os.makedirs(output_path, exist_ok=True)
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        filename = os.path.join(output_path, timestamp) + ".las"
+
+        # Create the las file
+        hdr = laspy.LasHeader(point_format=1)  # Point format 1 supports GPS time
+        new_las = laspy.LasData(hdr)
+        points = np.asarray(self._cloud_map.points)
+        new_las.x = points[:, 0]
+        new_las.y = points[:, 1]
+        new_las.z = points[:, 2]
+        if len(self.intensities) == len(self._cloud_map.points):
+            new_las.intensity = self.intensities
+        else :
+            print("Intensities not saved because of different lengths : ", len(self.intensities), " vs ", len(self._cloud_map.points))
+        if len(self.timestamps) == len(self._cloud_map.points):
+            new_las.gps_time = self.timestamps
+        else :
+            print("Timestamps not saved because of different lengths : ", len(self.timestamps), " vs ", len(self._cloud_map.points))
+        new_las.write(filename)
+
+        # Also store an array to know which points belong to which scan
+        filename = os.path.join(output_path, timestamp) + ".npy"
+        np.save(filename, self.points_to_scan)
 
     @staticmethod
     def _get_results_dir(out_dir: str):

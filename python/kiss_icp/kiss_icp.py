@@ -42,10 +42,10 @@ class KissICP:
 
     def register_frame(self, frame, timestamps):
         # Apply motion compensation
-        frame = self.compensator.deskew_scan(frame, self.poses, timestamps)
+        raw_frame_deskewed = self.compensator.deskew_scan(frame, self.poses, timestamps)
 
         # Preprocess the input cloud
-        frame = self.preprocess(frame)
+        frame = self.preprocess(raw_frame_deskewed)
 
         # Voxelize
         source, frame_downsample = self.voxelize(frame)
@@ -70,7 +70,7 @@ class KissICP:
         self.adaptive_threshold.update_model_deviation(np.linalg.inv(initial_guess) @ new_pose)
         self.local_map.update(frame_downsample, new_pose)
         self.poses.append(new_pose)
-        return frame, source
+        return frame, source, raw_frame_deskewed
 
     def voxelize(self, iframe):
         frame_downsample = voxel_down_sample(iframe, self.config.mapping.voxel_size * 0.5)

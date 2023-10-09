@@ -80,6 +80,20 @@ class GenericDataset:
         print('Trying to guess how to read your data: `pip install "kiss-icp[all]"` is required')
         first_scan_file = self.scan_files[0]
 
+        if self.file_extension == "las":
+            try:
+                import laspy
+                def las_reader(las_filename):
+                    las_data = laspy.read(las_filename)
+                    points = np.vstack((las_data.x, las_data.y, las_data.z, las_data.gps_time, las_data.intensity)).T.astype(float)
+                    # intensities = las_data.intensity
+                    # timestamps = las_data.gps_time
+                    return points
+                return las_reader
+            except:
+                pass
+
+
         # first try trimesh
         try:
             import trimesh
