@@ -138,7 +138,7 @@ class OusterDataloader:
         scan = next(self._scans_iter)
         self._next_idx += 1
 
-        self._timestamps[self._next_idx-1] = 1e-9 * scan.timestamp[0]
+        self._timestamps[self._next_idx - 1] = 1e-9 * scan.timestamp[0]
 
         timestamps = np.tile(np.linspace(0, 1.0, scan.w, endpoint=False), (scan.h, 1))
 
