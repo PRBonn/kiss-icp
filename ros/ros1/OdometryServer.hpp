@@ -42,8 +42,7 @@ public:
 private:
     /// Register new frame
     void RegisterFrame(const sensor_msgs::PointCloud2::ConstPtr &msg);
-    bool reset_pose(kiss_icp::set_pose::Request &req,
-                    kiss_icp::set_pose::Response &res);
+    bool reset_pose(kiss_icp::set_pose::Request &req, kiss_icp::set_pose::Response &res);
 
     /// Ros node stuff
     ros::NodeHandle nh_;
