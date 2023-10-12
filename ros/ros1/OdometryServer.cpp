@@ -74,6 +74,8 @@ OdometryServer::OdometryServer(const ros::NodeHandle &nh, const ros::NodeHandle 
     // Initialize subscribers
     pointcloud_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>("pointcloud_topic", queue_size_,
                                                               &OdometryServer::RegisterFrame, this);
+    service = nh_.advertiseService("reset_pose", &OdometryServer::reset_pose, this);
+
 
     // Initialize publishers
     odom_publisher_ = pnh_.advertise<nav_msgs::Odometry>("odometry", queue_size_);
@@ -172,6 +174,24 @@ void OdometryServer::RegisterFrame(const sensor_msgs::PointCloud2::ConstPtr &msg
     local_map_header.frame_id = odom_frame_;
     map_publisher_.publish(*std::move(EigenToPointCloud2(odometry_.LocalMap(), local_map_header)));
 }
+
+bool OdometryServer::reset_pose(kiss_icp::set_pose::Request &req,kiss_icp::set_pose::Response &res)
+    {
+        Sophus::SE3d se3d_transform;
+        se3d_transform.setQuaternion(Eigen::Quaterniond(Eigen::AngleAxisd(req.R, Eigen::Vector3d::UnitX()) *
+                                                   Eigen::AngleAxisd(req.P, Eigen::Vector3d::UnitY()) *
+                                                   Eigen::AngleAxisd(req.Y, Eigen::Vector3d::UnitZ())));
+
+        Eigen::Quaterniond quaternion = se3d_transform.unit_quaternion();
+
+        Eigen::Vector3d  vector(req.x, req.y, req.z);
+         
+        odometry_.Reset(quaternion, vector);
+        path_msg_.poses.clear();
+        res.done = true;
+        return true;
+    }
+
 }  // namespace kiss_icp_ros
 
 int main(int argc, char **argv) {

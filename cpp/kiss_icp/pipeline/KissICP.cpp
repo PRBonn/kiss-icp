@@ -107,4 +107,12 @@ bool KissICP::HasMoved() {
     return motion > 5.0 * config_.min_motion_th;
 }
 
+void KissICP::Reset(Eigen::Quaterniond quaternion,Eigen::Vector3d translation )
+{   
+    poses_.clear();
+    Sophus::SE3d predpred(quaternion, translation);
+    poses_.push_back(predpred);
+    local_map_.Clear();
+}
+
 }  // namespace kiss_icp::pipeline

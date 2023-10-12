@@ -30,6 +30,7 @@
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <tf2_ros/transform_broadcaster.h>
+#include "kiss_icp/set_pose.h"
 
 namespace kiss_icp_ros {
 
@@ -41,6 +42,8 @@ public:
 private:
     /// Register new frame
     void RegisterFrame(const sensor_msgs::PointCloud2::ConstPtr &msg);
+    bool reset_pose(kiss_icp::set_pose::Request &req,
+                    kiss_icp::set_pose::Response &res);
 
     /// Ros node stuff
     ros::NodeHandle nh_;
@@ -62,6 +65,7 @@ private:
     ros::Publisher frame_publisher_;
     ros::Publisher kpoints_publisher_;
     ros::Publisher map_publisher_;
+    ros::ServiceServer service;
 
     /// KISS-ICP
     kiss_icp::pipeline::KissICP odometry_;
