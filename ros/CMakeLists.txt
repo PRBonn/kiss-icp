@@ -53,8 +53,8 @@ if("$ENV{ROS_VERSION}" STREQUAL "1")
                tf2
                tf2_ros
                message_generation)
-  add_service_files(FILES  set_pose.srv)
-  generate_messages(DEPENDENCIES std_msgs) 
+  add_service_files(FILES set_pose.srv)
+  generate_messages(DEPENDENCIES std_msgs)
   catkin_package()
 
   # ROS 1 node
