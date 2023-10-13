@@ -121,7 +121,7 @@ Sophus::SE3d RegisterFrame(const std::vector<Eigen::Vector3d> &frame,
         // Equation (10)
         const auto &[src, tgt] = voxel_map.GetCorrespondences(source, max_correspondence_distance);
         // Equation (11)
-        auto &[JTJ, JTr] = BuildLinearSystem(src, tgt, kernel);
+        const auto &[JTJ, JTr] = BuildLinearSystem(src, tgt, kernel);
         const Eigen::Vector6d dx = JTJ.ldlt().solve(-JTr);
         const Sophus::SE3d estimation = Sophus::SE3d::exp(dx);
         // Equation (12)
