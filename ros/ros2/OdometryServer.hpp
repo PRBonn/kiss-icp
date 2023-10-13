@@ -48,7 +48,7 @@ private:
     void RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msg);
 
     /// If user ask, report the pose in the given child_frame
-    Sophus::SE3d BaseLinkToCloudTf(const std::string &pointcloud_frame_id);
+    Sophus::SE3d CloudToBaseTf(const std::string &pointcloud_frame_id) const;
 
 private:
     /// Tools for broadcasting TFs.
@@ -63,8 +63,6 @@ private:
 
     /// Data publishers.
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_publisher_;
-    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr frame_publisher_;
-    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr kpoints_publisher_;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr map_publisher_;
 
     /// Path publisher
