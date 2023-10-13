@@ -176,17 +176,13 @@ void OdometryServer::RegisterFrame(const sensor_msgs::PointCloud2::ConstPtr &msg
 
 bool OdometryServer::reset_pose(kiss_icp::set_pose::Request &req,
                                 kiss_icp::set_pose::Response &res) {
-    Sophus::SE3d se3d_transform;
-    se3d_transform.setQuaternion(
+    Eigen::Quaterniond quaternion =
         Eigen::Quaterniond(Eigen::AngleAxisd(req.R, Eigen::Vector3d::UnitX()) *
                            Eigen::AngleAxisd(req.P, Eigen::Vector3d::UnitY()) *
-                           Eigen::AngleAxisd(req.Y, Eigen::Vector3d::UnitZ())));
-
-    Eigen::Quaterniond quaternion = se3d_transform.unit_quaternion();
-
-    Eigen::Vector3d vector(req.x, req.y, req.z);
-
-    odometry_.Reset(quaternion, vector);
+                           Eigen::AngleAxisd(req.Y, Eigen::Vector3d::UnitZ()));
+    Eigen::Vector3d translation(req.x, req.y, req.z);
+    Sophus::SE3d se3d_transform(quaternion, translation);
+    odometry_.Reset(se3d_transform);
     path_msg_.poses.clear();
     res.done = true;
     return true;

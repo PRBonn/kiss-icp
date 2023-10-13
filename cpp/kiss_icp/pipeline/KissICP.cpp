@@ -107,10 +107,9 @@ bool KissICP::HasMoved() {
     return motion > 5.0 * config_.min_motion_th;
 }
 
-void KissICP::Reset(Eigen::Quaterniond quaternion, Eigen::Vector3d translation) {
+void KissICP::Reset(Sophus::SE3d se3d_transform) {
     poses_.clear();
-    Sophus::SE3d predpred(quaternion, translation);
-    poses_.push_back(predpred);
+    poses_.push_back(se3d_transform);
     local_map_.Clear();
 }
 

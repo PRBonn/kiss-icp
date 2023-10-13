@@ -67,7 +67,7 @@ public:
     double GetAdaptiveThreshold();
     Sophus::SE3d GetPredictionModel() const;
     bool HasMoved();
-    void Reset(Eigen::Quaterniond, Eigen::Vector3d);
+    void Reset(Sophus::SE3d);
 
 public:
     // Extra C++ API to facilitate ROS debugging
