@@ -23,7 +23,6 @@
 #include <Eigen/Core>
 #include <memory>
 #include <sophus/se3.hpp>
-#include <tuple>
 #include <utility>
 #include <vector>
 
