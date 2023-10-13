@@ -108,9 +108,17 @@ bool KissICP::HasMoved() {
 }
 
 void KissICP::Reset(Sophus::SE3d se3d_transform) {
+    // getting local map
+    std::vector<Eigen::Vector3d> local_cloud = local_map_.Pointcloud();
+    // clearing poses
     poses_.clear();
+    // adding new start pose
     poses_.push_back(se3d_transform);
+    // clearing the previous map (wrt previus frame of reference)
     local_map_.Clear();
+    // Updating local_map_ with the transformed map wrt new frame
+    local_map_.Update(local_cloud, se3d_transform);
+    
 }
 
 }  // namespace kiss_icp::pipeline
