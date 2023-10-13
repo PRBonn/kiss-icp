@@ -120,9 +120,8 @@ class OusterDataloader:
         self._scans_num = sum((1 for _ in client.Scans(self._source)))
         print(f"Ouster pcap total scans number:  {self._scans_num}")
 
-        # cached timestamps array
-        self._timestamps = np.empty(0)
-        self._timestamps_initialized = False
+        # frame timestamps array
+        self._timestamps = np.linspace(0, self._scans_num, self._scans_num, endpoint=False)
 
         # start Scans iterator for consumption in __getitem__
         self._source = pcap.Pcap(self._pcap_file, self._info)
@@ -139,16 +138,19 @@ class OusterDataloader:
         scan = next(self._scans_iter)
         self._next_idx += 1
 
-        if not self._timestamps_initialized:
-            self._timestamps = np.tile(np.linspace(0, 1.0, scan.w, endpoint=False), (scan.h, 1))
-            self._timestamps_initialized = True
+        self._timestamps[self._next_idx - 1] = 1e-9 * scan.timestamp[0]
+
+        timestamps = np.tile(np.linspace(0, 1.0, scan.w, endpoint=False), (scan.h, 1))
 
         # filtering our zero returns makes it substantially faster for kiss-icp
         sel_flag = scan.field(self._client.ChanField.RANGE) != 0
         xyz = self._xyz_lut(scan)[sel_flag]
-        timestamps = self._timestamps[sel_flag]
+        timestamps = timestamps[sel_flag]
 
         return xyz, timestamps
+
+    def get_frames_timestamps(self):
+        return self._timestamps
 
     def __len__(self):
         return self._scans_num

@@ -30,8 +30,9 @@
 #include <string>
 #include <vector>
 
-#include "sensor_msgs/msg/point_cloud2.hpp"
-#include "sensor_msgs/point_cloud2_iterator.hpp"
+// ROS 2
+#include <sensor_msgs/msg/point_cloud2.hpp>
+#include <sensor_msgs/point_cloud2_iterator.hpp>
 
 namespace kiss_icp_ros::utils {
 
