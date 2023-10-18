@@ -51,7 +51,7 @@ using utils::GetTimestamps;
 using utils::PointCloud2ToEigen;
 
 OdometryServer::OdometryServer(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
-    : nh_(nh), pnh_(pnh) {
+    : nh_(nh), pnh_(pnh), tf2_listener_(tf2_ros::TransformListener(tf2_buffer_)) {
     pnh_.param("base_frame", base_frame_, base_frame_);
     pnh_.param("odom_frame", odom_frame_, odom_frame_);
     pnh_.param("publish_odom_tf", publish_odom_tf_, false);
@@ -79,11 +79,8 @@ OdometryServer::OdometryServer(const ros::NodeHandle &nh, const ros::NodeHandle 
     map_publisher_ = pnh_.advertise<sensor_msgs::PointCloud2>("/kiss/local_map", queue_size_);
     traj_publisher_ = pnh_.advertise<nav_msgs::Path>("/kiss/trajectory", queue_size_);
 
-    // Initialize the transform broadcaster
-    tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>();
-    tf2_buffer_ = std::make_unique<tf2_ros::Buffer>();
-    tf2_buffer_->setUsingDedicatedThread(true);
-    tf2_listener_ = std::make_unique<tf2_ros::TransformListener>(*tf2_buffer_);
+    // Initialize the transform buffer
+    tf2_buffer_.setUsingDedicatedThread(true);
     path_msg_.header.frame_id = odom_frame_;
 
     // publish odometry msg
@@ -92,11 +89,11 @@ OdometryServer::OdometryServer(const ros::NodeHandle &nh, const ros::NodeHandle 
 
 Sophus::SE3d OdometryServer::CloudToBaseTf(const std::string &cloud_frame_id) const {
     std::string err_msg;
-    if (tf2_buffer_->_frameExists(base_frame_) &&     //
-        tf2_buffer_->_frameExists(cloud_frame_id) &&  //
-        tf2_buffer_->canTransform(cloud_frame_id, base_frame_, ros::Time(0), &err_msg)) {
+    if (tf2_buffer_._frameExists(base_frame_) &&     //
+        tf2_buffer_._frameExists(cloud_frame_id) &&  //
+        tf2_buffer_.canTransform(cloud_frame_id, base_frame_, ros::Time(0), &err_msg)) {
         try {
-            auto tf = tf2_buffer_->lookupTransform(cloud_frame_id, base_frame_, ros::Time(0));
+            auto tf = tf2_buffer_.lookupTransform(cloud_frame_id, base_frame_, ros::Time(0));
             return tf2::transformToSophus(tf);
         } catch (tf2::TransformException &ex) {
             ROS_WARN("%s", ex.what());
@@ -139,7 +136,7 @@ void OdometryServer::RegisterFrame(const sensor_msgs::PointCloud2::ConstPtr &msg
         transform_msg.header = odom_header;
         transform_msg.child_frame_id = egocentric_estimation ? cloud_frame_id : base_frame_;
         transform_msg.transform = tf2::sophusToTransform(pose);
-        tf_broadcaster_->sendTransform(transform_msg);
+        tf_broadcaster_.sendTransform(transform_msg);
     }
 
     // publish trajectory msg

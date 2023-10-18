@@ -53,9 +53,9 @@ private:
     int queue_size_{1};
 
     /// Tools for broadcasting TFs.
-    std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
-    std::unique_ptr<tf2_ros::Buffer> tf2_buffer_;
-    std::unique_ptr<tf2_ros::TransformListener> tf2_listener_;
+    tf2_ros::TransformBroadcaster tf_broadcaster_;
+    tf2_ros::Buffer tf2_buffer_;
+    tf2_ros::TransformListener tf2_listener_;
     bool publish_odom_tf_;
 
     /// Data subscribers.
