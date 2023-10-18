@@ -29,7 +29,9 @@
 #include <nav_msgs/Path.h>
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_broadcaster.h>
+#include <tf2_ros/transform_listener.h>
 
 namespace kiss_icp_ros {
 
@@ -42,15 +44,19 @@ private:
     /// Register new frame
     void RegisterFrame(const sensor_msgs::PointCloud2::ConstPtr &msg);
 
+    /// If user ask, report the pose in the given child_frame
+    Sophus::SE3d CloudToBaseTf(const std::string &pointcloud_frame_id) const;
+
     /// Ros node stuff
     ros::NodeHandle nh_;
     ros::NodeHandle pnh_;
     int queue_size_{1};
 
     /// Tools for broadcasting TFs.
-    tf2_ros::TransformBroadcaster tf_broadcaster_;
+    std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+    std::unique_ptr<tf2_ros::Buffer> tf2_buffer_;
+    std::unique_ptr<tf2_ros::TransformListener> tf2_listener_;
     bool publish_odom_tf_;
-    bool publish_alias_tf_;
 
     /// Data subscribers.
     ros::Subscriber pointcloud_sub_;
@@ -69,7 +75,7 @@ private:
 
     /// Global/map coordinate frame.
     std::string odom_frame_{"odom"};
-    std::string child_frame_{"base_link"};
+    std::string base_frame_{};
 };
 
 }  // namespace kiss_icp_ros
