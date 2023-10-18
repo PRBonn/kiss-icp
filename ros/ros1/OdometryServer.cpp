@@ -76,8 +76,6 @@ OdometryServer::OdometryServer(const ros::NodeHandle &nh, const ros::NodeHandle 
 
     // Initialize publishers
     odom_publisher_ = pnh_.advertise<nav_msgs::Odometry>("/kiss/odometry", queue_size_);
-    frame_publisher_ = pnh_.advertise<sensor_msgs::PointCloud2>("/kiss/frame", queue_size_);
-    kpoints_publisher_ = pnh_.advertise<sensor_msgs::PointCloud2>("/kiss/keypoints", queue_size_);
     map_publisher_ = pnh_.advertise<sensor_msgs::PointCloud2>("/kiss/local_map", queue_size_);
     traj_publisher_ = pnh_.advertise<nav_msgs::Path>("/kiss/trajectory", queue_size_);
 

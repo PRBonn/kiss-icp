@@ -65,8 +65,6 @@ private:
     ros::Publisher odom_publisher_;
     ros::Publisher traj_publisher_;
     nav_msgs::Path path_msg_;
-    ros::Publisher frame_publisher_;
-    ros::Publisher kpoints_publisher_;
     ros::Publisher map_publisher_;
 
     /// KISS-ICP
