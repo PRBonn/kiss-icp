@@ -47,11 +47,13 @@ if("$ENV{ROS_VERSION}" STREQUAL "1")
     COMPONENTS geometry_msgs
                nav_msgs
                sensor_msgs
+               geometry_msgs
                roscpp
                rosbag
                std_msgs
                tf2
-               tf2_ros)
+               tf2_ros
+               Sophus)
   catkin_package()
 
   # ROS 1 node
@@ -71,6 +73,7 @@ elseif("$ENV{ROS_VERSION}" STREQUAL "2")
   find_package(rclcpp_components REQUIRED)
   find_package(sensor_msgs REQUIRED)
   find_package(tf2_ros REQUIRED)
+  find_package(sophus REQUIRED)
 
   # ROS 2 node
   add_library(odometry_component SHARED ros2/OdometryServer.cpp)
@@ -84,7 +87,9 @@ elseif("$ENV{ROS_VERSION}" STREQUAL "2")
     rclcpp_components
     nav_msgs
     sensor_msgs
-    tf2_ros)
+    geometry_msgs
+    tf2_ros
+    Sophus)
 
   rclcpp_components_register_node(odometry_component PLUGIN "kiss_icp_ros::OdometryServer" EXECUTABLE odometry_node)
 
