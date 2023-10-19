@@ -47,10 +47,18 @@ public:
 private:
     /// Register new frame
     void RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msg);
+
     /// Stream the estimated pose to ROS
     void Publish(const Sophus::SE3d &pose,
                  const rclcpp::Time &stamp,
                  const std::string &cloud_frame_id);
+
+    /// Stream the debugging point clouds for visualization (if required)
+    using Vector3dVector = kiss_icp::pipeline::KissICP::Vector3dVector;
+    void PublishClouds(const Vector3dVector frame,
+                       const Vector3dVector keypoints,
+                       const rclcpp::Time &stamp,
+                       const std::string &cloud_frame_id);
 
     /// Utility function to compute transformation using tf tree
     Sophus::SE3d LookupTransform(const std::string &target_frame,
@@ -62,12 +70,15 @@ private:
     std::unique_ptr<tf2_ros::Buffer> tf2_buffer_;
     std::unique_ptr<tf2_ros::TransformListener> tf2_listener_;
     bool publish_odom_tf_;
+    bool publish_debug_clouds_;
 
     /// Data subscribers.
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_sub_;
 
     /// Data publishers.
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_publisher_;
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr frame_publisher_;
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr kpoints_publisher_;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr map_publisher_;
 
     /// Path publisher
