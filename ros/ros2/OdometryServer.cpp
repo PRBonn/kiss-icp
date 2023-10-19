@@ -197,7 +197,7 @@ void OdometryServer::PublishClouds(const Vector3dVector frame,
     header.stamp = stamp;
     header.frame_id = odom_frame_;
 
-    if (map_publisher_->get_subscription_count() < 0) {
+    if (map_publisher_->get_subscription_count() > 0) {
         const auto egocentric_estimation = (base_frame_.empty() || base_frame_ == cloud_frame_id);
         const auto kiss_map = odometry_.LocalMap();
         if (egocentric_estimation) {
