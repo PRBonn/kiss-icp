@@ -133,14 +133,11 @@ void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSha
         return cloud2base.inverse() * kiss_pose * cloud2base;
     }();
 
-    // Header for point clouds and stuff seen from desired odom_frame
-    std_msgs::msg::Header odom_header = msg->header;
-    odom_header.frame_id = odom_frame_;
-
-    // Broadcast the tf
+    // Broadcast the tf ---
     if (publish_odom_tf_) {
         geometry_msgs::msg::TransformStamped transform_msg;
-        transform_msg.header = odom_header;
+        transform_msg.header.stamp = msg->header.stamp;
+        transform_msg.header.frame_id = odom_frame_;
         transform_msg.child_frame_id = egocentric_estimation ? cloud_frame_id : base_frame_;
         transform_msg.transform = tf2::sophusToTransform(pose);
         tf_broadcaster_->sendTransform(transform_msg);
@@ -148,26 +145,32 @@ void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSha
 
     // publish trajectory msg
     geometry_msgs::msg::PoseStamped pose_msg;
-    pose_msg.header = odom_header;
+    pose_msg.header.stamp = msg->header.stamp;
+    pose_msg.header.frame_id = odom_frame_;
     pose_msg.pose = tf2::sophusToPose(pose);
     path_msg_.poses.push_back(pose_msg);
     traj_publisher_->publish(path_msg_);
 
     // publish odometry msg
     nav_msgs::msg::Odometry odom_msg;
-    odom_msg.header = odom_header;
+    odom_msg.header.stamp = msg->header.stamp;
+    odom_msg.header.frame_id = odom_frame_;
     odom_msg.pose.pose = tf2::sophusToPose(pose);
     odom_publisher_->publish(std::move(odom_msg));
 
     // Publish KISS-ICP internal map, just for debugging
     if (map_publisher_->get_subscription_count() > 0) {
         const auto kiss_map = odometry_.LocalMap();
+        std_msgs::msg::Header header;
+        header.stamp = msg->header.stamp;
+        header.frame_id = odom_frame_;
         if (egocentric_estimation) {
-            map_publisher_->publish(std::move(EigenToPointCloud2(kiss_map, odom_header)));
+            map_publisher_->publish(std::move(EigenToPointCloud2(kiss_map, header)));
         } else {
             const auto T = CloudToBaseTf(cloud_frame_id).inverse();
-            map_publisher_->publish(std::move(EigenToPointCloud2(kiss_map, T, odom_header)));
+            map_publisher_->publish(std::move(EigenToPointCloud2(kiss_map, T, header)));
         }
     }
 }
+
 }  // namespace kiss_icp_ros
