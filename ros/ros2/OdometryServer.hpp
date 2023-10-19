@@ -34,6 +34,7 @@
 #include <nav_msgs/msg/path.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
+#include <string>
 
 namespace kiss_icp_ros {
 
@@ -46,6 +47,10 @@ public:
 private:
     /// Register new frame
     void RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msg);
+    /// Stream the estimated pose to ROS
+    void Publish(const Sophus::SE3d &pose,
+                 const rclcpp::Time &stamp,
+                 const std::string &cloud_frame_id);
 
     /// If user ask, report the pose in the given child_frame
     Sophus::SE3d CloudToBaseTf(const std::string &pointcloud_frame_id) const;
