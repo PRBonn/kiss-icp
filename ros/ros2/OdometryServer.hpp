@@ -49,9 +49,9 @@ private:
     void RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msg);
 
     /// Stream the estimated pose to ROS
-    void Publish(const Sophus::SE3d &pose,
-                 const rclcpp::Time &stamp,
-                 const std::string &cloud_frame_id);
+    void PublishOdometry(const Sophus::SE3d &pose,
+                         const rclcpp::Time &stamp,
+                         const std::string &cloud_frame_id);
 
     /// Stream the debugging point clouds for visualization (if required)
     using Vector3dVector = kiss_icp::pipeline::KissICP::Vector3dVector;
