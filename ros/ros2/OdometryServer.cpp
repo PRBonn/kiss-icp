@@ -133,19 +133,26 @@ void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSha
         return cloud2base.inverse() * kiss_pose * cloud2base;
     }();
 
+    // Spit the current estimated pose to ROS msgs
+    Publish(pose, msg->header.stamp, cloud_frame_id);
+}
+
+void OdometryServer::Publish(const Sophus::SE3d &pose,
+                             const rclcpp::Time &stamp,
+                             const std::string &cloud_frame_id) {
     // Broadcast the tf ---
     if (publish_odom_tf_) {
         geometry_msgs::msg::TransformStamped transform_msg;
-        transform_msg.header.stamp = msg->header.stamp;
+        transform_msg.header.stamp = stamp;
         transform_msg.header.frame_id = odom_frame_;
-        transform_msg.child_frame_id = egocentric_estimation ? cloud_frame_id : base_frame_;
+        transform_msg.child_frame_id = base_frame_.empty() ? cloud_frame_id : base_frame_;
         transform_msg.transform = tf2::sophusToTransform(pose);
         tf_broadcaster_->sendTransform(transform_msg);
     }
 
     // publish trajectory msg
     geometry_msgs::msg::PoseStamped pose_msg;
-    pose_msg.header.stamp = msg->header.stamp;
+    pose_msg.header.stamp = stamp;
     pose_msg.header.frame_id = odom_frame_;
     pose_msg.pose = tf2::sophusToPose(pose);
     path_msg_.poses.push_back(pose_msg);
@@ -153,16 +160,17 @@ void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSha
 
     // publish odometry msg
     nav_msgs::msg::Odometry odom_msg;
-    odom_msg.header.stamp = msg->header.stamp;
+    odom_msg.header.stamp = stamp;
     odom_msg.header.frame_id = odom_frame_;
     odom_msg.pose.pose = tf2::sophusToPose(pose);
     odom_publisher_->publish(std::move(odom_msg));
 
     // Publish KISS-ICP internal map, just for debugging
     if (map_publisher_->get_subscription_count() > 0) {
+        const auto egocentric_estimation = (base_frame_.empty() || base_frame_ == cloud_frame_id);
         const auto kiss_map = odometry_.LocalMap();
         std_msgs::msg::Header header;
-        header.stamp = msg->header.stamp;
+        header.stamp = stamp;
         header.frame_id = odom_frame_;
         if (egocentric_estimation) {
             map_publisher_->publish(std::move(EigenToPointCloud2(kiss_map, header)));
