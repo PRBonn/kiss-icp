@@ -21,6 +21,7 @@
     <param name="odom_frame" value="$(arg odom_frame)"/>
     <param name="base_frame" value="$(arg base_frame)"/>
     <param name="publish_odom_tf" value="$(arg publish_odom_tf)"/>
+    <param name="visualize" value="$(arg visualize)"/>
     <!-- KISS-ICP params -->
     <param name="max_range" value="$(arg max_range)"/>
     <param name="min_range" value="$(arg min_range)"/>
