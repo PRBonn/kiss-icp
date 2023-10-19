@@ -52,8 +52,9 @@ private:
                  const rclcpp::Time &stamp,
                  const std::string &cloud_frame_id);
 
-    /// If user ask, report the pose in the given child_frame
-    Sophus::SE3d CloudToBaseTf(const std::string &pointcloud_frame_id) const;
+    /// Utility function to compute transformation using tf tree
+    Sophus::SE3d LookupTransform(const std::string &target_frame,
+                                 const std::string &source_frame) const;
 
 private:
     /// Tools for broadcasting TFs.
