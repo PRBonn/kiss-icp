@@ -58,7 +58,6 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
     base_frame_ = declare_parameter<std::string>("base_frame", base_frame_);
     odom_frame_ = declare_parameter<std::string>("odom_frame", odom_frame_);
     publish_odom_tf_ = declare_parameter<bool>("publish_odom_tf", publish_odom_tf_);
-    publish_debug_clouds_ = declare_parameter<bool>("visualize", publish_debug_clouds_);
     config_.max_range = declare_parameter<double>("max_range", config_.max_range);
     config_.min_range = declare_parameter<double>("min_range", config_.min_range);
     config_.deskew = declare_parameter<bool>("deskew", config_.deskew);
@@ -72,6 +71,16 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
     }
     // clang-format on
 
+    // Conditioanlly add debugging information
+    const bool visualize = declare_parameter<bool>("visualize", publish_debug_clouds_);
+    publish_debug_clouds_ = visualize && publish_odom_tf_;
+    if (visualize && !publish_odom_tf_) {
+        RCLCPP_ERROR(
+            get_logger(),
+            "Using rviz as debugging visualizer for KISS-ICP withouth publishing to the tf tree is "
+            "not supported. Please check the Python client");
+    }
+
     // Construct the main KISS-ICP odometry node
     odometry_ = kiss_icp::pipeline::KissICP(config_);
 
@@ -83,9 +92,12 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
     // Initialize publishers
     rclcpp::QoS qos((rclcpp::SystemDefaultsQoS()));
     odom_publisher_ = create_publisher<nav_msgs::msg::Odometry>("/kiss/odometry", qos);
-    frame_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("/kiss/frame", qos);
-    kpoints_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("/kiss/keypoints", qos);
-    map_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("/kiss/local_map", qos);
+    if (publish_debug_clouds_) {
+        frame_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("/kiss/frame", qos);
+        kpoints_publisher_ =
+            create_publisher<sensor_msgs::msg::PointCloud2>("/kiss/keypoints", qos);
+        map_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("/kiss/local_map", qos);
+    }
     traj_publisher_ = create_publisher<nav_msgs::msg::Path>("/kiss/trajectory", qos);
     path_msg_.header.frame_id = odom_frame_;
 
@@ -179,11 +191,6 @@ void OdometryServer::PublishClouds(const Vector3dVector frame,
                                    const rclcpp::Time &stamp,
                                    const std::string &cloud_frame_id) {
     if (!publish_debug_clouds_) return;
-    if (!publish_odom_tf_) {
-        RCLCPP_WARN_ONCE(get_logger(),
-                         "Using rviz as debugging visualizer withouth publishing to the tf tree is "
-                         "not supported. Please check the Python client");
-    }
 
     // Publish KISS-ICP internal map, and input clouds. Just for debugging
     std_msgs::msg::Header header;
