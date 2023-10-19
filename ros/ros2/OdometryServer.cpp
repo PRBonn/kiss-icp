@@ -154,9 +154,9 @@ void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSha
     traj_publisher_->publish(path_msg_);
 
     // publish odometry msg
-    auto odom_msg = std::make_unique<nav_msgs::msg::Odometry>();
-    odom_msg->header = odom_header;
-    odom_msg->pose.pose = tf2::sophusToPose(pose);
+    nav_msgs::msg::Odometry odom_msg;
+    odom_msg.header = odom_header;
+    odom_msg.pose.pose = tf2::sophusToPose(pose);
     odom_publisher_->publish(std::move(odom_msg));
 
     // Publish KISS-ICP internal map, just for debugging
