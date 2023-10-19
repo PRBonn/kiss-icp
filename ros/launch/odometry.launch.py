@@ -42,7 +42,7 @@ def generate_launch_description():
             DeclareLaunchArgument("bagfile", default_value=""),
             DeclareLaunchArgument("visualize", default_value="true"),
             DeclareLaunchArgument("odom_frame", default_value="odom"),
-            DeclareLaunchArgument("base_frame", default_value="base_footprint"),
+            DeclareLaunchArgument("base_frame", default_value=""),
             DeclareLaunchArgument("publish_odom_tf", default_value="false"),
             # KISS-ICP parameters
             DeclareLaunchArgument("deskew", default_value="false"),
