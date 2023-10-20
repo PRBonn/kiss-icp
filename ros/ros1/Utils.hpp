@@ -38,7 +38,6 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
 
-
 namespace tf2 {
 
 inline geometry_msgs::Transform sophusToTransform(const Sophus::SE3d &T) {

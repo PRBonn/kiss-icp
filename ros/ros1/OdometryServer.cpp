@@ -105,8 +105,8 @@ Sophus::SE3d OdometryServer::LookupTransform(const std::string &target_frame,
             ROS_WARN("%s", ex.what());
         }
     }
-    ROS_WARN("Failed to find tf between %s and %s. Reason=%s", 
-        target_frame.c_str(), source_frame.c_str(), err_msg.c_str());
+    ROS_WARN("Failed to find tf between %s and %s. Reason=%s", target_frame.c_str(),
+             source_frame.c_str(), err_msg.c_str());
     return {};
 }
 
@@ -170,7 +170,6 @@ void OdometryServer::PublishOdometry(const Sophus::SE3d &pose,
     odom_msg.header.frame_id = odom_frame_;
     odom_msg.pose.pose = tf2::sophusToPose(pose);
     odom_publisher_.publish(odom_msg);
-
 }
 
 void OdometryServer::PublishClouds(const Vector3dVector frame,

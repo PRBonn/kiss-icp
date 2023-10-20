@@ -32,6 +32,7 @@
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2_ros/transform_listener.h>
+
 #include <string>
 
 namespace kiss_icp_ros {
@@ -60,7 +61,7 @@ private:
     /// Utility function to compute transformation using tf tree
     Sophus::SE3d LookupTransform(const std::string &target_frame,
                                  const std::string &source_frame) const;
-    
+
     /// Ros node stuff
     ros::NodeHandle nh_;
     ros::NodeHandle pnh_;
