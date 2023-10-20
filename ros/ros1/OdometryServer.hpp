@@ -52,9 +52,8 @@ private:
                          const std::string &cloud_frame_id);
 
     /// Stream the debugging point clouds for visualization (if required)
-    using Vector3dVector = kiss_icp::pipeline::KissICP::Vector3dVector;
-    void PublishClouds(const Vector3dVector frame,
-                       const Vector3dVector keypoints,
+    void PublishClouds(const std::vector<Eigen::Vector3d> frame,
+                       const std::vector<Eigen::Vector3d> keypoints,
                        const ros::Time &stamp,
                        const std::string &cloud_frame_id);
 

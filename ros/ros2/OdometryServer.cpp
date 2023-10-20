@@ -177,8 +177,8 @@ void OdometryServer::PublishOdometry(const Sophus::SE3d &pose,
     odom_publisher_->publish(std::move(odom_msg));
 }
 
-void OdometryServer::PublishClouds(const Vector3dVector frame,
-                                   const Vector3dVector keypoints,
+void OdometryServer::PublishClouds(const std::vector<Eigen::Vector3d> frame,
+                                   const std::vector<Eigen::Vector3d> keypoints,
                                    const rclcpp::Time &stamp,
                                    const std::string &cloud_frame_id) {
     std_msgs::msg::Header odom_header;
