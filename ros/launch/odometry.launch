@@ -4,10 +4,9 @@
   <arg name="bagfile" default=""/>
   <arg name="visualize" default="true"/>
   <arg name="odom_frame" default="odom"/>
-  <arg name="child_frame" default="base_link"/>
+  <arg name="base_frame" default=""/>
   <arg name="topic" default=""/>
-  <arg name="publish_odom_tf" default="true"/>
-  <arg name="publish_alias_tf" default="true"/>
+  <arg name="publish_odom_tf" default="false"/>
 
   <!-- KISS-ICP paramaters -->
   <arg name="deskew" default="false"/>
@@ -20,9 +19,9 @@
     <!-- ROS params -->
     <remap from="pointcloud_topic" to="$(arg topic)"/>
     <param name="odom_frame" value="$(arg odom_frame)"/>
-    <param name="child_frame" value="$(arg child_frame)"/>
+    <param name="base_frame" value="$(arg base_frame)"/>
     <param name="publish_odom_tf" value="$(arg publish_odom_tf)"/>
-    <param name="publish_alias_tf" value="$(arg publish_alias_tf)"/>
+    <param name="visualize" value="$(arg visualize)"/>
     <!-- KISS-ICP params -->
     <param name="max_range" value="$(arg max_range)"/>
     <param name="min_range" value="$(arg min_range)"/>

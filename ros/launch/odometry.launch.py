@@ -42,9 +42,8 @@ def generate_launch_description():
             DeclareLaunchArgument("bagfile", default_value=""),
             DeclareLaunchArgument("visualize", default_value="true"),
             DeclareLaunchArgument("odom_frame", default_value="odom"),
-            DeclareLaunchArgument("child_frame", default_value="base_link"),
+            DeclareLaunchArgument("base_frame", default_value=""),
             DeclareLaunchArgument("publish_odom_tf", default_value="true"),
-            DeclareLaunchArgument("publish_alias_tf", default_value="true"),
             # KISS-ICP parameters
             DeclareLaunchArgument("deskew", default_value="false"),
             DeclareLaunchArgument("max_range", default_value="100.0"),
@@ -60,7 +59,7 @@ def generate_launch_description():
                 parameters=[
                     {
                         "odom_frame": LaunchConfiguration("odom_frame"),
-                        "child_frame": LaunchConfiguration("child_frame"),
+                        "base_frame": LaunchConfiguration("base_frame"),
                         "max_range": LaunchConfiguration("max_range"),
                         "min_range": LaunchConfiguration("min_range"),
                         "deskew": LaunchConfiguration("deskew"),
@@ -69,7 +68,7 @@ def generate_launch_description():
                         "initial_threshold": 2.0,
                         "min_motion_th": 0.1,
                         "publish_odom_tf": LaunchConfiguration("publish_odom_tf"),
-                        "publish_alias_tf": LaunchConfiguration("publish_alias_tf"),
+                        "visualize": LaunchConfiguration("visualize"),
                     }
                 ],
             ),

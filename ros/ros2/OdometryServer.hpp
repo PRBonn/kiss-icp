@@ -26,12 +26,15 @@
 #include "kiss_icp/pipeline/KissICP.hpp"
 
 // ROS 2
+#include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_broadcaster.h>
+#include <tf2_ros/transform_listener.h>
 
 #include <nav_msgs/msg/odometry.hpp>
 #include <nav_msgs/msg/path.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
+#include <string>
 
 namespace kiss_icp_ros {
 
@@ -45,14 +48,28 @@ private:
     /// Register new frame
     void RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msg);
 
-private:
-    /// Ros node stuff
-    size_t queue_size_{1};
+    /// Stream the estimated pose to ROS
+    void PublishOdometry(const Sophus::SE3d &pose,
+                         const rclcpp::Time &stamp,
+                         const std::string &cloud_frame_id);
 
+    /// Stream the debugging point clouds for visualization (if required)
+    void PublishClouds(const std::vector<Eigen::Vector3d> frame,
+                       const std::vector<Eigen::Vector3d> keypoints,
+                       const rclcpp::Time &stamp,
+                       const std::string &cloud_frame_id);
+
+    /// Utility function to compute transformation using tf tree
+    Sophus::SE3d LookupTransform(const std::string &target_frame,
+                                 const std::string &source_frame) const;
+
+private:
     /// Tools for broadcasting TFs.
     std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+    std::unique_ptr<tf2_ros::Buffer> tf2_buffer_;
+    std::unique_ptr<tf2_ros::TransformListener> tf2_listener_;
     bool publish_odom_tf_;
-    bool publish_alias_tf_;
+    bool publish_debug_clouds_;
 
     /// Data subscribers.
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_sub_;
@@ -73,7 +90,7 @@ private:
 
     /// Global/map coordinate frame.
     std::string odom_frame_{"odom"};
-    std::string child_frame_{"base_link"};
+    std::string base_frame_{};
 };
 
 }  // namespace kiss_icp_ros

@@ -51,11 +51,11 @@ using utils::GetTimestamps;
 using utils::PointCloud2ToEigen;
 
 OdometryServer::OdometryServer(const ros::NodeHandle &nh, const ros::NodeHandle &pnh)
-    : nh_(nh), pnh_(pnh) {
-    pnh_.param("child_frame", child_frame_, child_frame_);
+    : nh_(nh), pnh_(pnh), tf2_listener_(tf2_ros::TransformListener(tf2_buffer_)) {
+    pnh_.param("base_frame", base_frame_, base_frame_);
     pnh_.param("odom_frame", odom_frame_, odom_frame_);
-    pnh_.param("publish_alias_tf", publish_alias_tf_, true);
-    pnh_.param("publish_odom_tf", publish_odom_tf_, true);
+    pnh_.param("publish_odom_tf", publish_odom_tf_, false);
+    pnh_.param("visualize", publish_debug_clouds_, publish_debug_clouds_);
     pnh_.param("max_range", config_.max_range, config_.max_range);
     pnh_.param("min_range", config_.min_range, config_.min_range);
     pnh_.param("deskew", config_.deskew, config_.deskew);
@@ -76,102 +76,139 @@ OdometryServer::OdometryServer(const ros::NodeHandle &nh, const ros::NodeHandle 
                                                               &OdometryServer::RegisterFrame, this);
 
     // Initialize publishers
-    odom_publisher_ = pnh_.advertise<nav_msgs::Odometry>("odometry", queue_size_);
-    frame_publisher_ = pnh_.advertise<sensor_msgs::PointCloud2>("frame", queue_size_);
-    kpoints_publisher_ = pnh_.advertise<sensor_msgs::PointCloud2>("keypoints", queue_size_);
-    map_publisher_ = pnh_.advertise<sensor_msgs::PointCloud2>("local_map", queue_size_);
-
-    // Initialize trajectory publisher
-    path_msg_.header.frame_id = odom_frame_;
-    traj_publisher_ = pnh_.advertise<nav_msgs::Path>("trajectory", queue_size_);
-
-    // Broadcast a static transformation that links with identity the specified base link to the
-    // pointcloud_frame, basically to always be able to visualize the frame in rviz
-    if (publish_alias_tf_ && child_frame_ != "base_link") {
-        static tf2_ros::StaticTransformBroadcaster br;
-        geometry_msgs::TransformStamped alias_transform_msg;
-        alias_transform_msg.header.stamp = ros::Time::now();
-        alias_transform_msg.transform.translation.x = 0.0;
-        alias_transform_msg.transform.translation.y = 0.0;
-        alias_transform_msg.transform.translation.z = 0.0;
-        alias_transform_msg.transform.rotation.x = 0.0;
-        alias_transform_msg.transform.rotation.y = 0.0;
-        alias_transform_msg.transform.rotation.z = 0.0;
-        alias_transform_msg.transform.rotation.w = 1.0;
-        alias_transform_msg.header.frame_id = child_frame_;
-        alias_transform_msg.child_frame_id = "base_link";
-        br.sendTransform(alias_transform_msg);
+    odom_publisher_ = pnh_.advertise<nav_msgs::Odometry>("/kiss/odometry", queue_size_);
+    traj_publisher_ = pnh_.advertise<nav_msgs::Path>("/kiss/trajectory", queue_size_);
+    if (publish_debug_clouds_) {
+        frame_publisher_ = pnh_.advertise<sensor_msgs::PointCloud2>("/kiss/frame", queue_size_);
+        kpoints_publisher_ =
+            pnh_.advertise<sensor_msgs::PointCloud2>("/kiss/keypoints", queue_size_);
+        map_publisher_ = pnh_.advertise<sensor_msgs::PointCloud2>("/kiss/local_map", queue_size_);
     }
+    // Initialize the transform buffer
+    tf2_buffer_.setUsingDedicatedThread(true);
+    path_msg_.header.frame_id = odom_frame_;
 
     // publish odometry msg
     ROS_INFO("KISS-ICP ROS 1 Odometry Node Initialized");
 }
 
+Sophus::SE3d OdometryServer::LookupTransform(const std::string &target_frame,
+                                             const std::string &source_frame) const {
+    std::string err_msg;
+    if (tf2_buffer_._frameExists(source_frame) &&  //
+        tf2_buffer_._frameExists(target_frame) &&  //
+        tf2_buffer_.canTransform(target_frame, source_frame, ros::Time(0), &err_msg)) {
+        try {
+            auto tf = tf2_buffer_.lookupTransform(target_frame, source_frame, ros::Time(0));
+            return tf2::transformToSophus(tf);
+        } catch (tf2::TransformException &ex) {
+            ROS_WARN("%s", ex.what());
+        }
+    }
+    ROS_WARN("Failed to find tf between %s and %s. Reason=%s", target_frame.c_str(),
+             source_frame.c_str(), err_msg.c_str());
+    return {};
+}
+
 void OdometryServer::RegisterFrame(const sensor_msgs::PointCloud2::ConstPtr &msg) {
+    const auto cloud_frame_id = msg->header.frame_id;
     const auto points = PointCloud2ToEigen(msg);
     const auto timestamps = [&]() -> std::vector<double> {
         if (!config_.deskew) return {};
         return GetTimestamps(msg);
     }();
+    const auto egocentric_estimation = (base_frame_.empty() || base_frame_ == cloud_frame_id);
 
     // Register frame, main entry point to KISS-ICP pipeline
     const auto &[frame, keypoints] = odometry_.RegisterFrame(points, timestamps);
 
-    // PublishPose
-    const auto pose = odometry_.poses().back();
+    // Compute the pose using KISS, ego-centric to the LiDAR
+    const Sophus::SE3d kiss_pose = odometry_.poses().back();
 
-    // Convert from Eigen to ROS types
-    const Eigen::Vector3d t_current = pose.translation();
-    const Eigen::Quaterniond q_current = pose.unit_quaternion();
+    // If necessary, transform the ego-centric pose to the specified base_link/base_footprint frame
+    const auto pose = [&]() -> Sophus::SE3d {
+        if (egocentric_estimation) return kiss_pose;
+        const Sophus::SE3d cloud2base = LookupTransform(base_frame_, cloud_frame_id);
+        return cloud2base * kiss_pose * cloud2base.inverse();
+    }();
+
+    // Spit the current estimated pose to ROS msgs
+    PublishOdometry(pose, msg->header.stamp, cloud_frame_id);
+
+    // Publishing this clouds is a bit costly, so do it only if we are debugging
+    if (publish_debug_clouds_) {
+        PublishClouds(frame, keypoints, msg->header.stamp, cloud_frame_id);
+    }
+}
+
+void OdometryServer::PublishOdometry(const Sophus::SE3d &pose,
+                                     const ros::Time &stamp,
+                                     const std::string &cloud_frame_id) {
+    // Header for point clouds and stuff seen from desired odom_frame
 
     // Broadcast the tf
     if (publish_odom_tf_) {
         geometry_msgs::TransformStamped transform_msg;
-        transform_msg.header.stamp = msg->header.stamp;
+        transform_msg.header.stamp = stamp;
         transform_msg.header.frame_id = odom_frame_;
-        transform_msg.child_frame_id = child_frame_;
-        transform_msg.transform.rotation.x = q_current.x();
-        transform_msg.transform.rotation.y = q_current.y();
-        transform_msg.transform.rotation.z = q_current.z();
-        transform_msg.transform.rotation.w = q_current.w();
-        transform_msg.transform.translation.x = t_current.x();
-        transform_msg.transform.translation.y = t_current.y();
-        transform_msg.transform.translation.z = t_current.z();
+        transform_msg.child_frame_id = base_frame_.empty() ? cloud_frame_id : base_frame_;
+        transform_msg.transform = tf2::sophusToTransform(pose);
         tf_broadcaster_.sendTransform(transform_msg);
     }
 
     // publish trajectory msg
     geometry_msgs::PoseStamped pose_msg;
-    pose_msg.pose.orientation.x = q_current.x();
-    pose_msg.pose.orientation.y = q_current.y();
-    pose_msg.pose.orientation.z = q_current.z();
-    pose_msg.pose.orientation.w = q_current.w();
-    pose_msg.pose.position.x = t_current.x();
-    pose_msg.pose.position.y = t_current.y();
-    pose_msg.pose.position.z = t_current.z();
-    pose_msg.header.stamp = msg->header.stamp;
+    pose_msg.header.stamp = stamp;
     pose_msg.header.frame_id = odom_frame_;
+    pose_msg.pose = tf2::sophusToPose(pose);
     path_msg_.poses.push_back(pose_msg);
     traj_publisher_.publish(path_msg_);
 
     // publish odometry msg
-    auto odom_msg = std::make_unique<nav_msgs::Odometry>();
-    odom_msg->header = pose_msg.header;
-    odom_msg->child_frame_id = child_frame_;
-    odom_msg->pose.pose = pose_msg.pose;
-    odom_publisher_.publish(*std::move(odom_msg));
-
-    // Publish KISS-ICP internal data, just for debugging
-    auto frame_header = msg->header;
-    frame_header.frame_id = child_frame_;
-    frame_publisher_.publish(*std::move(EigenToPointCloud2(frame, frame_header)));
-    kpoints_publisher_.publish(*std::move(EigenToPointCloud2(keypoints, frame_header)));
-
-    // Map is referenced to the odometry_frame
-    auto local_map_header = msg->header;
-    local_map_header.frame_id = odom_frame_;
-    map_publisher_.publish(*std::move(EigenToPointCloud2(odometry_.LocalMap(), local_map_header)));
+    nav_msgs::Odometry odom_msg;
+    odom_msg.header.stamp = stamp;
+    odom_msg.header.frame_id = odom_frame_;
+    odom_msg.pose.pose = tf2::sophusToPose(pose);
+    odom_publisher_.publish(odom_msg);
 }
+
+void OdometryServer::PublishClouds(const std::vector<Eigen::Vector3d> frame,
+                                   const std::vector<Eigen::Vector3d> keypoints,
+                                   const ros::Time &stamp,
+                                   const std::string &cloud_frame_id) {
+    std_msgs::Header odom_header;
+    odom_header.stamp = stamp;
+    odom_header.frame_id = odom_frame_;
+
+    // Publish map
+    const auto kiss_map = odometry_.LocalMap();
+
+    if (!publish_odom_tf_) {
+        // debugging happens in an egocentric world
+        std_msgs::Header cloud_header;
+        cloud_header.stamp = stamp;
+        cloud_header.frame_id = cloud_frame_id;
+
+        frame_publisher_.publish(*EigenToPointCloud2(frame, cloud_header));
+        kpoints_publisher_.publish(*EigenToPointCloud2(keypoints, cloud_header));
+        map_publisher_.publish(*EigenToPointCloud2(kiss_map, odom_header));
+
+        return;
+    }
+
+    // If transmitting to tf tree we know where the clouds are exactly
+    const auto cloud2odom = LookupTransform(odom_frame_, cloud_frame_id);
+    frame_publisher_.publish(*EigenToPointCloud2(frame, cloud2odom, odom_header));
+    kpoints_publisher_.publish(*EigenToPointCloud2(keypoints, cloud2odom, odom_header));
+
+    if (!base_frame_.empty()) {
+        const Sophus::SE3d cloud2base = LookupTransform(base_frame_, cloud_frame_id);
+        map_publisher_.publish(*EigenToPointCloud2(kiss_map, cloud2base, odom_header));
+    } else {
+        map_publisher_.publish(*EigenToPointCloud2(kiss_map, odom_header));
+    }
+}
+
 }  // namespace kiss_icp_ros
 
 int main(int argc, char **argv) {

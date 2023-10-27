@@ -27,12 +27,56 @@
 #include <cstddef>
 #include <memory>
 #include <regex>
+#include <sophus/se3.hpp>
 #include <string>
 #include <vector>
 
 // ROS 2
+#include <geometry_msgs/msg/pose.hpp>
+#include <geometry_msgs/msg/transform.hpp>
+#include <geometry_msgs/msg/transform_stamped.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
+
+namespace tf2 {
+
+inline geometry_msgs::msg::Transform sophusToTransform(const Sophus::SE3d &T) {
+    geometry_msgs::msg::Transform t;
+    t.translation.x = T.translation().x();
+    t.translation.y = T.translation().y();
+    t.translation.z = T.translation().z();
+
+    Eigen::Quaterniond q(T.so3().unit_quaternion());
+    t.rotation.x = q.x();
+    t.rotation.y = q.y();
+    t.rotation.z = q.z();
+    t.rotation.w = q.w();
+
+    return t;
+}
+
+inline geometry_msgs::msg::Pose sophusToPose(const Sophus::SE3d &T) {
+    geometry_msgs::msg::Pose t;
+    t.position.x = T.translation().x();
+    t.position.y = T.translation().y();
+    t.position.z = T.translation().z();
+
+    Eigen::Quaterniond q(T.so3().unit_quaternion());
+    t.orientation.x = q.x();
+    t.orientation.y = q.y();
+    t.orientation.z = q.z();
+    t.orientation.w = q.w();
+
+    return t;
+}
+
+inline Sophus::SE3d transformToSophus(const geometry_msgs::msg::TransformStamped &transform) {
+    const auto &t = transform.transform;
+    return Sophus::SE3d(
+        Sophus::SE3d::QuaternionType(t.rotation.w, t.rotation.x, t.rotation.y, t.rotation.z),
+        Sophus::SE3d::Point(t.translation.x, t.translation.y, t.translation.z));
+}
+}  // namespace tf2
 
 namespace kiss_icp_ros::utils {
 
@@ -174,6 +218,16 @@ inline std::unique_ptr<PointCloud2> EigenToPointCloud2(const std::vector<Eigen::
 }
 
 inline std::unique_ptr<PointCloud2> EigenToPointCloud2(const std::vector<Eigen::Vector3d> &points,
+                                                       const Sophus::SE3d &T,
+                                                       const Header &header) {
+    std::vector<Eigen::Vector3d> points_t;
+    points_t.resize(points.size());
+    std::transform(points.cbegin(), points.cend(), points_t.begin(),
+                   [&](const auto &point) { return T * point; });
+    return EigenToPointCloud2(points_t, header);
+}
+
+inline std::unique_ptr<PointCloud2> EigenToPointCloud2(const std::vector<Eigen::Vector3d> &points,
                                                        const std::vector<double> &timestamps,
                                                        const Header &header) {
     auto msg = CreatePointCloud2Msg(points.size(), header, true);
@@ -181,5 +235,4 @@ inline std::unique_ptr<PointCloud2> EigenToPointCloud2(const std::vector<Eigen::
     FillPointCloud2Timestamp(timestamps, *msg);
     return msg;
 }
-
 }  // namespace kiss_icp_ros::utils

@@ -47,6 +47,7 @@ if("$ENV{ROS_VERSION}" STREQUAL "1")
     COMPONENTS geometry_msgs
                nav_msgs
                sensor_msgs
+               geometry_msgs
                roscpp
                rosbag
                std_msgs
@@ -84,6 +85,7 @@ elseif("$ENV{ROS_VERSION}" STREQUAL "2")
     rclcpp_components
     nav_msgs
     sensor_msgs
+    geometry_msgs
     tf2_ros)
 
   rclcpp_components_register_node(odometry_component PLUGIN "kiss_icp_ros::OdometryServer" EXECUTABLE odometry_node)

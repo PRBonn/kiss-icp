@@ -55,7 +55,7 @@ Visualization Manager:
       Size (Pixels): 1
       Size (m): 0.009999999776482582
       Style: Points
-      Topic: /odometry_node/frame
+      Topic: /kiss/frame
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: false
@@ -83,7 +83,7 @@ Visualization Manager:
       Size (Pixels): 1
       Size (m): 0.009999999776482582
       Style: Points
-      Topic: /odometry_node/local_map
+      Topic: /kiss/local_map
       Unreliable: true
       Use Fixed Frame: true
       Use rainbow: true
@@ -131,7 +131,7 @@ Visualization Manager:
       Length: 3
       Name: child_frame
       Radius: 0.10000000149011612
-      Reference Frame: base_link
+      Reference Frame: base
       Show Trail: false
       Value: true
     - Alpha: 1
@@ -155,7 +155,7 @@ Visualization Manager:
       Radius: 0.20000000298023224
       Shaft Diameter: 0.10000000149011612
       Shaft Length: 0.10000000149011612
-      Topic: /odometry_node/trajectory
+      Topic: /kiss/trajectory
       Unreliable: false
       Value: true
   Enabled: true
