@@ -32,7 +32,9 @@
 #include <tuple>
 
 namespace Eigen {
+using Matrix6d = Eigen::Matrix<double, 6, 6>;
 using Matrix3_6d = Eigen::Matrix<double, 3, 6>;
+using Vector6d = Eigen::Matrix<double, 6, 1>;
 }  // namespace Eigen
 
 namespace {
