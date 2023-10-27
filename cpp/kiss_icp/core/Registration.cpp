@@ -32,9 +32,7 @@
 #include <tuple>
 
 namespace Eigen {
-using Matrix6d = Eigen::Matrix<double, 6, 6>;
 using Matrix3_6d = Eigen::Matrix<double, 3, 6>;
-using Vector6d = Eigen::Matrix<double, 6, 1>;
 }  // namespace Eigen
 
 namespace {
@@ -62,9 +60,17 @@ void TransformPoints(const Sophus::SE3d &T, std::vector<Eigen::Vector3d> &points
                    [&](const auto &point) { return T * point; });
 }
 
-Sophus::SE3d AlignClouds(const std::vector<Eigen::Vector3d> &source,
-                         const std::vector<Eigen::Vector3d> &target,
-                         double th) {
+constexpr int MAX_NUM_ITERATIONS_ = 500;
+constexpr double ESTIMATION_THRESHOLD_ = 0.0001;
+
+}  // namespace
+
+namespace kiss_icp {
+
+std::tuple<Eigen::Matrix6d, Eigen::Vector6d> BuildLinearSystem(
+    const std::vector<Eigen::Vector3d> &source,
+    const std::vector<Eigen::Vector3d> &target,
+    double kernel) {
     auto compute_jacobian_and_residual = [&](auto i) {
         const Eigen::Vector3d residual = source[i] - target[i];
         Eigen::Matrix3_6d J_r;
@@ -80,7 +86,9 @@ Sophus::SE3d AlignClouds(const std::vector<Eigen::Vector3d> &source,
         ResultTuple(),
         // 1st Lambda: Parallel computation
         [&](const tbb::blocked_range<size_t> &r, ResultTuple J) -> ResultTuple {
-            auto Weight = [&](double residual2) { return square(th) / square(th + residual2); };
+            auto Weight = [&](double residual2) {
+                return square(kernel) / square(kernel + residual2);
+            };
             auto &[JTJ_private, JTr_private] = J;
             for (auto i = r.begin(); i < r.end(); ++i) {
                 const auto &[J_r, residual] = compute_jacobian_and_residual(i);
@@ -93,16 +101,8 @@ Sophus::SE3d AlignClouds(const std::vector<Eigen::Vector3d> &source,
         // 2nd Lambda: Parallel reduction of the private Jacboians
         [&](ResultTuple a, const ResultTuple &b) -> ResultTuple { return a + b; });
 
-    const Eigen::Vector6d x = JTJ.ldlt().solve(-JTr);
-    return Sophus::SE3d::exp(x);
+    return std::make_tuple(JTJ, JTr);
 }
-
-constexpr int MAX_NUM_ITERATIONS_ = 500;
-constexpr double ESTIMATION_THRESHOLD_ = 0.0001;
-
-}  // namespace
-
-namespace kiss_icp {
 
 Sophus::SE3d RegisterFrame(const std::vector<Eigen::Vector3d> &frame,
                            const VoxelHashMap &voxel_map,
@@ -121,13 +121,15 @@ Sophus::SE3d RegisterFrame(const std::vector<Eigen::Vector3d> &frame,
         // Equation (10)
         const auto &[src, tgt] = voxel_map.GetCorrespondences(source, max_correspondence_distance);
         // Equation (11)
-        auto estimation = AlignClouds(src, tgt, kernel);
+        const auto &[JTJ, JTr] = BuildLinearSystem(src, tgt, kernel);
+        const Eigen::Vector6d dx = JTJ.ldlt().solve(-JTr);
+        const Sophus::SE3d estimation = Sophus::SE3d::exp(dx);
         // Equation (12)
         TransformPoints(estimation, source);
         // Update iterations
         T_icp = estimation * T_icp;
         // Termination criteria
-        if (estimation.log().norm() < ESTIMATION_THRESHOLD_) break;
+        if (dx.norm() < ESTIMATION_THRESHOLD_) break;
     }
     // Spit the final transformation
     return T_icp * initial_guess;
