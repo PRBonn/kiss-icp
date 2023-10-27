@@ -28,7 +28,17 @@
 
 #include "VoxelHashMap.hpp"
 
+namespace Eigen {
+using Matrix6d = Eigen::Matrix<double, 6, 6>;
+using Vector6d = Eigen::Matrix<double, 6, 1>;
+}  // namespace Eigen
+
 namespace kiss_icp {
+
+std::tuple<Eigen::Matrix6d, Eigen::Vector6d> BuildLinearSystem(
+    const std::vector<Eigen::Vector3d> &source,
+    const std::vector<Eigen::Vector3d> &target,
+    double kernel);
 
 Sophus::SE3d RegisterFrame(const std::vector<Eigen::Vector3d> &frame,
                            const VoxelHashMap &voxel_map,
