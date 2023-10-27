@@ -65,10 +65,6 @@ void TransformPoints(const Sophus::SE3d &T, std::vector<Eigen::Vector3d> &points
 constexpr int MAX_NUM_ITERATIONS_ = 500;
 constexpr double ESTIMATION_THRESHOLD_ = 0.0001;
 
-}  // namespace
-
-namespace kiss_icp {
-
 std::tuple<Eigen::Matrix6d, Eigen::Vector6d> BuildLinearSystem(
     const std::vector<Eigen::Vector3d> &source,
     const std::vector<Eigen::Vector3d> &target,
@@ -105,6 +101,9 @@ std::tuple<Eigen::Matrix6d, Eigen::Vector6d> BuildLinearSystem(
 
     return std::make_tuple(JTJ, JTr);
 }
+}  // namespace
+
+namespace kiss_icp {
 
 Sophus::SE3d RegisterFrame(const std::vector<Eigen::Vector3d> &frame,
                            const VoxelHashMap &voxel_map,
