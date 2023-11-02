@@ -81,7 +81,7 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
         std::bind(&OdometryServer::RegisterFrame, this, std::placeholders::_1));
 
     // Initialize publishers
-    rclcpp::QoS qos((rclcpp::SystemDefaultsQoS()));
+    rclcpp::QoS qos((rclcpp::SensorDataQoS()));
     odom_publisher_ = create_publisher<nav_msgs::msg::Odometry>("/kiss/odometry", qos);
     traj_publisher_ = create_publisher<nav_msgs::msg::Path>("/kiss/trajectory", qos);
     path_msg_.header.frame_id = odom_frame_;
