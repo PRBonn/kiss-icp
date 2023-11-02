@@ -24,6 +24,7 @@
 
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_reduce.h>
+#include <tbb/task_arena.h>
 
 #include <algorithm>
 #include <cmath>
@@ -62,6 +63,7 @@ void TransformPoints(const Sophus::SE3d &T, std::vector<Eigen::Vector3d> &points
 
 constexpr int MAX_NUM_ITERATIONS_ = 500;
 constexpr double ESTIMATION_THRESHOLD_ = 0.0001;
+constexpr int NUM_THREADS_ = 16;
 
 }  // namespace
 
@@ -79,29 +81,33 @@ std::tuple<Eigen::Matrix6d, Eigen::Vector6d> BuildLinearSystem(
         return std::make_tuple(J_r, residual);
     };
 
-    const auto &[JTJ, JTr] = tbb::parallel_reduce(
-        // Range
-        tbb::blocked_range<size_t>{0, source.size()},
-        // Identity
-        ResultTuple(),
-        // 1st Lambda: Parallel computation
-        [&](const tbb::blocked_range<size_t> &r, ResultTuple J) -> ResultTuple {
-            auto Weight = [&](double residual2) {
-                return square(kernel) / square(kernel + residual2);
-            };
-            auto &[JTJ_private, JTr_private] = J;
-            for (auto i = r.begin(); i < r.end(); ++i) {
-                const auto &[J_r, residual] = compute_jacobian_and_residual(i);
-                const double w = Weight(residual.squaredNorm());
-                JTJ_private.noalias() += J_r.transpose() * w * J_r;
-                JTr_private.noalias() += J_r.transpose() * w * residual;
-            }
-            return J;
-        },
-        // 2nd Lambda: Parallel reduction of the private Jacboians
-        [&](ResultTuple a, const ResultTuple &b) -> ResultTuple { return a + b; });
+    ResultTuple jacobian;
+    tbb::task_arena limited_arena(NUM_THREADS_);
+    limited_arena.execute([&]() -> void {
+        jacobian = tbb::parallel_reduce(
+            // Range
+            tbb::blocked_range<size_t>{0, source.size()},
+            // Identity
+            ResultTuple(),
+            // 1st Lambda: Parallel computation
+            [&](const tbb::blocked_range<size_t> &r, ResultTuple J) -> ResultTuple {
+                auto Weight = [&](double residual2) {
+                    return square(kernel) / square(kernel + residual2);
+                };
+                auto &[JTJ_private, JTr_private] = J;
+                for (auto i = r.begin(); i < r.end(); ++i) {
+                    const auto &[J_r, residual] = compute_jacobian_and_residual(i);
+                    const double w = Weight(residual.squaredNorm());
+                    JTJ_private.noalias() += J_r.transpose() * w * J_r;
+                    JTr_private.noalias() += J_r.transpose() * w * residual;
+                }
+                return J;
+            },
+            // 2nd Lambda: Parallel reduction of the private Jacboians
+            [&](ResultTuple a, const ResultTuple &b) -> ResultTuple { return a + b; });
+    });
 
-    return std::make_tuple(JTJ, JTr);
+    return std::make_tuple(jacobian.JTJ, jacobian.JTr);
 }
 
 Sophus::SE3d RegisterFrame(const std::vector<Eigen::Vector3d> &frame,
