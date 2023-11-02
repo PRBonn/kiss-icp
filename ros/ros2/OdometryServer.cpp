@@ -118,12 +118,12 @@ Sophus::SE3d OdometryServer::LookupTransform(const std::string &target_frame,
     return {};
 }
 
-void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msg) {
+void OdometryServer::RegisterFrame(sensor_msgs::msg::PointCloud2::UniquePtr msg) {
     const auto cloud_frame_id = msg->header.frame_id;
-    const auto points = PointCloud2ToEigen(msg);
+    const auto points = PointCloud2ToEigen(*msg);
     const auto timestamps = [&]() -> std::vector<double> {
         if (!config_.deskew) return {};
-        return GetTimestamps(msg);
+        return GetTimestamps(*msg);
     }();
     const auto egocentric_estimation = (base_frame_.empty() || base_frame_ == cloud_frame_id);
 
