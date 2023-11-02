@@ -88,9 +88,9 @@ inline std::string FixFrameId(const std::string &frame_id) {
     return std::regex_replace(frame_id, std::regex("^/"), "");
 }
 
-inline auto GetTimestampField(const PointCloud2 &msg) {
+inline auto GetTimestampField(const PointCloud2::ConstSharedPtr msg) {
     PointField timestamp_field;
-    for (const auto &field : msg.fields) {
+    for (const auto &field : msg->fields) {
         if ((field.name == "t" || field.name == "timestamp" || field.name == "time")) {
             timestamp_field = field;
         }
@@ -115,10 +115,11 @@ inline auto NormalizeTimestamps(const std::vector<double> &timestamps) {
     return timestamps_normalized;
 }
 
-inline auto ExtractTimestampsFromMsg(const PointCloud2 &msg, const PointField &field) {
+inline auto ExtractTimestampsFromMsg(const PointCloud2::ConstSharedPtr msg,
+                                     const PointField &field) {
     auto extract_timestamps =
         [&msg]<typename T>(sensor_msgs::PointCloud2ConstIterator<T> &&it) -> std::vector<double> {
-        const size_t n_points = msg.height * msg.width;
+        const size_t n_points = msg->height * msg->width;
         std::vector<double> timestamps;
         timestamps.reserve(n_points);
         for (size_t i = 0; i < n_points; ++i, ++it) {
@@ -133,11 +134,11 @@ inline auto ExtractTimestampsFromMsg(const PointCloud2 &msg, const PointField &f
     // According to the type of the timestamp == type, return a PointCloud2ConstIterator<type>
     using sensor_msgs::PointCloud2ConstIterator;
     if (timestamp_field.datatype == PointField::UINT32) {
-        return extract_timestamps(PointCloud2ConstIterator<uint32_t>(msg, timestamp_field.name));
+        return extract_timestamps(PointCloud2ConstIterator<uint32_t>(*msg, timestamp_field.name));
     } else if (timestamp_field.datatype == PointField::FLOAT32) {
-        return extract_timestamps(PointCloud2ConstIterator<float>(msg, timestamp_field.name));
+        return extract_timestamps(PointCloud2ConstIterator<float>(*msg, timestamp_field.name));
     } else if (timestamp_field.datatype == PointField::FLOAT64) {
-        return extract_timestamps(PointCloud2ConstIterator<double>(msg, timestamp_field.name));
+        return extract_timestamps(PointCloud2ConstIterator<double>(*msg, timestamp_field.name));
     }
 
     // timestamp type not supported, please open an issue :)
@@ -188,7 +189,7 @@ inline void FillPointCloud2Timestamp(const std::vector<double> &timestamps, Poin
     for (size_t i = 0; i < timestamps.size(); i++, ++msg_t) *msg_t = timestamps[i];
 }
 
-inline std::vector<double> GetTimestamps(const PointCloud2 &msg) {
+inline std::vector<double> GetTimestamps(const PointCloud2::ConstSharedPtr msg) {
     auto timestamp_field = GetTimestampField(msg);
 
     // Extract timestamps from cloud_msg
@@ -197,13 +198,13 @@ inline std::vector<double> GetTimestamps(const PointCloud2 &msg) {
     return timestamps;
 }
 
-inline std::vector<Eigen::Vector3d> PointCloud2ToEigen(const PointCloud2 &msg) {
+inline std::vector<Eigen::Vector3d> PointCloud2ToEigen(const PointCloud2::ConstSharedPtr msg) {
     std::vector<Eigen::Vector3d> points;
-    points.reserve(msg.height * msg.width);
-    sensor_msgs::PointCloud2ConstIterator<float> msg_x(msg, "x");
-    sensor_msgs::PointCloud2ConstIterator<float> msg_y(msg, "y");
-    sensor_msgs::PointCloud2ConstIterator<float> msg_z(msg, "z");
-    for (size_t i = 0; i < msg.height * msg.width; ++i, ++msg_x, ++msg_y, ++msg_z) {
+    points.reserve(msg->height * msg->width);
+    sensor_msgs::PointCloud2ConstIterator<float> msg_x(*msg, "x");
+    sensor_msgs::PointCloud2ConstIterator<float> msg_y(*msg, "y");
+    sensor_msgs::PointCloud2ConstIterator<float> msg_z(*msg, "z");
+    for (size_t i = 0; i < msg->height * msg->width; ++i, ++msg_x, ++msg_y, ++msg_z) {
         points.emplace_back(*msg_x, *msg_y, *msg_z);
     }
     return points;
@@ -213,7 +214,7 @@ inline std::unique_ptr<PointCloud2> EigenToPointCloud2(const std::vector<Eigen::
                                                        const Header &header) {
     auto msg = CreatePointCloud2Msg(points.size(), header);
     FillPointCloud2XYZ(points, *msg);
-    return std::move(msg);
+    return msg;
 }
 
 inline std::unique_ptr<PointCloud2> EigenToPointCloud2(const std::vector<Eigen::Vector3d> &points,
@@ -232,6 +233,6 @@ inline std::unique_ptr<PointCloud2> EigenToPointCloud2(const std::vector<Eigen::
     auto msg = CreatePointCloud2Msg(points.size(), header, true);
     FillPointCloud2XYZ(points, *msg);
     FillPointCloud2Timestamp(timestamps, *msg);
-    return std::move(msg);
+    return msg;
 }
 }  // namespace kiss_icp_ros::utils

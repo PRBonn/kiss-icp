@@ -81,7 +81,7 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
         std::bind(&OdometryServer::RegisterFrame, this, std::placeholders::_1));
 
     // Initialize publishers
-    rclcpp::QoS qos((rclcpp::SensorDataQoS()));
+    rclcpp::QoS qos((rclcpp::SystemDefaultsQoS().keep_last(1).durability_volatile()));
     odom_publisher_ = create_publisher<nav_msgs::msg::Odometry>("/kiss/odometry", qos);
     traj_publisher_ = create_publisher<nav_msgs::msg::Path>("/kiss/trajectory", qos);
     path_msg_.header.frame_id = odom_frame_;
@@ -118,12 +118,12 @@ Sophus::SE3d OdometryServer::LookupTransform(const std::string &target_frame,
     return {};
 }
 
-void OdometryServer::RegisterFrame(sensor_msgs::msg::PointCloud2::UniquePtr msg) {
+void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msg) {
     const auto cloud_frame_id = msg->header.frame_id;
-    const auto points = PointCloud2ToEigen(*msg);
+    const auto points = PointCloud2ToEigen(msg);
     const auto timestamps = [&]() -> std::vector<double> {
         if (!config_.deskew) return {};
-        return GetTimestamps(*msg);
+        return GetTimestamps(msg);
     }();
     const auto egocentric_estimation = (base_frame_.empty() || base_frame_ == cloud_frame_id);
 

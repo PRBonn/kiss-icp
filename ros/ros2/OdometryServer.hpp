@@ -46,7 +46,7 @@ public:
 
 private:
     /// Register new frame
-    void RegisterFrame(sensor_msgs::msg::PointCloud2::UniquePtr msg);
+    void RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msg);
 
     /// Stream the estimated pose to ROS
     void PublishOdometry(const Sophus::SE3d &pose,
