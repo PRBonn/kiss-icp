@@ -214,3 +214,6 @@ void OdometryServer::PublishClouds(const std::vector<Eigen::Vector3d> frame,
     }
 }
 }  // namespace kiss_icp_ros
+
+#include "rclcpp_components/register_node_macro.hpp"
+RCLCPP_COMPONENTS_REGISTER_NODE(kiss_icp_ros::OdometryServer)
