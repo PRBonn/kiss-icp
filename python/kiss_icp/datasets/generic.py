@@ -83,6 +83,7 @@ class GenericDataset:
         if self.file_extension == "las":
             try:
                 import laspy
+                print("Using laspy to read .las files")
                 def las_reader(las_filename):
                     las_data = laspy.read(las_filename)
                     points = np.vstack((las_data.x, las_data.y, las_data.z, las_data.gps_time, las_data.intensity)).T.astype(float)

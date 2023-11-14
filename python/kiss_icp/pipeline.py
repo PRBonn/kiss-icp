@@ -39,6 +39,10 @@ from kiss_icp.tools.pipeline_results import PipelineResults
 from kiss_icp.tools.progress_bar import get_progress_bar
 from kiss_icp.tools.visualizer import RegistrationVisualizer, StubVisualizer
 
+import logging
+logging.basicConfig(format='[%(module)s | l.%(lineno)d] %(message)s')
+logging.getLogger().setLevel(logging.INFO)
+
 
 class OdometryPipeline:
     def __init__(
@@ -50,6 +54,7 @@ class OdometryPipeline:
         visualize: bool = False,
         n_scans: int = -1,
         jump: int = 0,
+        output_poses_path: Optional[str] = None,
     ):
         self._dataset = dataset
         self._n_scans = (
@@ -61,7 +66,8 @@ class OdometryPipeline:
 
         # Config and output dir
         self.config = load_config(config, deskew=deskew, max_range=max_range)
-        self.results_dir = None
+        self.results_dir = output_poses_path
+        logging.info('output_poses_path=\n%s',output_poses_path)
 
         # Pipeline
         self.odometry = KissICP(config=self.config)
@@ -77,11 +83,11 @@ class OdometryPipeline:
             else os.path.basename(self._dataset.data_dir)
         )
 
-        self._cloud_map = o3d.geometry.PointCloud()
-        self.intensities = np.empty(0)
-        self.timestamps = np.empty(0)
+        # self._cloud_map = o3d.geometry.PointCloud()
+        # self.intensities = np.empty(0)
+        # self.timestamps = np.empty(0)
         self.scan_nbr = 0
-        self.points_to_scan = np.zeros(self._n_scans) # Dictionary to store which points belong to which scan
+        # self.points_to_scan = np.zeros(self._n_scans) # Dictionary to store which points belong to which scan
 
         # Visualizer
         self.visualizer = RegistrationVisualizer() if visualize else StubVisualizer()
@@ -97,7 +103,7 @@ class OdometryPipeline:
         self._write_gt_poses()
         self._write_cfg()
         self._write_log()
-        self._write_las()
+        # self._write_las()
         return self.results
 
     # def transform(self, pcd, matrix):
@@ -109,8 +115,8 @@ class OdometryPipeline:
         for idx in get_progress_bar(self._first, self._last):
             raw_frame, timestamps, intensities  = self._next(idx)
             start_time = time.perf_counter_ns()
-            source, keypoints, raw_frame_deskewed = self.odometry.register_frame(raw_frame, timestamps)
-            raw_frame_deskewed_transformed = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(raw_frame_deskewed))
+            source, keypoints, _ = self.odometry.register_frame(raw_frame, timestamps)
+            # raw_frame_deskewed_transformed = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(raw_frame_deskewed))
             # if intensities is not None:
             #     intensities = np.clip(intensities, 0, 80)
             #     normalized_intensities = np.interp(intensities, (intensities.min(), intensities.max()), (0, 1)).astype(float)
@@ -118,11 +124,12 @@ class OdometryPipeline:
             #     colors[:, :] = normalized_intensities.reshape(-1, 1)
             #     raw_frame_deskewed_transformed.colors = o3d.utility.Vector3dVector(colors)
             
-            raw_frame_deskewed_transformed.transform(self.poses[-1])
-            self._cloud_map += raw_frame_deskewed_transformed
+            # raw_frame_deskewed_transformed.transform(self.poses[-1])
+            # self._cloud_map += raw_frame_deskewed_transformed
 
             self.times.append(time.perf_counter_ns() - start_time)
             self.visualizer.update(source, keypoints, self.odometry.local_map, self.poses[-1])
+        # logging.info('self.poses=\n%s',self.poses)
 
     def _next(self, idx):
         """TODO: re-arrange this logic"""
@@ -149,10 +156,10 @@ class OdometryPipeline:
 
             frame = frame[:, :3]
 
-        self.points_to_scan[self.scan_nbr] = frame.shape[0]
+        # self.points_to_scan[self.scan_nbr] = frame.shape[0]
         self.scan_nbr += 1
-        self.intensities = np.concatenate((self.intensities, intensities))
-        self.timestamps = np.concatenate((self.timestamps, timestamps))
+        # self.intensities = np.concatenate((self.intensities, intensities))
+        # self.timestamps = np.concatenate((self.timestamps, timestamps))
         return frame, timestamps, intensities
 
 
@@ -197,8 +204,11 @@ class OdometryPipeline:
         self.save_poses_tum_format(filename, poses, timestamps)
 
     def _write_result_poses(self):
+        print("Saving poses to ", self.results_dir)
+        poses_path = os.path.join(self.results_dir, "poses")
+        os.makedirs(poses_path, exist_ok=True)
         self._save_poses(
-            filename=f"{self.results_dir}/{self.dataset_sequence}_poses",
+            filename=f"{self.results_dir}/poses/{self.dataset_sequence}_poses",
             poses=self._calibrate_poses(self.poses),
             timestamps=self._get_frames_timestamps(),
         )
@@ -294,4 +304,6 @@ class OdometryPipeline:
         return results_dir
 
     def _create_output_dir(self):
-        self.results_dir = self._get_results_dir(self.config.out_dir)
+        if self.results_dir is None:
+            self.results_dir = self._get_results_dir(self.config.out_dir)
+        logging.info('self.results_dir=\n%s',self.results_dir)

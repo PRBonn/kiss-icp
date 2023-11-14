@@ -43,7 +43,7 @@ class KissICP:
     def register_frame(self, frame, timestamps):
         # Apply motion compensation
         raw_frame_deskewed = self.compensator.deskew_scan(frame, self.poses, timestamps)
-
+        # raw_frame_deskewed = np.array(frame) # test if deskew is the problem -> it's not apparently
         # Preprocess the input cloud
         frame = self.preprocess(raw_frame_deskewed)
 
