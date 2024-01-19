@@ -25,3 +25,7 @@ jobs:
       - name: Test installation
         run: |
           kiss_icp_pipeline --version
+      - name: Run unittests
+        run: |
+          python -m pip install --verbose './python[test]'
+          pytest -rA --verbose ./python/
