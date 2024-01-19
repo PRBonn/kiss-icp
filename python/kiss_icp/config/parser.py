@@ -28,7 +28,6 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from pydantic import PrivateAttr
 from pydantic_settings import BaseSettings
 
 from kiss_icp.config.config import AdaptiveThresholdConfig, DataConfig, MappingConfig
