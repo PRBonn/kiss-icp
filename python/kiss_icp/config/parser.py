@@ -65,7 +65,6 @@ def load_config(
     also specified from the CLI interface"""
 
     config = KISSConfig(**_yaml_source(config_file))
-    print(config.model_dump())
 
     # Override defaults from command line
     if deskew is not None:
