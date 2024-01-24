@@ -33,6 +33,7 @@ YELLOW = np.array([1, 0.706, 0])
 RED = np.array([128, 0, 0]) / 255.0
 BLACK = np.array([0, 0, 0]) / 255.0
 BLUE = np.array([0.4, 0.5, 0.9])
+GRAY = np.array([0.4, 0.4, 0.4])
 SPHERE_SIZE = 0.20
 
 
@@ -216,7 +217,9 @@ class RegistrationVisualizer(StubVisualizer):
         if self.render_map:
             target = copy.deepcopy(target)
             self.target.points = self.o3d.utility.Vector3dVector(target)
-            if not self.global_view:
+            if self.global_view:
+                self.target.paint_uniform_color(GRAY)
+            else:
                 self.target.transform(np.linalg.inv(pose))
         else:
             self.target.points = self.o3d.utility.Vector3dVector()
