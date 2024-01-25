@@ -103,12 +103,12 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
     m.def(
         "_deskew_scan",
         [](const std::vector<Eigen::Vector3d> &frame, const std::vector<double> &timestamps,
-           const Eigen::Matrix4d &T_start, const Eigen::Matrix4d &T_finish) {
+           const Eigen::Matrix4d &T_start, const Eigen::Matrix4d &T_finish, int prev_frame_delta=1) {
             Sophus::SE3d start_pose(T_start);
             Sophus::SE3d finish_pose(T_finish);
-            return DeSkewScan(frame, timestamps, start_pose, finish_pose);
+            return DeSkewScan(frame, timestamps, start_pose, finish_pose, prev_frame_delta);
         },
-        "frame"_a, "timestamps"_a, "start_pose"_a, "finish_pose"_a);
+        "frame"_a, "timestamps"_a, "start_pose"_a, "finish_pose"_a, "prev_frame_delta"_a);
 
     // prerpocessing modules
     m.def("_voxel_down_sample", &VoxelDownsample, "frame"_a, "voxel_size"_a);

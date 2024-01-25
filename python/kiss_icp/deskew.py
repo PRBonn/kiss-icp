@@ -36,7 +36,7 @@ class StubCompensator:
 
 
 class MotionCompensator:
-    def deskew_scan(self, frame, poses, timestamps):
+    def deskew_scan(self, frame, poses, timestamps, prev_frame_delta = 1):
         if len(poses) < 2:
             return frame
         deskew_frame = kiss_icp_pybind._deskew_scan(
@@ -44,5 +44,6 @@ class MotionCompensator:
             timestamps=timestamps,
             start_pose=poses[-2],
             finish_pose=poses[-1],
+            prev_frame_delta=prev_frame_delta,
         )
         return np.asarray(deskew_frame)

@@ -39,10 +39,11 @@ class KissICP:
         self.adaptive_threshold = get_threshold_estimator(self.config)
         self.local_map = get_voxel_hash_map(self.config)
         self.preprocess = get_preprocessor(self.config)
+        self.prev_frame_delta = 1
 
-    def register_frame(self, frame, timestamps):
+    def register_frame(self, frame, timestamps, frame_delta=1):
         # Apply motion compensation
-        frame = self.compensator.deskew_scan(frame, self.poses, timestamps)
+        frame = self.compensator.deskew_scan(frame, self.poses, timestamps, self.prev_frame_delta)
 
         # Preprocess the input cloud
         frame = self.preprocess(frame)
@@ -54,7 +55,7 @@ class KissICP:
         sigma = self.get_adaptive_threshold()
 
         # Compute initial_guess for ICP
-        prediction = self.get_prediction_model()
+        prediction = self.get_prediction_model(frame_delta)
         last_pose = self.poses[-1] if self.poses else np.eye(4)
         initial_guess = last_pose @ prediction
 
@@ -70,6 +71,7 @@ class KissICP:
         self.adaptive_threshold.update_model_deviation(np.linalg.inv(initial_guess) @ new_pose)
         self.local_map.update(frame_downsample, new_pose)
         self.poses.append(new_pose)
+        self.prev_frame_delta = frame_delta
         return frame, source
 
     def voxelize(self, iframe):
@@ -84,10 +86,11 @@ class KissICP:
             else self.adaptive_threshold.get_threshold()
         )
 
-    def get_prediction_model(self):
+    def get_prediction_model(self, frame_delta):
         if len(self.poses) < 2:
             return np.eye(4)
-        return np.linalg.inv(self.poses[-2]) @ self.poses[-1]
+        model = np.linalg.inv(self.poses[-2]) @ self.poses[-1]
+        return np.linalg.matrix_power(model, int(frame_delta))
 
     def has_moved(self):
         if len(self.poses) < 1:
