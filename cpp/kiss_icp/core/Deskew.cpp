@@ -38,8 +38,8 @@ std::vector<Eigen::Vector3d> DeSkewScan(const std::vector<Eigen::Vector3d> &fram
                                         const std::vector<double> &timestamps,
                                         const Sophus::SE3d &start_pose,
                                         const Sophus::SE3d &finish_pose,
-					int prev_ratio) {
-    const auto delta_pose = (start_pose.inverse() * finish_pose).log() / prev_ratio;
+					int prev_frame_delta) {
+    const auto delta_pose = (start_pose.inverse() * finish_pose).log() / prev_frame_delta;
     std::vector<Eigen::Vector3d> corrected_frame(frame.size());
     tbb::parallel_for(size_t(0), frame.size(), [&](size_t i) {
         const auto motion = Sophus::SE3d::exp((timestamps[i] - mid_pose_timestamp) * delta_pose);
