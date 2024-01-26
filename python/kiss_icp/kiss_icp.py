@@ -41,9 +41,16 @@ class KissICP:
         self.preprocess = get_preprocessor(self.config)
         self.prev_frame_delta = 1
 
-    def register_frame(self, frame, timestamps, frame_delta=1):
+    def register_frame(self, frame, timestamps, frame_delta = 1):
+        if frame_delta <= 0:
+            raise RuntimeError("Math error. Frame_delta has to be greater than zero.")
+
+        # Handle frame drop case. For better inital pose estimation
+        frame_delta_ratio = frame_delta / self.prev_frame_delta
+
         # Apply motion compensation
-        frame = self.compensator.deskew_scan(frame, self.poses, timestamps, self.prev_frame_delta)
+        frame = self.compensator.deskew_scan(frame, self.poses, timestamps,
+                                             frame_delta_ratio)
 
         # Preprocess the input cloud
         frame = self.preprocess(frame)
@@ -55,7 +62,7 @@ class KissICP:
         sigma = self.get_adaptive_threshold()
 
         # Compute initial_guess for ICP
-        prediction = self.get_prediction_model(frame_delta)
+        prediction = self.get_prediction_model(frame_delta_ratio)
         last_pose = self.poses[-1] if self.poses else np.eye(4)
         initial_guess = last_pose @ prediction
 
@@ -86,11 +93,14 @@ class KissICP:
             else self.adaptive_threshold.get_threshold()
         )
 
-    def get_prediction_model(self, frame_delta):
+    def get_prediction_model(self, frame_delta_ratio):
         if len(self.poses) < 2:
             return np.eye(4)
         model = np.linalg.inv(self.poses[-2]) @ self.poses[-1]
-        return np.linalg.matrix_power(model, int(frame_delta))
+        if frame_delta_ratio == 1:
+            return model
+        else:
+            return np.linalg.matrix_power(model, int(round(frame_delta_ratio)))
 
     def has_moved(self):
         if len(self.poses) < 1:
