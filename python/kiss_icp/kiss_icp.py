@@ -97,10 +97,8 @@ class KissICP:
         if len(self.poses) < 2:
             return np.eye(4)
         model = np.linalg.inv(self.poses[-2]) @ self.poses[-1]
-        if frame_delta_ratio == 1:
-            return model
-        else:
-            return np.linalg.matrix_power(model, int(round(frame_delta_ratio)))
+
+        return np.linalg.matrix_power(model, int(round(frame_delta_ratio)))
 
     def has_moved(self):
         if len(self.poses) < 1:
