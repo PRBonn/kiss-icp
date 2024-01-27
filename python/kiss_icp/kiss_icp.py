@@ -98,7 +98,6 @@ class KissICP:
             return np.eye(4)
         model = np.linalg.inv(self.poses[-2]) @ self.poses[-1]
 
-        print("PYTHON ratio round = ", int(round(frame_delta_ratio)))
         if frame_delta_ratio <= 0.5:
             return model
         else:
