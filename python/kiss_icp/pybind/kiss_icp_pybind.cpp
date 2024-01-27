@@ -103,7 +103,7 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
     m.def(
         "_deskew_scan",
         [](const std::vector<Eigen::Vector3d> &frame, const std::vector<double> &timestamps,
-           const Eigen::Matrix4d &T_start, const Eigen::Matrix4d &T_finish, float frame_delta_ratio) {
+           const Eigen::Matrix4d &T_start, const Eigen::Matrix4d &T_finish, double frame_delta_ratio) {
             Sophus::SE3d start_pose(T_start);
             Sophus::SE3d finish_pose(T_finish);
             return DeSkewScan(frame, timestamps, start_pose, finish_pose, frame_delta_ratio);
