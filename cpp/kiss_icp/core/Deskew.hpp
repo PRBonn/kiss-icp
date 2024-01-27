@@ -33,6 +33,6 @@ std::vector<Eigen::Vector3d> DeSkewScan(const std::vector<Eigen::Vector3d> &fram
                                         const std::vector<double> &timestamps,
                                         const Sophus::SE3d &start_pose,
                                         const Sophus::SE3d &finish_pose,
-                                        float frame_drop_ratio = 1);
+                                        double frame_drop_ratio = 1.0);
 
 }  // namespace kiss_icp
