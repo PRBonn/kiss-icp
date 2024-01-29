@@ -28,7 +28,7 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from pydantic import BaseSettings, PrivateAttr
+from pydantic_settings import BaseSettings
 
 from kiss_icp.config.config import AdaptiveThresholdConfig, DataConfig, MappingConfig
 
@@ -38,32 +38,23 @@ class KISSConfig(BaseSettings):
     data: DataConfig = DataConfig()
     mapping: MappingConfig = MappingConfig()
     adaptive_threshold: AdaptiveThresholdConfig = AdaptiveThresholdConfig()
-    _config_file: Optional[Path] = PrivateAttr()
 
-    def __init__(self, config_file: Optional[Path] = None, *args, **kwargs):
-        self._config_file = config_file
-        super().__init__(*args, **kwargs)
 
-    def _yaml_source(self) -> Dict[str, Any]:
-        data = None
-        if self._config_file is not None:
-            try:
-                yaml = importlib.import_module("yaml")
-            except ModuleNotFoundError:
-                print(
-                    "Custom configuration file specified but PyYAML is not installed on your system,"
-                    ' run `pip install "kiss-icp[all]"`. You can also modify the config.py if your '
-                    "system does not support PyYaml "
-                )
-                sys.exit(1)
-            with open(self._config_file) as cfg_file:
-                data = yaml.safe_load(cfg_file)
-        return data or {}
-
-    class Config:
-        @classmethod
-        def customise_sources(cls, init_settings, env_settings, file_secret_settings):
-            return init_settings, KISSConfig._yaml_source
+def _yaml_source(config_file: Optional[Path]) -> Dict[str, Any]:
+    data = None
+    if config_file is not None:
+        try:
+            yaml = importlib.import_module("yaml")
+        except ModuleNotFoundError:
+            print(
+                "Custom configuration file specified but PyYAML is not installed on your system,"
+                ' run `pip install "kiss-icp[all]"`. You can also modify the config.py if your '
+                "system does not support PyYaml "
+            )
+            sys.exit(1)
+        with open(config_file) as cfg_file:
+            data = yaml.safe_load(cfg_file)
+    return data or {}
 
 
 def load_config(
@@ -72,7 +63,7 @@ def load_config(
     """Load configuration from an Optional yaml file. Additionally, deskew and max_range can be
     also specified from the CLI interface"""
 
-    config = KISSConfig(config_file=config_file)
+    config = KISSConfig(**_yaml_source(config_file))
 
     # Override defaults from command line
     if deskew is not None:
