@@ -9,7 +9,7 @@
     <br />
     <a href=https://user-images.githubusercontent.com/21349875/219626075-d67e9165-31a2-4a1b-8c26-9f04e7d195ec.mp4>Demo</a>
     <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
-    <a href="https://github.com/PRBonn/kiss-icp/edit/main/README.md#install">Install</a>
+    <a href="https://github.com/PRBonn/kiss-icp/blob/main/README.md#Install">Install</a>
     <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
     <a href="https://github.com/PRBonn/kiss-icp/blob/main/ros">ROS 1</a>
     <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
