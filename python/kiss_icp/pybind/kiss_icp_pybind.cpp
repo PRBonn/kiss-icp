@@ -52,8 +52,8 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
     // Map representation
     py::class_<VoxelHashMap> internal_map(m, "_VoxelHashMap", "Don't use this");
     internal_map
-        .def(py::init<double, double, int>(), "voxel_size"_a, "max_distance"_a,
-             "max_points_per_voxel"_a)
+        .def(py::init<double, double, int, int>(), "voxel_size"_a, "max_distance"_a,
+             "max_points_per_voxel"_a, "max_threads"_a)
         .def("_clear", &VoxelHashMap::Clear)
         .def("_empty", &VoxelHashMap::Empty)
         .def("_update",

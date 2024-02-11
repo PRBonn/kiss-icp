@@ -35,6 +35,7 @@ class DataConfig(BaseModel):
 class MappingConfig(BaseModel):
     voxel_size: Optional[float] = None  # default: take it from data
     max_points_per_voxel: int = 20
+    max_threads: int = -1  # Means automatic
 
 
 class AdaptiveThresholdConfig(BaseModel):

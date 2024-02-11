@@ -12,6 +12,7 @@ data:
 mapping:
   voxel_size: 1.0 # <- optional
   max_points_per_voxel: 20
+  max_threads: -1
 
 adaptive_threshold:
   fixed_threshold: 0.3 # <- optional, disables adaptive threshold
