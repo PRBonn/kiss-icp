@@ -26,6 +26,7 @@
 // should at least acknoowledge the work from CT-ICP by giving a star on GitHub
 #pragma once
 
+#include <oneapi/tbb/task_arena.h>
 #include <tsl/robin_map.h>
 
 #include <Eigen/Core>
@@ -52,10 +53,14 @@ struct VoxelHashMap {
         }
     };
 
-    explicit VoxelHashMap(double voxel_size, double max_distance, int max_points_per_voxel)
+    explicit VoxelHashMap(double voxel_size,
+                          double max_distance,
+                          int max_points_per_voxel,
+                          int max_threads = tbb::task_arena::automatic)
         : voxel_size_(voxel_size),
           max_distance_(max_distance),
-          max_points_per_voxel_(max_points_per_voxel) {}
+          max_points_per_voxel_(max_points_per_voxel),
+          max_threads_(max_threads) {}
 
     Vector3dVectorTuple GetCorrespondences(const Vector3dVector &points,
                                            double max_correspondance_distance) const;
@@ -70,6 +75,7 @@ struct VoxelHashMap {
     double voxel_size_;
     double max_distance_;
     int max_points_per_voxel_;
+    int max_threads_;
     tsl::robin_map<Voxel, VoxelBlock, VoxelHash> map_;
 };
 }  // namespace kiss_icp

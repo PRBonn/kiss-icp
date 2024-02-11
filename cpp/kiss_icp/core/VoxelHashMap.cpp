@@ -44,8 +44,6 @@ struct ResultTuple {
     std::vector<Eigen::Vector3d> target;
 };
 
-constexpr int NUM_THREADS_ = 16;
-
 }  // namespace
 
 namespace kiss_icp {
@@ -97,7 +95,7 @@ VoxelHashMap::Vector3dVectorTuple VoxelHashMap::GetCorrespondences(
 
     using points_iterator = std::vector<Eigen::Vector3d>::const_iterator;
     ResultTuple correspondences(points.size());
-    tbb::task_arena limited_arena(NUM_THREADS_);
+    tbb::task_arena limited_arena(max_threads_);
     limited_arena.execute([&]() -> void {
         correspondences = tbb::parallel_reduce(
             // Range
