@@ -81,7 +81,7 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
         std::bind(&OdometryServer::RegisterFrame, this, std::placeholders::_1));
 
     // Initialize publishers
-    rclcpp::QoS qos((rclcpp::SystemDefaultsQoS()));
+    rclcpp::QoS qos((rclcpp::SystemDefaultsQoS().keep_last(1).durability_volatile()));
     odom_publisher_ = create_publisher<nav_msgs::msg::Odometry>("/kiss/odometry", qos);
     traj_publisher_ = create_publisher<nav_msgs::msg::Path>("/kiss/trajectory", qos);
     path_msg_.header.frame_id = odom_frame_;
@@ -214,3 +214,6 @@ void OdometryServer::PublishClouds(const std::vector<Eigen::Vector3d> frame,
     }
 }
 }  // namespace kiss_icp_ros
+
+#include "rclcpp_components/register_node_macro.hpp"
+RCLCPP_COMPONENTS_REGISTER_NODE(kiss_icp_ros::OdometryServer)

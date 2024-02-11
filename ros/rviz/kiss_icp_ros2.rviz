@@ -58,7 +58,7 @@ Visualization Manager:
             Durability Policy: Volatile
             Filter size: 10
             History Policy: Keep Last
-            Reliability Policy: Reliable
+            Reliability Policy: Best Effort
             Value: /kiss/frame
           Use Fixed Frame: true
           Use rainbow: true
@@ -92,7 +92,7 @@ Visualization Manager:
             Durability Policy: Volatile
             Filter size: 10
             History Policy: Keep Last
-            Reliability Policy: Reliable
+            Reliability Policy: Best Effort
             Value: /kiss/keypoints
           Use Fixed Frame: true
           Use rainbow: true
@@ -126,7 +126,7 @@ Visualization Manager:
             Durability Policy: Volatile
             Filter size: 10
             History Policy: Keep Last
-            Reliability Policy: Reliable
+            Reliability Policy: Best Effort
             Value: /kiss/local_map
           Use Fixed Frame: true
           Use rainbow: true
@@ -171,7 +171,7 @@ Visualization Manager:
             Durability Policy: Volatile
             Filter size: 10
             History Policy: Keep Last
-            Reliability Policy: Reliable
+            Reliability Policy: Best Effort
             Value: /kiss/odometry
           Value: true
         - Alpha: 1
@@ -199,7 +199,7 @@ Visualization Manager:
             Durability Policy: Volatile
             Filter size: 10
             History Policy: Keep Last
-            Reliability Policy: Reliable
+            Reliability Policy: Best Effort
             Value: /kiss/trajectory
           Value: true
       Enabled: true

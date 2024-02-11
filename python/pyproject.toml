@@ -38,7 +38,8 @@ dependencies = [
     "natsort",
     "numpy",
     "plyfile",
-    "pydantic <2",
+    "pydantic>=2",
+    "pydantic-settings",
     "pyquaternion",
     "rich",
     "tqdm",
@@ -52,6 +53,9 @@ all = [
     "pyntcloud",
     "PyYAML",
     "trimesh",
+]
+test = [
+    "pytest",
 ]
 visualizer = [
     "open3d>=0.13",
@@ -89,3 +93,6 @@ skip = ["*-musllinux*",  "pp*", "cp36-*"]
 [tool.cibuildwheel.macos]
 environment = "MACOSX_DEPLOYMENT_TARGET=10.14"
 archs = ["auto64", "arm64"]
+
+[tool.pytest.ini_options]
+testpaths = ['tests']
