@@ -49,47 +49,37 @@ namespace kiss_icp {
 VoxelHashMap::Vector3dVectorTuple VoxelHashMap::GetCorrespondences(
     const Vector3dVector &points, double max_correspondance_distance) const {
     // Lambda Function to obtain the KNN of one point, maybe refactor
-    auto GetClosestNeighboor = [&](const Eigen::Vector3d &point) {
+    auto GetClosestNeighbour = [&](const Eigen::Vector3d &point) {
         auto kx = static_cast<int>(point[0] / voxel_size_);
         auto ky = static_cast<int>(point[1] / voxel_size_);
         auto kz = static_cast<int>(point[2] / voxel_size_);
-        std::vector<Voxel> voxels;
-        voxels.reserve(27);
+
+        Eigen::Vector3d closest_neighbour;
+        double closest_distance2 = std::numeric_limits<double>::max();
+
         for (int i = kx - 1; i < kx + 1 + 1; ++i) {
             for (int j = ky - 1; j < ky + 1 + 1; ++j) {
                 for (int k = kz - 1; k < kz + 1 + 1; ++k) {
-                    voxels.emplace_back(i, j, k);
+                    auto search = map_.find({i, j, k});
+                    if (search != map_.end()) {
+                        const auto &search_points = search->second.points;
+                        if (!search_points.empty()) {
+                            for (const auto &p : search_points) {
+                                double distance = (p - point).squaredNorm();
+                                if (distance < closest_distance2) {
+                                    closest_neighbour = p;
+                                    closest_distance2 = distance;
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
 
-        using Vector3dVector = std::vector<Eigen::Vector3d>;
-        Vector3dVector neighboors;
-        neighboors.reserve(27 * max_points_per_voxel_);
-        std::for_each(voxels.cbegin(), voxels.cend(), [&](const auto &voxel) {
-            auto search = map_.find(voxel);
-            if (search != map_.end()) {
-                const auto &points = search->second.points;
-                if (!points.empty()) {
-                    for (const auto &point : points) {
-                        neighboors.emplace_back(point);
-                    }
-                }
-            }
-        });
-
-        Eigen::Vector3d closest_neighbor;
-        double closest_distance2 = std::numeric_limits<double>::max();
-        std::for_each(neighboors.cbegin(), neighboors.cend(), [&](const auto &neighbor) {
-            double distance = (neighbor - point).squaredNorm();
-            if (distance < closest_distance2) {
-                closest_neighbor = neighbor;
-                closest_distance2 = distance;
-            }
-        });
-
-        return closest_neighbor;
+        return closest_neighbour;
     };
+
     using points_iterator = std::vector<Eigen::Vector3d>::const_iterator;
     const auto [source, target] = tbb::parallel_reduce(
         // Range
@@ -97,16 +87,16 @@ VoxelHashMap::Vector3dVectorTuple VoxelHashMap::GetCorrespondences(
         // Identity
         ResultTuple(points.size()),
         // 1st lambda: Parallel computation
-        [max_correspondance_distance, &GetClosestNeighboor](
+        [max_correspondance_distance, &GetClosestNeighbour](
             const tbb::blocked_range<points_iterator> &r, ResultTuple res) -> ResultTuple {
             auto &[src, tgt] = res;
             src.reserve(r.size());
             tgt.reserve(r.size());
             for (const auto &point : r) {
-                Eigen::Vector3d closest_neighboors = GetClosestNeighboor(point);
-                if ((closest_neighboors - point).norm() < max_correspondance_distance) {
+                Eigen::Vector3d closest_neighbour = GetClosestNeighbour(point);
+                if ((closest_neighbour - point).norm() < max_correspondance_distance) {
                     src.emplace_back(point);
-                    tgt.emplace_back(closest_neighboors);
+                    tgt.emplace_back(closest_neighbour);
                 }
             }
             return res;
