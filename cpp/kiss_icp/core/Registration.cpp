@@ -22,6 +22,7 @@
 // SOFTWARE.
 #include "Registration.hpp"
 
+#include <oneapi/tbb/task_arena.h>
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_reduce.h>
 #include <tbb/task_arena.h>
@@ -65,12 +66,12 @@ void TransformPoints(const Sophus::SE3d &T, std::vector<Eigen::Vector3d> &points
 
 constexpr int MAX_NUM_ITERATIONS_ = 500;
 constexpr double ESTIMATION_THRESHOLD_ = 0.0001;
-constexpr int NUM_THREADS_ = 16;
 
 std::tuple<Eigen::Matrix6d, Eigen::Vector6d> BuildLinearSystem(
     const std::vector<Eigen::Vector3d> &source,
     const std::vector<Eigen::Vector3d> &target,
-    double kernel) {
+    double kernel,
+    int max_threads = tbb::task_arena::automatic) {
     auto compute_jacobian_and_residual = [&](auto i) {
         const Eigen::Vector3d residual = source[i] - target[i];
         Eigen::Matrix3_6d J_r;
@@ -80,7 +81,7 @@ std::tuple<Eigen::Matrix6d, Eigen::Vector6d> BuildLinearSystem(
     };
 
     ResultTuple jacobian;
-    tbb::task_arena limited_arena(NUM_THREADS_);
+    tbb::task_arena limited_arena(max_threads);
     limited_arena.execute([&]() -> void {
         jacobian = tbb::parallel_reduce(
             // Range
@@ -128,7 +129,7 @@ Sophus::SE3d RegisterFrame(const std::vector<Eigen::Vector3d> &frame,
         // Equation (10)
         const auto &[src, tgt] = voxel_map.GetCorrespondences(source, max_correspondence_distance);
         // Equation (11)
-        const auto &[JTJ, JTr] = BuildLinearSystem(src, tgt, kernel);
+        const auto &[JTJ, JTr] = BuildLinearSystem(src, tgt, kernel, voxel_map.max_threads_);
         const Eigen::Vector6d dx = JTJ.ldlt().solve(-JTr);
         const Sophus::SE3d estimation = Sophus::SE3d::exp(dx);
         // Equation (12)
