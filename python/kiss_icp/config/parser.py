@@ -87,6 +87,6 @@ def write_config(config: KISSConfig, filename: str):
     with open(filename, "w") as outfile:
         try:
             yaml = importlib.import_module("yaml")
-            yaml.dump(config.dict(), outfile, default_flow_style=False)
+            yaml.dump(config.model_dump(), outfile, default_flow_style=False)
         except ModuleNotFoundError:
-            outfile.write(str(config.dict()))
+            outfile.write(str(config.model_dump()))
