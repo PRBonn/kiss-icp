@@ -66,7 +66,7 @@ cd ~/ros2_ws/src/ && git clone https://github.com/PRBonn/kiss-icp && cd ~/ros2_w
 <details>
 <summary>ROS 1</summary>
 
-Not supported anymore, please check: 
+Not supported anymore, please check:
 </details>
 
 For more detailed instructions on the ROS wrappers, please visit this [README](ros/README.md)
