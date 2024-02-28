@@ -26,25 +26,16 @@
 <package format="3">
   <name>kiss_icp</name>
   <version>0.3.0</version>
-  <description>KISS-ICP ROS Wrappers</description>
+  <description>KISS-ICP ROS 2 Wrappers</description>
   <maintainer email="ignaciovizzo@gmail.com">ivizzo</maintainer>
   <license>MIT</license>
 
-  <!-- Common ROS 1 / ROS 2 dependencies -->
-  <build_depend>ros_environment</build_depend>
-
-  <!-- ROS 1 dependencies -->
-  <buildtool_depend condition="$ROS_VERSION == 1">catkin</buildtool_depend>
-  <depend condition="$ROS_VERSION == 1">roscpp</depend>
-
   <!-- ROS 2 dependencies -->
-  <buildtool_depend condition="$ROS_VERSION == 2">ament_cmake</buildtool_depend>
-  <depend condition="$ROS_VERSION == 2">rcutils</depend>
-  <depend condition="$ROS_VERSION == 2">rclcpp</depend>
-  <depend condition="$ROS_VERSION == 2">rclcpp_components</depend>
-  <exec_depend condition="$ROS_VERSION == 2">ros2launch</exec_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <!-- ROS1/2 dependencies -->
+  <depend>rcutils</depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_components</depend>
   <depend>geometry_msgs</depend>
   <depend>nav_msgs</depend>
   <depend>std_msgs</depend>
@@ -52,8 +43,9 @@
   <depend>tf2</depend>
   <depend>tf2_ros</depend>
 
+  <exec_depend>ros2launch</exec_depend>
+
   <export>
-    <build_type condition="$ROS_VERSION == 1">catkin</build_type>
-    <build_type condition="$ROS_VERSION == 2">ament_cmake</build_type>
+    <build_type>ament_cmake</build_type>
   </export>
 </package>
