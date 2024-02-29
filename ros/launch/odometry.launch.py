@@ -21,7 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, ExecuteProcess
+from launch.actions import ExecuteProcess
 from launch.conditions import IfCondition
 from launch.substitutions import (
     LaunchConfiguration,
@@ -32,26 +32,66 @@ from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
 
-def generate_launch_description():
-    current_pkg = FindPackageShare("kiss_icp")
-    kiss_icp_yaml = PathJoinSubstitution([current_pkg, "config", "kiss_icp.yaml"])
-    topic_arg = DeclareLaunchArgument(
-        "topic", description="sensor_msg/PointCloud2 topic to process"
-    )
-    bagfile_arg = DeclareLaunchArgument("bagfile", default_value="")
-    visualize_arg = DeclareLaunchArgument("visualize", default_value="true")
-    use_sim_time_arg = DeclareLaunchArgument("use_sim_time", default_value="true")
+# This configuration parameters are not exposed thorught the launch system, meaning you can't modify
+# those throw the ros launch CLI. If you need to change these values, you could write your own
+# launch file and modify the 'parameters=' block from the Node class.
+class config:
+    # Preprocessing
+    max_range: float = 100.0
+    min_range: float = 5.0
+    deskew: bool = False
 
+    #  Mapping parameters
+    voxel_size: float = max_range / 100.0
+    max_points_per_voxel: int = 20
+
+    # Adaptive threshold
+    initial_threshold: float = 2.0
+    min_motion_th: float = 0.1
+
+
+def generate_launch_description():
+    use_sim_time = LaunchConfiguration("use_sim_time", default="true")
+
+    # tf tree configuration, these are the likely 3 parameters to change and nothing else
+    base_frame = LaunchConfiguration("base_frame", default="")
+    odom_frame = LaunchConfiguration("odom_frame", default="odom")
+    publish_odom_tf = LaunchConfiguration("publish_odom_tf", default=True)
+
+    # ROS configuration
+    pointcloud_topic = LaunchConfiguration("topic")
+    visualize = LaunchConfiguration("visualize", default="true")
+
+    # Optional ros bag play
+    bagfile = LaunchConfiguration("bagfile", default="")
+
+    # KISS-ICP node
     kiss_icp_node = Node(
         package="kiss_icp",
         executable="kiss_icp_node",
         name="kiss_icp_node",
         output="screen",
-        remappings=[("pointcloud_topic", LaunchConfiguration("topic"))],
+        remappings=[
+            ("pointcloud_topic", pointcloud_topic),
+        ],
         parameters=[
-            {"use_sim_time": LaunchConfiguration("use_sim_time")},
-            {"publish_debug_clouds": LaunchConfiguration("visualize")},
-            kiss_icp_yaml,
+            {
+                # ROS node configuration
+                "base_frame": base_frame,
+                "odom_frame": odom_frame,
+                "publish_odom_tf": publish_odom_tf,
+                # KISS-ICP configuration
+                "max_range": config.max_range,
+                "min_range": config.min_range,
+                "deskew": config.deskew,
+                "max_points_per_voxel": config.max_points_per_voxel,
+                "voxel_size": config.voxel_size,
+                "initial_threshold": config.initial_threshold,
+                "min_motion_th": config.min_motion_th,
+                # ROS CLI arguments
+                "publish_debug_clouds": visualize,
+                "use_sim_time": use_sim_time,
+            },
         ],
     )
     rviz_node = Node(
@@ -60,21 +100,18 @@ def generate_launch_description():
         output="screen",
         arguments=[
             "-d",
-            PathJoinSubstitution([current_pkg, "rviz", "kiss_icp.rviz"]),
+            PathJoinSubstitution([FindPackageShare("kiss_icp"), "rviz", "kiss_icp.rviz"]),
         ],
-        condition=IfCondition(LaunchConfiguration("visualize")),
+        condition=IfCondition(visualize),
     )
+
     bagfile_play = ExecuteProcess(
-        cmd=["ros2", "bag", "play", LaunchConfiguration("bagfile")],
+        cmd=["ros2", "bag", "play", bagfile],
         output="screen",
-        condition=IfCondition(PythonExpression(["'", LaunchConfiguration("bagfile"), "' != ''"])),
+        condition=IfCondition(PythonExpression(["'", bagfile, "' != ''"])),
     )
     return LaunchDescription(
         [
-            topic_arg,
-            bagfile_arg,
-            visualize_arg,
-            use_sim_time_arg,
             kiss_icp_node,
             rviz_node,
             bagfile_play,
