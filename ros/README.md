@@ -33,7 +33,7 @@ ros2 bag play <path>*.bag
 ## Out of source builds
 
 Good news! If you don't have git or you don't need to change the core KISS-ICP library, you can just
-copy paste this folder into your ROS1/ROS2 workspace and build as usual. The build system will fetch
+copy paste this folder into your ROS2 workspace and build as usual. The build system will fetch
 the latest stable release for you.
 
 ## Looking how to run KITTI on ROS along with KISS-ICP?
