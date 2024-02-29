@@ -34,6 +34,7 @@ from launch_ros.substitutions import FindPackageShare
 
 def generate_launch_description():
     current_pkg = FindPackageShare("kiss_icp")
+    kiss_icp_yaml = PathJoinSubstitution([current_pkg, "config", "kiss_icp.yaml"])
     topic_arg = DeclareLaunchArgument(
         "topic", description="sensor_msg/PointCloud2 topic to process"
     )
@@ -48,11 +49,9 @@ def generate_launch_description():
         output="screen",
         remappings=[("pointcloud_topic", LaunchConfiguration("topic"))],
         parameters=[
-            {
-                "use_sim_time": LaunchConfiguration("use_sim_time"),
-                "publish_debug_clouds": LaunchConfiguration("visualize"),
-            },
-            PathJoinSubstitution([current_pkg, "config", "kiss_icp.yaml"]),
+            {"use_sim_time": LaunchConfiguration("use_sim_time")},
+            {"publish_debug_clouds": LaunchConfiguration("visualize")},
+            kiss_icp_yaml,
         ],
     )
     rviz_node = Node(
