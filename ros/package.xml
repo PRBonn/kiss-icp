@@ -26,11 +26,10 @@
 <package format="3">
   <name>kiss_icp</name>
   <version>0.3.0</version>
-  <description>KISS-ICP ROS 2 Wrappers</description>
+  <description>KISS-ICP ROS 2 Wrapper</description>
   <maintainer email="ignaciovizzo@gmail.com">ivizzo</maintainer>
   <license>MIT</license>
 
-  <!-- ROS 2 dependencies -->
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>rcutils</depend>

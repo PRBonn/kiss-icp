@@ -1,4 +1,4 @@
-# KISS-ICP ROS 2 wrapper
+# KISS-ICP ROS 2 Wrapper
 
 ### How to build
 

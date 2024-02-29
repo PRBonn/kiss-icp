@@ -49,6 +49,7 @@ kiss_icp_pipeline --help
 <summary>This should print the following help message:</summary>
 
 ![out](https://user-images.githubusercontent.com/21349875/193282970-25a400aa-ebcd-487a-b839-faa04eeca5b9.png)
+
 </details>
 
 For advanced instructions on the Python pacakge plase see [this README](python/README.md)
@@ -61,16 +62,19 @@ For advanced instructions on the Python pacakge plase see [this README](python/R
 ```sh
 cd ~/ros2_ws/src/ && git clone https://github.com/PRBonn/kiss-icp && cd ~/ros2_ws/ && colcon build --packages-select kiss_icp
 ```
+
 </details>
 
 <details>
 <summary>ROS 1</summary>
 
-Not supported anymore, please check:
+⚠️ ⚠️ ROS 1 is deprecated in KISS-ICP and not officially supported anymore. Upgrade now to ROS 2! ⚠️ ⚠️
+
+The last release that supports ROS 1 is [v0.3.0](https://github.com/PRBonn/kiss-icp/tree/v0.3.0), if you still need ROS 1 support please checkout that version and follow the instructions in the [README.md](https://github.com/PRBonn/kiss-icp/blob/v0.3.0/README.md)
+
 </details>
 
-For more detailed instructions on the ROS wrappers, please visit this [README](ros/README.md)
-
+For more detailed instructions on the ROS wrapper, please visit this [README](ros/README.md)
 
 ## Citation
 
