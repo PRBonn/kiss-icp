@@ -66,6 +66,6 @@ ament_target_dependencies(
 rclcpp_components_register_node(odometry_component PLUGIN "kiss_icp_ros::OdometryServer" EXECUTABLE odometry_node)
 
 install(TARGETS odometry_component LIBRARY DESTINATION lib RUNTIME DESTINATION lib/${PROJECT_NAME})
-install(DIRECTORY launch rviz DESTINATION share/${PROJECT_NAME}/)
+install(DIRECTORY config launch rviz DESTINATION share/${PROJECT_NAME}/)
 
 ament_package()
