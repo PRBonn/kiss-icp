@@ -58,7 +58,7 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
     base_frame_ = declare_parameter<std::string>("base_frame", base_frame_);
     odom_frame_ = declare_parameter<std::string>("odom_frame", odom_frame_);
     publish_odom_tf_ = declare_parameter<bool>("publish_odom_tf", publish_odom_tf_);
-    publish_debug_clouds_ = declare_parameter<bool>("visualize", publish_debug_clouds_);
+    publish_debug_clouds_ = declare_parameter<bool>("publish_debug_clouds", publish_debug_clouds_);
     config_.max_range = declare_parameter<double>("max_range", config_.max_range);
     config_.min_range = declare_parameter<double>("min_range", config_.min_range);
     config_.deskew = declare_parameter<bool>("deskew", config_.deskew);

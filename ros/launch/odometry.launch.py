@@ -28,18 +28,18 @@ from launch.substitutions import (
     PathJoinSubstitution,
     PythonExpression,
 )
-from launch_ros.actions import Node, SetParameter
+from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
     current_pkg = FindPackageShare("kiss_icp")
-    use_sim_time = SetParameter(name="use_sim_time", value=True)
     topic_arg = DeclareLaunchArgument(
         "topic", description="sensor_msg/PointCloud2 topic to process"
     )
     bagfile_arg = DeclareLaunchArgument("bagfile", default_value="")
     visualize_arg = DeclareLaunchArgument("visualize", default_value="true")
+    use_sim_time_arg = DeclareLaunchArgument("use_sim_time", default_value="true")
 
     kiss_icp_node = Node(
         package="kiss_icp",
@@ -47,7 +47,13 @@ def generate_launch_description():
         name="odometry_node",
         output="screen",
         remappings=[("pointcloud_topic", LaunchConfiguration("topic"))],
-        parameters=[PathJoinSubstitution([current_pkg, "config", "kiss_icp.yaml"])],
+        parameters=[
+            {
+                "use_sim_time": LaunchConfiguration("use_sim_time"),
+                "publish_debug_clouds": LaunchConfiguration("visualize"),
+            },
+            PathJoinSubstitution([current_pkg, "config", "kiss_icp.yaml"]),
+        ],
     )
     rviz_node = Node(
         package="rviz2",
@@ -66,10 +72,10 @@ def generate_launch_description():
     )
     return LaunchDescription(
         [
-            use_sim_time,
             topic_arg,
             bagfile_arg,
             visualize_arg,
+            use_sim_time_arg,
             kiss_icp_node,
             rviz_node,
             bagfile_play,
