@@ -181,37 +181,17 @@ void OdometryServer::PublishClouds(const std::vector<Eigen::Vector3d> frame,
                                    const std::vector<Eigen::Vector3d> keypoints,
                                    const rclcpp::Time &stamp,
                                    const std::string &cloud_frame_id) {
-    std_msgs::msg::Header odom_header;
-    odom_header.stamp = stamp;
-    odom_header.frame_id = odom_frame_;
-
-    // Publish map
+    // debugging happens in an egocentric world
     const auto kiss_map = odometry_.LocalMap();
+    const auto kiss_pose = odometry_.poses().back().inverse();
 
-    if (!publish_odom_tf_) {
-        // debugging happens in an egocentric world
-        std_msgs::msg::Header cloud_header;
-        cloud_header.stamp = stamp;
-        cloud_header.frame_id = cloud_frame_id;
+    std_msgs::msg::Header cloud_header;
+    cloud_header.stamp = stamp;
+    cloud_header.frame_id = cloud_frame_id;
 
-        frame_publisher_->publish(std::move(EigenToPointCloud2(frame, cloud_header)));
-        kpoints_publisher_->publish(std::move(EigenToPointCloud2(keypoints, cloud_header)));
-        map_publisher_->publish(std::move(EigenToPointCloud2(kiss_map, odom_header)));
-
-        return;
-    }
-
-    // If transmitting to tf tree we know where the clouds are exactly
-    const auto cloud2odom = LookupTransform(odom_frame_, cloud_frame_id);
-    frame_publisher_->publish(std::move(EigenToPointCloud2(frame, cloud2odom, odom_header)));
-    kpoints_publisher_->publish(std::move(EigenToPointCloud2(keypoints, cloud2odom, odom_header)));
-
-    if (!base_frame_.empty()) {
-        const Sophus::SE3d cloud2base = LookupTransform(base_frame_, cloud_frame_id);
-        map_publisher_->publish(std::move(EigenToPointCloud2(kiss_map, cloud2base, odom_header)));
-    } else {
-        map_publisher_->publish(std::move(EigenToPointCloud2(kiss_map, odom_header)));
-    }
+    frame_publisher_->publish(std::move(EigenToPointCloud2(frame, cloud_header)));
+    kpoints_publisher_->publish(std::move(EigenToPointCloud2(keypoints, cloud_header)));
+    map_publisher_->publish(std::move(EigenToPointCloud2(kiss_map, kiss_pose, cloud_header)));
 }
 }  // namespace kiss_icp_ros
 
