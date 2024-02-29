@@ -53,7 +53,7 @@ using utils::GetTimestamps;
 using utils::PointCloud2ToEigen;
 
 OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
-    : rclcpp::Node("odometry_node", options) {
+    : rclcpp::Node("kiss_icp_node", options) {
     // clang-format off
     base_frame_ = declare_parameter<std::string>("base_frame", base_frame_);
     odom_frame_ = declare_parameter<std::string>("odom_frame", odom_frame_);
