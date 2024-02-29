@@ -76,7 +76,7 @@ def generate_launch_description():
                 package="rviz2",
                 executable="rviz2",
                 output={"both": "log"},
-                arguments=["-d", PathJoinSubstitution([current_pkg, "rviz", "kiss_icp_ros2.rviz"])],
+                arguments=["-d", PathJoinSubstitution([current_pkg, "rviz", "kiss_icp.rviz"])],
                 condition=IfCondition(LaunchConfiguration("visualize")),
             ),
             ExecuteProcess(
