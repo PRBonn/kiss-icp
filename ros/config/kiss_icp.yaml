@@ -18,3 +18,7 @@ kiss_icp_node:
     # config.adaptive_threshold
     initial_threshold: 2.0
     min_motion_th: 0.1
+
+    # Covariance diagonal values
+    position_covariance: 0.1
+    orientation_covariance: 0.1
