@@ -1,4 +1,4 @@
-odometry_node:
+kiss_icp_node:
   ros__parameters:
     # tf tree configuration
     base_frame: ""

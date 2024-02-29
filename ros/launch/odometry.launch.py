@@ -43,8 +43,8 @@ def generate_launch_description():
 
     kiss_icp_node = Node(
         package="kiss_icp",
-        executable="odometry_node",
-        name="odometry_node",
+        executable="kiss_icp_node",
+        name="kiss_icp_node",
         output="screen",
         remappings=[("pointcloud_topic", LaunchConfiguration("topic"))],
         parameters=[
