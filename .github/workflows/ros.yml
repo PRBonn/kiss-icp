@@ -7,31 +7,11 @@ on:
     branches: ["main"]
 
 jobs:
-  ros1_node:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        release: [noetic]
-    container: osrf/ros:${{ matrix.release }}-desktop-full
-    steps:
-      - name: Setup cmake
-        uses: jwlawson/actions-setup-cmake@v1.13
-        with:
-          cmake-version: "3.25.x"
-      - name: Prepare catkin_ws
-        run: mkdir -p catkin_ws/src
-      - uses: actions/checkout@v3
-        with:
-          path: catkin_ws/src
-      - name: Run catkin_make
-        run: source /opt/ros/${{ matrix.release }}/setup.bash && cd catkin_ws && catkin_make
-        shell: bash
-
   ros2_node:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        release: [humble, iron]
+        release: [humble, iron, rolling]
     container: osrf/ros:${{ matrix.release }}-desktop
     steps:
       - name: Setup cmake

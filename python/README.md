@@ -11,8 +11,6 @@
     <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
     <a href="https://github.com/PRBonn/kiss-icp/edit/main/README.md#install">Install</a>
     <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
-    <a href="https://github.com/PRBonn/kiss-icp/blob/main/ros">ROS 1</a>
-    <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
     <a href="https://github.com/PRBonn/kiss-icp/blob/main/ros">ROS 2</a>
     <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
     <a href=https://user-images.githubusercontent.com/21349875/214578180-b1d2431c-8fff-440e-aa6e-99a1d85989b5.mp4

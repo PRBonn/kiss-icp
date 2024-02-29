@@ -35,7 +35,7 @@ jobs:
 
       - name: Build test wheels (only PRs)
         if: github.event_name != 'release'
-        uses: pypa/cibuildwheel@v2.12.0
+        uses: pypa/cibuildwheel@v2.16.5
         env: # build 1 build per platform just to make sure we can do it later when releasing
           CIBW_BUILD: "cp310-*"
         with:
@@ -43,7 +43,7 @@ jobs:
 
       - name: Build all wheels
         if: github.event_name == 'release'
-        uses: pypa/cibuildwheel@v2.12.0
+        uses: pypa/cibuildwheel@v2.16.5
         with:
           package-dir: ${{github.workspace}}/python/
 
