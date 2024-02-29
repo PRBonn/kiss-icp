@@ -12,7 +12,7 @@ kiss_icp_node:
     min_range: 5.0
 
     # config.mapping
-    voxel_size: 1.0
+    # voxel_size: 1.0 # <--optional, default is max_range / 100.0
     max_points_per_voxel: 20
 
     # config.adaptive_threshold
