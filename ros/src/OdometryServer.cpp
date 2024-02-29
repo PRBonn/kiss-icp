@@ -144,7 +144,7 @@ void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSha
     PublishOdometry(pose, msg->header.stamp, cloud_frame_id);
     // Publishing this clouds is a bit costly, so do it only if we are debugging
     if (publish_debug_clouds_) {
-        PublishClouds(frame, keypoints, msg->header.stamp, cloud_frame_id);
+        PublishClouds(frame, keypoints, msg->header);
     }
 }
 
@@ -179,19 +179,14 @@ void OdometryServer::PublishOdometry(const Sophus::SE3d &pose,
 
 void OdometryServer::PublishClouds(const std::vector<Eigen::Vector3d> frame,
                                    const std::vector<Eigen::Vector3d> keypoints,
-                                   const rclcpp::Time &stamp,
-                                   const std::string &cloud_frame_id) {
-    // debugging happens in an egocentric world
+                                   const std_msgs::msg::Header &header) {
+    // debugging happens in an egocentric world, always
     const auto kiss_map = odometry_.LocalMap();
     const auto kiss_pose = odometry_.poses().back().inverse();
 
-    std_msgs::msg::Header cloud_header;
-    cloud_header.stamp = stamp;
-    cloud_header.frame_id = cloud_frame_id;
-
-    frame_publisher_->publish(std::move(EigenToPointCloud2(frame, cloud_header)));
-    kpoints_publisher_->publish(std::move(EigenToPointCloud2(keypoints, cloud_header)));
-    map_publisher_->publish(std::move(EigenToPointCloud2(kiss_map, kiss_pose, cloud_header)));
+    frame_publisher_->publish(std::move(EigenToPointCloud2(frame, header)));
+    kpoints_publisher_->publish(std::move(EigenToPointCloud2(keypoints, header)));
+    map_publisher_->publish(std::move(EigenToPointCloud2(kiss_map, kiss_pose, header)));
 }
 }  // namespace kiss_icp_ros
 
