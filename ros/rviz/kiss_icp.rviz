@@ -202,7 +202,7 @@ Visualization Manager:
             Reliability Policy: Best Effort
             Value: /kiss/trajectory
           Value: true
-      Enabled: true
+      Enabled: false
       Name: odometry
     - Class: rviz_default_plugins/Axes
       Enabled: true
