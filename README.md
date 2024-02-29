@@ -13,9 +13,6 @@
     <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
     <a href="https://github.com/PRBonn/kiss-icp/blob/main/ros">ROS 2</a>
     <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
-    <a href=https://user-images.githubusercontent.com/21349875/214578180-b1d2431c-8fff-440e-aa6e-99a1d85989b5.mp4
->ROS Demo</a>
-    <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
     <a href=https://www.ipb.uni-bonn.de/wp-content/papercite-data/pdf/vizzo2023ral.pdf>Paper</a>
     <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
     <a href=https://github.com/PRBonn/kiss-icp/issues>Contact Us</a>
@@ -50,7 +47,7 @@ kiss_icp_pipeline --help
 
 </details>
 
-For advanced instructions on the Python pacakge plase see [this README](python/README.md)
+For advanced instructions on the Python package please see [this README](python/README.md)
 
 ## ROS support
 
@@ -60,19 +57,19 @@ For advanced instructions on the Python pacakge plase see [this README](python/R
 ```sh
 cd ~/ros2_ws/src/ && git clone https://github.com/PRBonn/kiss-icp && cd ~/ros2_ws/ && colcon build --packages-select kiss_icp
 ```
+For more detailed instructions on the ROS wrapper, please visit this [README](ros/README.md)
 
 </details>
 
 <details>
 <summary>ROS 1</summary>
 
-⚠️ ⚠️ ROS 1 is deprecated in KISS-ICP and not officially supported anymore. Upgrade now to ROS 2! ⚠️ ⚠️
+⚠️ ⚠️ **ROS 1 is deprecated in KISS-ICP and is not officially supported anymore. Upgrade now to ROS 2!** ⚠️ ⚠️
 
-The last release that supports ROS 1 is [v0.3.0](https://github.com/PRBonn/kiss-icp/tree/v0.3.0), if you still need ROS 1 support please checkout that version and follow the instructions in the [README.md](https://github.com/PRBonn/kiss-icp/blob/v0.3.0/README.md)
+The last release that supports ROS 1 is [v0.3.0](https://github.com/PRBonn/kiss-icp/tree/v0.3.0), if you still need ROS 1 support please check that version.
 
 </details>
 
-For more detailed instructions on the ROS wrapper, please visit this [README](ros/README.md)
 
 ## Citation
 
