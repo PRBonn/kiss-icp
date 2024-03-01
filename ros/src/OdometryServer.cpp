@@ -130,7 +130,7 @@ void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSha
     // Register frame, main entry point to KISS-ICP pipeline
     const auto &[frame, keypoints] = odometry_.RegisterFrame(points, timestamps);
 
-    // Compute the pose using KISS, ego-centric to the LiDAR
+    // Extract the last KISS-ICP pose, ego-centric to the LiDAR
     const Sophus::SE3d kiss_pose = odometry_.poses().back();
 
     // Spit the current estimated pose to ROS msgs handling the desired target frame
