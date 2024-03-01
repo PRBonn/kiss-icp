@@ -116,48 +116,6 @@ Vector3dVectorTuple GetCorrespondences(const Vector3dVector &points,
         std::vector<Eigen::Vector3d> target;
     };
 
-    // Lambda Function to obtain the KNN of one point, maybe refactor
-    auto GetClosestNeighboor = [&](const Eigen::Vector3d &point) {
-        auto kx = static_cast<int>(point[0] / voxel_map.voxel_size_);
-        auto ky = static_cast<int>(point[1] / voxel_map.voxel_size_);
-        auto kz = static_cast<int>(point[2] / voxel_map.voxel_size_);
-        std::vector<kiss_icp::VoxelHashMap::Voxel> voxels;
-        voxels.reserve(27);
-        for (int i = kx - 1; i < kx + 1 + 1; ++i) {
-            for (int j = ky - 1; j < ky + 1 + 1; ++j) {
-                for (int k = kz - 1; k < kz + 1 + 1; ++k) {
-                    voxels.emplace_back(i, j, k);
-                }
-            }
-        }
-
-        Vector3dVector neighboors;
-        neighboors.reserve(27 * voxel_map.max_points_per_voxel_);
-        std::for_each(voxels.cbegin(), voxels.cend(), [&](const auto &voxel) {
-            auto search = voxel_map.map_.find(voxel);
-            if (search != voxel_map.map_.end()) {
-                const auto &points = search->second.points;
-                if (!points.empty()) {
-                    for (const auto &point : points) {
-                        neighboors.emplace_back(point);
-                    }
-                }
-            }
-        });
-
-        Eigen::Vector3d closest_neighbor;
-        double closest_distance2 = std::numeric_limits<double>::max();
-        std::for_each(neighboors.cbegin(), neighboors.cend(), [&](const auto &neighbor) {
-            double distance = (neighbor - point).squaredNorm();
-            if (distance < closest_distance2) {
-                closest_neighbor = neighbor;
-                closest_distance2 = distance;
-            }
-        });
-
-        return closest_neighbor;
-    };
-
     using points_iterator = std::vector<Eigen::Vector3d>::const_iterator;
     const auto [source, target] = tbb::parallel_reduce(
         // Range
@@ -165,13 +123,12 @@ Vector3dVectorTuple GetCorrespondences(const Vector3dVector &points,
         // Identity
         ResultTuple(points.size()),
         // 1st lambda: Parallel computation
-        [max_correspondance_distance, &GetClosestNeighboor](
-            const tbb::blocked_range<points_iterator> &r, ResultTuple res) -> ResultTuple {
+        [&](const tbb::blocked_range<points_iterator> &r, ResultTuple res) -> ResultTuple {
             auto &[src, tgt] = res;
             src.reserve(r.size());
             tgt.reserve(r.size());
             for (const auto &point : r) {
-                Eigen::Vector3d closest_neighboors = GetClosestNeighboor(point);
+                Eigen::Vector3d closest_neighboors = voxel_map.GetClosestNeighboor(point);
                 if ((closest_neighboors - point).norm() < max_correspondance_distance) {
                     src.emplace_back(point);
                     tgt.emplace_back(closest_neighboors);
@@ -199,7 +156,9 @@ namespace kiss_icp {
 Sophus::SE3d RegisterFrame(const std::vector<Eigen::Vector3d> &frame,
                            const VoxelHashMap &voxel_map,
                            const Sophus::SE3d &initial_guess,
-                           const RegistrationConfig &config) {
+                           const RegistrationConfig &config,
+                           double max_distance = 0.0,
+                           double kernel = 0.0) {
     if (voxel_map.Empty()) return initial_guess;
 
     // Equation (9)
@@ -210,10 +169,9 @@ Sophus::SE3d RegisterFrame(const std::vector<Eigen::Vector3d> &frame,
     Sophus::SE3d T_icp = Sophus::SE3d();
     for (int j = 0; j < config.max_num_iterations; ++j) {
         // Equation (10)
-        const auto &[src, tgt] =
-            GetCorrespondences(source, voxel_map, config.max_correspondence_distance);
+        const auto &[src, tgt] = GetCorrespondences(source, voxel_map, max_distance);
         // Equation (11)
-        const auto &[JTJ, JTr] = BuildLinearSystem(src, tgt, config.kernel);
+        const auto &[JTJ, JTr] = BuildLinearSystem(src, tgt, kernel);
         const Eigen::Vector6d dx = JTJ.ldlt().solve(-JTr);
         const Sophus::SE3d estimation = Sophus::SE3d::exp(dx);
         // Equation (12)

@@ -31,6 +31,48 @@
 
 namespace kiss_icp {
 
+// Function to obtain the KNN of one point
+Eigen::Vector3d VoxelHashMap::GetClosestNeighboor(const Eigen::Vector3d &point) const {
+    auto kx = static_cast<int>(point[0] / voxel_size_);
+    auto ky = static_cast<int>(point[1] / voxel_size_);
+    auto kz = static_cast<int>(point[2] / voxel_size_);
+    std::vector<kiss_icp::VoxelHashMap::Voxel> voxels;
+    voxels.reserve(27);
+    for (int i = kx - 1; i < kx + 1 + 1; ++i) {
+        for (int j = ky - 1; j < ky + 1 + 1; ++j) {
+            for (int k = kz - 1; k < kz + 1 + 1; ++k) {
+                voxels.emplace_back(i, j, k);
+            }
+        }
+    }
+
+    std::vector<Eigen::Vector3d> neighboors;
+    neighboors.reserve(static_cast<size_t>(27 * max_points_per_voxel_));
+    std::for_each(voxels.cbegin(), voxels.cend(), [&](const auto &voxel) {
+        auto search = map_.find(voxel);
+        if (search != map_.end()) {
+            const auto &points = search->second.points;
+            if (!points.empty()) {
+                for (const auto &point : points) {
+                    neighboors.emplace_back(point);
+                }
+            }
+        }
+    });
+
+    Eigen::Vector3d closest_neighbor;
+    double closest_distance2 = std::numeric_limits<double>::max();
+    std::for_each(neighboors.cbegin(), neighboors.cend(), [&](const auto &neighbor) {
+        double distance = (neighbor - point).squaredNorm();
+        if (distance < closest_distance2) {
+            closest_neighbor = neighbor;
+            closest_distance2 = distance;
+        }
+    });
+
+    return closest_neighbor;
+};
+
 std::vector<Eigen::Vector3d> VoxelHashMap::Pointcloud() const {
     std::vector<Eigen::Vector3d> points;
     points.reserve(max_points_per_voxel_ * map_.size());
