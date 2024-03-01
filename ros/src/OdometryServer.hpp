@@ -57,6 +57,10 @@ private:
                        const std::vector<Eigen::Vector3d> keypoints,
                        const std_msgs::msg::Header &header);
 
+    /// Utility function to compute transformation using tf tree
+    Sophus::SE3d LookupTransform(const std::string &target_frame,
+                                 const std::string &source_frame) const;
+
 private:
     /// Tools for broadcasting TFs.
     std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;

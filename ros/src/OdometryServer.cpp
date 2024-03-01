@@ -46,25 +46,6 @@
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <std_msgs/msg/string.hpp>
 
-namespace {
-Sophus::SE3d LookupTransform(const std::string &target_frame,
-                             const std::string &source_frame,
-                             const std::unique_ptr<tf2_ros::Buffer> &tf2_buffer) {
-    std::string err_msg;
-    if (tf2_buffer->canTransform(target_frame, source_frame, tf2::TimePointZero, &err_msg)) {
-        try {
-            auto tf = tf2_buffer->lookupTransform(target_frame, source_frame, tf2::TimePointZero);
-            return tf2::transformToSophus(tf);
-        } catch (tf2::TransformException &ex) {
-            RCLCPP_WARN(rclcpp::get_logger("LookupTransform"), "%s", ex.what());
-        }
-    }
-    RCLCPP_WARN(rclcpp::get_logger("LookupTransform"), "Failed to find tf. Reason=%s",
-                err_msg.c_str());
-    return {};
-}
-}  // namespace
-
 namespace kiss_icp_ros {
 
 using utils::EigenToPointCloud2;
@@ -120,6 +101,21 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
     RCLCPP_INFO(this->get_logger(), "KISS-ICP ROS 2 odometry node initialized");
 }
 
+Sophus::SE3d OdometryServer::LookupTransform(const std::string &target_frame,
+                                             const std::string &source_frame) const {
+    std::string err_msg;
+    if (tf2_buffer_->canTransform(target_frame, source_frame, tf2::TimePointZero, &err_msg)) {
+        try {
+            auto tf = tf2_buffer_->lookupTransform(target_frame, source_frame, tf2::TimePointZero);
+            return tf2::transformToSophus(tf);
+        } catch (tf2::TransformException &ex) {
+            RCLCPP_WARN(this->get_logger(), "%s", ex.what());
+        }
+    }
+    RCLCPP_WARN(this->get_logger(), "Failed to find tf. Reason=%s", err_msg.c_str());
+    return {};
+}
+
 void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msg) {
     const auto points = PointCloud2ToEigen(msg);
     const auto timestamps = [&]() -> std::vector<double> {
@@ -148,7 +144,7 @@ void OdometryServer::PublishOdometry(const Sophus::SE3d &kiss_pose,
     const auto egocentric_estimation = (base_frame_.empty() || base_frame_ == cloud_frame_id);
     const auto pose = [&]() -> Sophus::SE3d {
         if (egocentric_estimation) return kiss_pose;
-        const Sophus::SE3d cloud2base = LookupTransform(base_frame_, cloud_frame_id, tf2_buffer_);
+        const Sophus::SE3d cloud2base = LookupTransform(base_frame_, cloud_frame_id);
         return cloud2base * kiss_pose * cloud2base.inverse();
     }();
 
