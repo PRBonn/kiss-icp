@@ -28,12 +28,13 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from kiss_icp.config.config import AdaptiveThresholdConfig, DataConfig, MappingConfig
 
 
 class KISSConfig(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix="kiss_icp_")
     out_dir: str = "results"
     data: DataConfig = DataConfig()
     mapping: MappingConfig = MappingConfig()
