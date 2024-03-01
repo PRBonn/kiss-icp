@@ -71,7 +71,7 @@ Eigen::Vector3d VoxelHashMap::GetClosestNeighboor(const Eigen::Vector3d &point) 
     });
 
     return closest_neighbor;
-};
+}
 
 std::vector<Eigen::Vector3d> VoxelHashMap::Pointcloud() const {
     std::vector<Eigen::Vector3d> points;
