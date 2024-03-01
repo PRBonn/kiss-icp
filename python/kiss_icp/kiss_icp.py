@@ -60,7 +60,7 @@ class KissICP:
         initial_guess = last_pose @ prediction
 
         # Run ICP
-        new_pose = self.registration.register_frame(
+        new_pose = self.registration.align_cloud_to_map(
             points=source,
             voxel_map=self.local_map,
             initial_guess=initial_guess,

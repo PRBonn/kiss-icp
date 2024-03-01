@@ -36,11 +36,11 @@ struct Registration {
 
     // Register a point cloud to the given internal map representation. The config input parameter
     // contains all the necessary parametrization for the ICP loop
-    Sophus::SE3d RegisterFrame(const std::vector<Eigen::Vector3d> &frame,
-                               const VoxelHashMap &voxel_map,
-                               const Sophus::SE3d &initial_guess,
-                               double max_distance,
-                               double kernel);
+    Sophus::SE3d AlignCloudToMap(const std::vector<Eigen::Vector3d> &frame,
+                                 const VoxelHashMap &voxel_map,
+                                 const Sophus::SE3d &initial_guess,
+                                 double max_distance,
+                                 double kernel);
 
     int max_num_iterations_;
     double estimation_threshold_;

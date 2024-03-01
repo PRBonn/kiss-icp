@@ -77,14 +77,14 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
     internal_registration
         .def(py::init<int, double>(), "max_num_iterations"_a, "estimation_threshold"_a)
         .def(
-            "_register_point_cloud",
+            "_align_cloud_to_map",
             [](Registration &self, const std::vector<Eigen::Vector3d> &points,
                const VoxelHashMap &voxel_map, const Eigen::Matrix4d &T_guess,
                double max_correspondence_distance, double kernel) {
                 Sophus::SE3d initial_guess(T_guess);
                 return self
-                    .RegisterFrame(points, voxel_map, initial_guess, max_correspondence_distance,
-                                   kernel)
+                    .AlignCloudToMap(points, voxel_map, initial_guess, max_correspondence_distance,
+                                     kernel)
                     .matrix();
             },
             "points"_a, "voxel_map"_a, "initial_guess"_a, "max_correspondance_distance"_a,

@@ -153,11 +153,11 @@ Vector3dVectorTuple GetCorrespondences(const std::vector<Eigen::Vector3d> &point
 
 namespace kiss_icp {
 
-Sophus::SE3d Registration::RegisterFrame(const std::vector<Eigen::Vector3d> &frame,
-                                         const VoxelHashMap &voxel_map,
-                                         const Sophus::SE3d &initial_guess,
-                                         double max_distance,
-                                         double kernel) {
+Sophus::SE3d Registration::AlignCloudToMap(const std::vector<Eigen::Vector3d> &frame,
+                                           const VoxelHashMap &voxel_map,
+                                           const Sophus::SE3d &initial_guess,
+                                           double max_distance,
+                                           double kernel) {
     if (voxel_map.Empty()) return initial_guess;
 
     // Equation (9)

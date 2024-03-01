@@ -41,7 +41,7 @@ class Registration:
             estimation_threshold=estimation_threshold,
         )
 
-    def register_frame(
+    def align_cloud_to_map(
         self,
         points: np.ndarray,
         voxel_map: VoxelHashMap,
@@ -49,7 +49,7 @@ class Registration:
         max_correspondance_distance: float,
         kernel: float,
     ) -> np.ndarray:
-        return self._registration._register_point_cloud(
+        return self._registration._align_cloud_to_map(
             points=kiss_icp_pybind._Vector3dVector(points),
             voxel_map=voxel_map._internal_map,
             initial_guess=initial_guess,
