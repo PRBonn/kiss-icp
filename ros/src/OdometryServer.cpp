@@ -104,9 +104,7 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
 Sophus::SE3d OdometryServer::LookupTransform(const std::string &target_frame,
                                              const std::string &source_frame) const {
     std::string err_msg;
-    if (tf2_buffer_->_frameExists(source_frame) &&  //
-        tf2_buffer_->_frameExists(target_frame) &&  //
-        tf2_buffer_->canTransform(target_frame, source_frame, tf2::TimePointZero, &err_msg)) {
+    if (tf2_buffer_->canTransform(target_frame, source_frame, tf2::TimePointZero, &err_msg)) {
         try {
             auto tf = tf2_buffer_->lookupTransform(target_frame, source_frame, tf2::TimePointZero);
             return tf2::transformToSophus(tf);
