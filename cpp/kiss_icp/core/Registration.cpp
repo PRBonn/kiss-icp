@@ -40,11 +40,6 @@ using Vector6d = Eigen::Matrix<double, 6, 1>;
 }  // namespace Eigen
 
 namespace {
-
-// constants
-constexpr int MAX_NUM_ITERATIONS_ = 500;
-constexpr double ESTIMATION_THRESHOLD_ = 0.0001;
-
 // aliases
 using Vector3dVector = std::vector<Eigen::Vector3d>;
 using Vector3dVectorTuple = std::tuple<Vector3dVector, Vector3dVector>;
@@ -204,8 +199,7 @@ namespace kiss_icp {
 Sophus::SE3d RegisterFrame(const std::vector<Eigen::Vector3d> &frame,
                            const VoxelHashMap &voxel_map,
                            const Sophus::SE3d &initial_guess,
-                           double max_correspondence_distance,
-                           double kernel) {
+                           const RegistrationConfig &config) {
     if (voxel_map.Empty()) return initial_guess;
 
     // Equation (9)
@@ -214,11 +208,12 @@ Sophus::SE3d RegisterFrame(const std::vector<Eigen::Vector3d> &frame,
 
     // ICP-loop
     Sophus::SE3d T_icp = Sophus::SE3d();
-    for (int j = 0; j < MAX_NUM_ITERATIONS_; ++j) {
+    for (int j = 0; j < config.max_num_iterations; ++j) {
         // Equation (10)
-        const auto &[src, tgt] = GetCorrespondences(source, voxel_map, max_correspondence_distance);
+        const auto &[src, tgt] =
+            GetCorrespondences(source, voxel_map, config.max_correspondence_distance);
         // Equation (11)
-        const auto &[JTJ, JTr] = BuildLinearSystem(src, tgt, kernel);
+        const auto &[JTJ, JTr] = BuildLinearSystem(src, tgt, config.kernel);
         const Eigen::Vector6d dx = JTJ.ldlt().solve(-JTr);
         const Sophus::SE3d estimation = Sophus::SE3d::exp(dx);
         // Equation (12)
@@ -226,7 +221,7 @@ Sophus::SE3d RegisterFrame(const std::vector<Eigen::Vector3d> &frame,
         // Update iterations
         T_icp = estimation * T_icp;
         // Termination criteria
-        if (dx.norm() < ESTIMATION_THRESHOLD_) break;
+        if (dx.norm() < config.estimation_threshold) break;
     }
     // Spit the final transformation
     return T_icp * initial_guess;

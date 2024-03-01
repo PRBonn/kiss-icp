@@ -30,9 +30,21 @@
 
 namespace kiss_icp {
 
+struct RegistrationConfig {
+    // constans
+    int max_num_iterations = 500;
+    double estimation_threshold = 0.0001;
+
+    // variables
+    double max_correspondence_distance = 0.0;
+    double kernel = 0.0;
+};
+
+// Register a point cloud to the given internal map represetnation. The config input parameter
+// contains all the neccesary parametrization for the ICP loop
 Sophus::SE3d RegisterFrame(const std::vector<Eigen::Vector3d> &frame,
                            const VoxelHashMap &voxel_map,
                            const Sophus::SE3d &initial_guess,
-                           double max_correspondence_distance,
-                           double kernel);
+                           const RegistrationConfig &config);
+
 }  // namespace kiss_icp
