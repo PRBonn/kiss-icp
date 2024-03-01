@@ -43,13 +43,14 @@ std::vector<Eigen::Vector3d> VoxelHashMap::Pointcloud() const {
     return points;
 }
 
-void VoxelHashMap::Update(const Vector3dVector &points, const Eigen::Vector3d &origin) {
+void VoxelHashMap::Update(const std::vector<Eigen::Vector3d> &points,
+                          const Eigen::Vector3d &origin) {
     AddPoints(points);
     RemovePointsFarFromLocation(origin);
 }
 
-void VoxelHashMap::Update(const Vector3dVector &points, const Sophus::SE3d &pose) {
-    Vector3dVector points_transformed(points.size());
+void VoxelHashMap::Update(const std::vector<Eigen::Vector3d> &points, const Sophus::SE3d &pose) {
+    std::vector<Eigen::Vector3d> points_transformed(points.size());
     std::transform(points.cbegin(), points.cend(), points_transformed.begin(),
                    [&](const auto &point) { return pose * point; });
     const Eigen::Vector3d &origin = pose.translation();
