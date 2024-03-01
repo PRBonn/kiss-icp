@@ -57,12 +57,12 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
         .def("_clear", &VoxelHashMap::Clear)
         .def("_empty", &VoxelHashMap::Empty)
         .def("_update",
-             py::overload_cast<const VoxelHashMap::Vector3dVector &, const Eigen::Vector3d &>(
+             py::overload_cast<const std::vector<Eigen::Vector3d> &, const Eigen::Vector3d &>(
                  &VoxelHashMap::Update),
              "points"_a, "origin"_a)
         .def(
             "_update",
-            [](VoxelHashMap &self, const VoxelHashMap::Vector3dVector &points,
+            [](VoxelHashMap &self, const std::vector<Eigen::Vector3d> &points,
                const Eigen::Matrix4d &T) {
                 Sophus::SE3d pose(T);
                 self.Update(points, pose);
