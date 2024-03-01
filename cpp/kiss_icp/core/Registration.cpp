@@ -153,12 +153,11 @@ Vector3dVectorTuple GetCorrespondences(const Vector3dVector &points,
 
 namespace kiss_icp {
 
-Sophus::SE3d RegisterFrame(const std::vector<Eigen::Vector3d> &frame,
-                           const VoxelHashMap &voxel_map,
-                           const Sophus::SE3d &initial_guess,
-                           const RegistrationConfig &config,
-                           double max_distance = 0.0,
-                           double kernel = 0.0) {
+Sophus::SE3d Registration::RegisterFrame(const std::vector<Eigen::Vector3d> &frame,
+                                         const VoxelHashMap &voxel_map,
+                                         const Sophus::SE3d &initial_guess,
+                                         double max_distance,
+                                         double kernel) {
     if (voxel_map.Empty()) return initial_guess;
 
     // Equation (9)
@@ -167,7 +166,7 @@ Sophus::SE3d RegisterFrame(const std::vector<Eigen::Vector3d> &frame,
 
     // ICP-loop
     Sophus::SE3d T_icp = Sophus::SE3d();
-    for (int j = 0; j < config.max_num_iterations; ++j) {
+    for (int j = 0; j < max_num_iterations_; ++j) {
         // Equation (10)
         const auto &[src, tgt] = GetCorrespondences(source, voxel_map, max_distance);
         // Equation (11)
@@ -179,7 +178,7 @@ Sophus::SE3d RegisterFrame(const std::vector<Eigen::Vector3d> &frame,
         // Update iterations
         T_icp = estimation * T_icp;
         // Termination criteria
-        if (dx.norm() < config.estimation_threshold) break;
+        if (dx.norm() < estimation_threshold_) break;
     }
     // Spit the final transformation
     return T_icp * initial_guess;
