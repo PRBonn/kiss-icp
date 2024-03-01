@@ -36,6 +36,11 @@ class MappingConfig(BaseModel):
     max_points_per_voxel: int = 20
 
 
+class RegistrationConfig(BaseModel):
+    max_num_iterations: Optional[int] = 500
+    estimation_threshold: Optional[float] = 0.0001
+
+
 class AdaptiveThresholdConfig(BaseModel):
     fixed_threshold: Optional[float] = None
     initial_threshold: float = 2.0
