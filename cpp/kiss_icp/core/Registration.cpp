@@ -41,45 +41,41 @@ using Vector6d = Eigen::Matrix<double, 6, 1>;
 
 namespace {
 
+// constants
+constexpr int MAX_NUM_ITERATIONS_ = 500;
+constexpr double ESTIMATION_THRESHOLD_ = 0.0001;
+
+// aliases
+using Vector3dVector = std::vector<Eigen::Vector3d>;
+using Vector3dVectorTuple = std::tuple<Vector3dVector, Vector3dVector>;
+
 inline double square(double x) { return x * x; }
-
-struct ResultTuple {
-    ResultTuple() {
-        JTJ.setZero();
-        JTr.setZero();
-    }
-
-    ResultTuple operator+(const ResultTuple &other) {
-        this->JTJ += other.JTJ;
-        this->JTr += other.JTr;
-        return *this;
-    }
-
-    Eigen::Matrix6d JTJ;
-    Eigen::Vector6d JTr;
-};
-
-struct ResultTuple2 {
-    ResultTuple2(std::size_t n) {
-        source.reserve(n);
-        target.reserve(n);
-    }
-    std::vector<Eigen::Vector3d> source;
-    std::vector<Eigen::Vector3d> target;
-};
 
 void TransformPoints(const Sophus::SE3d &T, std::vector<Eigen::Vector3d> &points) {
     std::transform(points.cbegin(), points.cend(), points.begin(),
                    [&](const auto &point) { return T * point; });
 }
 
-constexpr int MAX_NUM_ITERATIONS_ = 500;
-constexpr double ESTIMATION_THRESHOLD_ = 0.0001;
-
 std::tuple<Eigen::Matrix6d, Eigen::Vector6d> BuildLinearSystem(
     const std::vector<Eigen::Vector3d> &source,
     const std::vector<Eigen::Vector3d> &target,
     double kernel) {
+    struct ResultTuple {
+        ResultTuple() {
+            JTJ.setZero();
+            JTr.setZero();
+        }
+
+        ResultTuple operator+(const ResultTuple &other) {
+            this->JTJ += other.JTJ;
+            this->JTr += other.JTr;
+            return *this;
+        }
+
+        Eigen::Matrix6d JTJ;
+        Eigen::Vector6d JTr;
+    };
+
     auto compute_jacobian_and_residual = [&](auto i) {
         const Eigen::Vector3d residual = source[i] - target[i];
         Eigen::Matrix3_6d J_r;
@@ -113,11 +109,18 @@ std::tuple<Eigen::Matrix6d, Eigen::Vector6d> BuildLinearSystem(
     return std::make_tuple(JTJ, JTr);
 }
 
-using Vector3dVector = std::vector<Eigen::Vector3d>;
-using Vector3dVectorTuple = std::tuple<Vector3dVector, Vector3dVector>;
 Vector3dVectorTuple GetCorrespondences(const Vector3dVector &points,
                                        const kiss_icp::VoxelHashMap &voxel_map,
                                        double max_correspondance_distance) {
+    struct ResultTuple {
+        ResultTuple(std::size_t n) {
+            source.reserve(n);
+            target.reserve(n);
+        }
+        std::vector<Eigen::Vector3d> source;
+        std::vector<Eigen::Vector3d> target;
+    };
+
     // Lambda Function to obtain the KNN of one point, maybe refactor
     auto GetClosestNeighboor = [&](const Eigen::Vector3d &point) {
         auto kx = static_cast<int>(point[0] / voxel_map.voxel_size_);
@@ -165,10 +168,10 @@ Vector3dVectorTuple GetCorrespondences(const Vector3dVector &points,
         // Range
         tbb::blocked_range<points_iterator>{points.cbegin(), points.cend()},
         // Identity
-        ResultTuple2(points.size()),
+        ResultTuple(points.size()),
         // 1st lambda: Parallel computation
         [max_correspondance_distance, &GetClosestNeighboor](
-            const tbb::blocked_range<points_iterator> &r, ResultTuple2 res) -> ResultTuple2 {
+            const tbb::blocked_range<points_iterator> &r, ResultTuple res) -> ResultTuple {
             auto &[src, tgt] = res;
             src.reserve(r.size());
             tgt.reserve(r.size());
@@ -182,7 +185,7 @@ Vector3dVectorTuple GetCorrespondences(const Vector3dVector &points,
             return res;
         },
         // 2nd lambda: Parallel reduction
-        [](ResultTuple2 a, const ResultTuple2 &b) -> ResultTuple2 {
+        [](ResultTuple a, const ResultTuple &b) -> ResultTuple {
             auto &[src, tgt] = a;
             const auto &[srcp, tgtp] = b;
             src.insert(src.end(),  //
