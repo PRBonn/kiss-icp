@@ -41,8 +41,7 @@ using Vector6d = Eigen::Matrix<double, 6, 1>;
 
 namespace {
 // aliases
-using Vector3dVector = std::vector<Eigen::Vector3d>;
-using Vector3dVectorTuple = std::tuple<Vector3dVector, Vector3dVector>;
+using Vector3dVectorTuple = std::tuple<std::vector<Eigen::Vector3d>, std::vector<Eigen::Vector3d>>;
 
 inline double square(double x) { return x * x; }
 
@@ -55,13 +54,13 @@ std::tuple<Eigen::Matrix6d, Eigen::Vector6d> BuildLinearSystem(
     const std::vector<Eigen::Vector3d> &source,
     const std::vector<Eigen::Vector3d> &target,
     double kernel) {
-    struct ResultTuple {
-        ResultTuple() {
+    struct LinearSystemRes {
+        LinearSystemRes() {
             JTJ.setZero();
             JTr.setZero();
         }
 
-        ResultTuple operator+(const ResultTuple &other) {
+        LinearSystemRes operator+(const LinearSystemRes &other) {
             this->JTJ += other.JTJ;
             this->JTr += other.JTr;
             return *this;
@@ -83,9 +82,9 @@ std::tuple<Eigen::Matrix6d, Eigen::Vector6d> BuildLinearSystem(
         // Range
         tbb::blocked_range<size_t>{0, source.size()},
         // Identity
-        ResultTuple(),
+        LinearSystemRes(),
         // 1st Lambda: Parallel computation
-        [&](const tbb::blocked_range<size_t> &r, ResultTuple J) -> ResultTuple {
+        [&](const tbb::blocked_range<size_t> &r, LinearSystemRes J) -> LinearSystemRes {
             auto Weight = [&](double residual2) {
                 return square(kernel) / square(kernel + residual2);
             };
@@ -99,16 +98,16 @@ std::tuple<Eigen::Matrix6d, Eigen::Vector6d> BuildLinearSystem(
             return J;
         },
         // 2nd Lambda: Parallel reduction of the private Jacboians
-        [&](ResultTuple a, const ResultTuple &b) -> ResultTuple { return a + b; });
+        [&](LinearSystemRes a, const LinearSystemRes &b) -> LinearSystemRes { return a + b; });
 
-    return std::make_tuple(JTJ, JTr);
+    return {JTJ, JTr};
 }
 
-Vector3dVectorTuple GetCorrespondences(const Vector3dVector &points,
+Vector3dVectorTuple GetCorrespondences(const std::vector<Eigen::Vector3d> &points,
                                        const kiss_icp::VoxelHashMap &voxel_map,
                                        double max_correspondance_distance) {
-    struct ResultTuple {
-        ResultTuple(std::size_t n) {
+    struct CorrespondenceSet {
+        CorrespondenceSet(std::size_t n) {
             source.reserve(n);
             target.reserve(n);
         }
@@ -121,9 +120,10 @@ Vector3dVectorTuple GetCorrespondences(const Vector3dVector &points,
         // Range
         tbb::blocked_range<points_iterator>{points.cbegin(), points.cend()},
         // Identity
-        ResultTuple(points.size()),
+        CorrespondenceSet(points.size()),
         // 1st lambda: Parallel computation
-        [&](const tbb::blocked_range<points_iterator> &r, ResultTuple res) -> ResultTuple {
+        [&](const tbb::blocked_range<points_iterator> &r,
+            CorrespondenceSet res) -> CorrespondenceSet {
             auto &[src, tgt] = res;
             src.reserve(r.size());
             tgt.reserve(r.size());
@@ -137,7 +137,7 @@ Vector3dVectorTuple GetCorrespondences(const Vector3dVector &points,
             return res;
         },
         // 2nd lambda: Parallel reduction
-        [](ResultTuple a, const ResultTuple &b) -> ResultTuple {
+        [](CorrespondenceSet a, const CorrespondenceSet &b) -> CorrespondenceSet {
             auto &[src, tgt] = a;
             const auto &[srcp, tgtp] = b;
             src.insert(src.end(),  //
@@ -147,7 +147,7 @@ Vector3dVectorTuple GetCorrespondences(const Vector3dVector &points,
             return a;
         });
 
-    return std::make_tuple(source, target);
+    return {source, target};
 }
 }  // namespace
 
