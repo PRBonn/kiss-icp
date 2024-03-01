@@ -114,6 +114,10 @@ $ kiss_icp_pipeline --visualize <path-to-ouster.pcap>:page_facing_up: \[--meta <
 
 # Use a more specific dataloader: {", ".join(_available_dl_help)}
 $ kiss_icp_pipeline --dataloader kitti --sequence 07 --visualize <path-to-kitti-root>:open_file_folder:
+
+# To change single config parameters on-the-fly, you can export them beforehand:
+$ export kiss_icp_out_dir='<path-to-logs>:open_file_folder:'
+$ export kiss_icp_data='{{"max_range": 50}}'
 """
 
 
