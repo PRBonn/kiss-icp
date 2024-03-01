@@ -28,7 +28,6 @@
 // ROS 2
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_broadcaster.h>
-#include <tf2_ros/transform_listener.h>
 
 #include <nav_msgs/msg/odometry.hpp>
 #include <nav_msgs/msg/path.hpp>
@@ -65,7 +64,6 @@ private:
     /// Tools for broadcasting TFs.
     std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
     std::unique_ptr<tf2_ros::Buffer> tf2_buffer_;
-    std::unique_ptr<tf2_ros::TransformListener> tf2_listener_;
     bool publish_odom_tf_;
     bool publish_debug_clouds_;
 

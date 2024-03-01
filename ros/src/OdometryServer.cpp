@@ -96,7 +96,6 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
     tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
     tf2_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
     tf2_buffer_->setUsingDedicatedThread(true);
-    tf2_listener_ = std::make_unique<tf2_ros::TransformListener>(*tf2_buffer_);
 
     RCLCPP_INFO(this->get_logger(), "KISS-ICP ROS 2 odometry node initialized");
 }
