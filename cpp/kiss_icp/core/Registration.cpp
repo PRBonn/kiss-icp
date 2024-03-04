@@ -38,8 +38,6 @@ using Matrix6d = Eigen::Matrix<double, 6, 6>;
 using Matrix3_6d = Eigen::Matrix<double, 3, 6>;
 using Vector6d = Eigen::Matrix<double, 6, 1>;
 }  // namespace Eigen
-
-// aliases
 using Associations = std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>;
 using LinearSystem = std::pair<Eigen::Matrix6d, Eigen::Vector6d>;
 
