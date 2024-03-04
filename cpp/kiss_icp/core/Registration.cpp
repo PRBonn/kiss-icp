@@ -40,7 +40,7 @@ using Vector6d = Eigen::Matrix<double, 6, 1>;
 }  // namespace Eigen
 
 // aliases
-using CorrespondenceVector = std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>;
+using Associations = std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>;
 using LinearSystem = std::pair<Eigen::Matrix6d, Eigen::Vector6d>;
 
 namespace {
@@ -69,7 +69,7 @@ Eigen::Vector3d GetClosestNeighborInMap(const Eigen::Vector3d &point,
     return closest_neighbor;
 }
 
-LinearSystem BuildLinearSystem(const CorrespondenceVector &associations, double kernel) {
+LinearSystem BuildLinearSystem(const Associations &associations, double kernel) {
     auto compute_jacobian_and_residual = [&](auto i) {
         const auto &[p_source, p_target] = associations[i];
         const Eigen::Vector3d residual = p_source - p_target;
@@ -108,20 +108,19 @@ LinearSystem BuildLinearSystem(const CorrespondenceVector &associations, double 
     return {JTJ, JTr};
 }
 
-CorrespondenceVector GetCorrespondences(const std::vector<Eigen::Vector3d> &points,
-                                        const kiss_icp::VoxelHashMap &voxel_map,
-                                        double max_correspondance_distance) {
+Associations GetDataAssociations(const std::vector<Eigen::Vector3d> &points,
+                                 const kiss_icp::VoxelHashMap &voxel_map,
+                                 double max_correspondance_distance) {
     using points_iterator = std::vector<Eigen::Vector3d>::const_iterator;
-    CorrespondenceVector points_associated;
-    points_associated.reserve(points.size());
-    points_associated = tbb::parallel_reduce(
+    Associations associations;
+    associations.reserve(points.size());
+    associations = tbb::parallel_reduce(
         // Range
         tbb::blocked_range<points_iterator>{points.cbegin(), points.cend()},
         // Identity
-        points_associated,
+        associations,
         // 1st lambda: Parallel computation
-        [&](const tbb::blocked_range<points_iterator> &r,
-            CorrespondenceVector res) -> CorrespondenceVector {
+        [&](const tbb::blocked_range<points_iterator> &r, Associations res) -> Associations {
             res.reserve(r.size());
             for (const auto &point : r) {
                 Eigen::Vector3d closest_neighbor = GetClosestNeighborInMap(point, voxel_map);
@@ -132,13 +131,14 @@ CorrespondenceVector GetCorrespondences(const std::vector<Eigen::Vector3d> &poin
             return res;
         },
         // 2nd lambda: Parallel reduction
-        [](CorrespondenceVector a, const CorrespondenceVector &b) -> CorrespondenceVector {
-            a.insert(a.end(),  //
-                     std::make_move_iterator(b.cbegin()), std::make_move_iterator(b.cend()));
+        [](Associations a, const Associations &b) -> Associations {
+            a.insert(a.end(),                              //
+                     std::make_move_iterator(b.cbegin()),  //
+                     std::make_move_iterator(b.cend()));
             return a;
         });
 
-    return points_associated;
+    return associations;
 }
 }  // namespace
 
@@ -159,7 +159,7 @@ Sophus::SE3d Registration::AlignCloudToMap(const std::vector<Eigen::Vector3d> &f
     Sophus::SE3d T_icp = Sophus::SE3d();
     for (int j = 0; j < max_num_iterations_; ++j) {
         // Equation (10)
-        const auto associations = GetCorrespondences(source, voxel_map, max_distance);
+        const auto associations = GetDataAssociations(source, voxel_map, max_distance);
         // Equation (11)
         const auto &[JTJ, JTr] = BuildLinearSystem(associations, kernel);
         const Eigen::Vector6d dx = JTJ.ldlt().solve(-JTr);
