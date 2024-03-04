@@ -128,10 +128,10 @@ Vector3dVectorTuple GetCorrespondences(const std::vector<Eigen::Vector3d> &point
             src.reserve(r.size());
             tgt.reserve(r.size());
             for (const auto &point : r) {
-                Eigen::Vector3d closest_neighboors = voxel_map.GetClosestNeighbor(point);
-                if ((closest_neighboors - point).norm() < max_correspondance_distance) {
+                Eigen::Vector3d closest_neighbors = voxel_map.GetClosestNeighbor(point);
+                if ((closest_neighbors - point).norm() < max_correspondance_distance) {
                     src.emplace_back(point);
-                    tgt.emplace_back(closest_neighboors);
+                    tgt.emplace_back(closest_neighbors);
                 }
             }
             return res;

@@ -46,15 +46,15 @@ Eigen::Vector3d VoxelHashMap::GetClosestNeighbor(const Eigen::Vector3d &point) c
         }
     }
 
-    std::vector<Eigen::Vector3d> neighboors;
-    neighboors.reserve(static_cast<size_t>(27 * max_points_per_voxel_));
+    std::vector<Eigen::Vector3d> neighbors;
+    neighbors.reserve(static_cast<size_t>(27 * max_points_per_voxel_));
     std::for_each(voxels.cbegin(), voxels.cend(), [&](const auto &voxel) {
         auto search = map_.find(voxel);
         if (search != map_.end()) {
             const auto &points = search->second.points;
             if (!points.empty()) {
                 for (const auto &point : points) {
-                    neighboors.emplace_back(point);
+                    neighbors.emplace_back(point);
                 }
             }
         }
@@ -62,7 +62,7 @@ Eigen::Vector3d VoxelHashMap::GetClosestNeighbor(const Eigen::Vector3d &point) c
 
     Eigen::Vector3d closest_neighbor;
     double closest_distance2 = std::numeric_limits<double>::max();
-    std::for_each(neighboors.cbegin(), neighboors.cend(), [&](const auto &neighbor) {
+    std::for_each(neighbors.cbegin(), neighbors.cend(), [&](const auto &neighbor) {
         double distance = (neighbor - point).squaredNorm();
         if (distance < closest_distance2) {
             closest_neighbor = neighbor;
