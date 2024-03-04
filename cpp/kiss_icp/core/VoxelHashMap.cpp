@@ -31,8 +31,8 @@
 
 namespace kiss_icp {
 
-std::vector<VoxelHashMap::Voxel> VoxelHashMap::GetVoxelNeighborhoodAroundPoint(
-    const Eigen::Vector3d &point, int adjacent_voxels) const {
+std::vector<VoxelHashMap::Voxel> VoxelHashMap::GetAdjacentVoxels(const Eigen::Vector3d &point,
+                                                                 int adjacent_voxels) const {
     auto kx = static_cast<int>(point[0] / voxel_size_);
     auto ky = static_cast<int>(point[1] / voxel_size_);
     auto kz = static_cast<int>(point[2] / voxel_size_);
@@ -47,11 +47,11 @@ std::vector<VoxelHashMap::Voxel> VoxelHashMap::GetVoxelNeighborhoodAroundPoint(
     return voxel_neighborhood;
 }
 
-std::vector<Eigen::Vector3d> VoxelHashMap::PointCloud(const std::vector<Voxel> &voxels) const {
+std::vector<Eigen::Vector3d> VoxelHashMap::GetPoints(const std::vector<Voxel> &query_voxels) const {
     std::vector<Eigen::Vector3d> points;
-    points.reserve(voxels.size() * static_cast<size_t>(max_points_per_voxel_));
-    std::for_each(voxels.cbegin(), voxels.cend(), [&](const auto &voxel) {
-        auto search = map_.find(voxel);
+    points.reserve(query_voxels.size() * static_cast<size_t>(max_points_per_voxel_));
+    std::for_each(query_voxels.cbegin(), query_voxels.cend(), [&](const auto &query) {
+        auto search = map_.find(query);
         if (search != map_.end()) {
             for (const auto &point : search->second.points) {
                 points.emplace_back(point);

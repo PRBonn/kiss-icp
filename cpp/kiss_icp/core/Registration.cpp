@@ -54,8 +54,8 @@ void TransformPoints(const Sophus::SE3d &T, std::vector<Eigen::Vector3d> &points
 // Function to obtain the KNN of one point
 Eigen::Vector3d GetClosestNeighborInMap(const Eigen::Vector3d &point,
                                         const kiss_icp::VoxelHashMap &voxel_map) {
-    const auto &voxels = voxel_map.GetVoxelNeighborhoodAroundPoint(point);
-    const auto &neighbors = voxel_map.PointCloud(voxels);
+    const auto &query_voxels = voxel_map.GetAdjacentVoxels(point);
+    const auto &neighbors = voxel_map.GetPoints(query_voxels);
     Eigen::Vector3d closest_neighbor;
     double closest_distance2 = std::numeric_limits<double>::max();
     std::for_each(neighbors.cbegin(), neighbors.cend(), [&](const auto &neighbor) {
