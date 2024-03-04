@@ -51,7 +51,6 @@ void TransformPoints(const Sophus::SE3d &T, std::vector<Eigen::Vector3d> &points
                    [&](const auto &point) { return T * point; });
 }
 
-// Function to obtain the KNN of one point
 Eigen::Vector3d GetClosestNeighborInMap(const Eigen::Vector3d &point,
                                         const kiss_icp::VoxelHashMap &voxel_map) {
     const auto &query_voxels = voxel_map.GetAdjacentVoxels(point);
@@ -67,6 +66,39 @@ Eigen::Vector3d GetClosestNeighborInMap(const Eigen::Vector3d &point,
     });
 
     return closest_neighbor;
+}
+
+Associations GetDataAssociations(const std::vector<Eigen::Vector3d> &points,
+                                 const kiss_icp::VoxelHashMap &voxel_map,
+                                 double max_correspondance_distance) {
+    using points_iterator = std::vector<Eigen::Vector3d>::const_iterator;
+    Associations associations;
+    associations.reserve(points.size());
+    associations = tbb::parallel_reduce(
+        // Range
+        tbb::blocked_range<points_iterator>{points.cbegin(), points.cend()},
+        // Identity
+        associations,
+        // 1st lambda: Parallel computation
+        [&](const tbb::blocked_range<points_iterator> &r, Associations res) -> Associations {
+            res.reserve(r.size());
+            for (const auto &point : r) {
+                Eigen::Vector3d closest_neighbor = GetClosestNeighborInMap(point, voxel_map);
+                if ((closest_neighbor - point).norm() < max_correspondance_distance) {
+                    res.emplace_back(point, closest_neighbor);
+                }
+            }
+            return res;
+        },
+        // 2nd lambda: Parallel reduction
+        [](Associations a, const Associations &b) -> Associations {
+            a.insert(a.end(),                              //
+                     std::make_move_iterator(b.cbegin()),  //
+                     std::make_move_iterator(b.cend()));
+            return a;
+        });
+
+    return associations;
 }
 
 LinearSystem BuildLinearSystem(const Associations &associations, double kernel) {
@@ -106,39 +138,6 @@ LinearSystem BuildLinearSystem(const Associations &associations, double kernel) 
         });
 
     return {JTJ, JTr};
-}
-
-Associations GetDataAssociations(const std::vector<Eigen::Vector3d> &points,
-                                 const kiss_icp::VoxelHashMap &voxel_map,
-                                 double max_correspondance_distance) {
-    using points_iterator = std::vector<Eigen::Vector3d>::const_iterator;
-    Associations associations;
-    associations.reserve(points.size());
-    associations = tbb::parallel_reduce(
-        // Range
-        tbb::blocked_range<points_iterator>{points.cbegin(), points.cend()},
-        // Identity
-        associations,
-        // 1st lambda: Parallel computation
-        [&](const tbb::blocked_range<points_iterator> &r, Associations res) -> Associations {
-            res.reserve(r.size());
-            for (const auto &point : r) {
-                Eigen::Vector3d closest_neighbor = GetClosestNeighborInMap(point, voxel_map);
-                if ((closest_neighbor - point).norm() < max_correspondance_distance) {
-                    res.emplace_back(point, closest_neighbor);
-                }
-            }
-            return res;
-        },
-        // 2nd lambda: Parallel reduction
-        [](Associations a, const Associations &b) -> Associations {
-            a.insert(a.end(),                              //
-                     std::make_move_iterator(b.cbegin()),  //
-                     std::make_move_iterator(b.cend()));
-            return a;
-        });
-
-    return associations;
 }
 }  // namespace
 
