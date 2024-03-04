@@ -51,8 +51,8 @@ void TransformPoints(const Sophus::SE3d &T, std::vector<Eigen::Vector3d> &points
                    [&](const auto &point) { return T * point; });
 }
 
-Eigen::Vector3d GetClosestNeighborInMap(const Eigen::Vector3d &point,
-                                        const kiss_icp::VoxelHashMap &voxel_map) {
+Eigen::Vector3d GetClosestNeighbor(const Eigen::Vector3d &point,
+                                   const kiss_icp::VoxelHashMap &voxel_map) {
     const auto &query_voxels = voxel_map.GetAdjacentVoxels(point);
     const auto &neighbors = voxel_map.GetPoints(query_voxels);
     Eigen::Vector3d closest_neighbor;
@@ -83,7 +83,7 @@ Associations GetDataAssociations(const std::vector<Eigen::Vector3d> &points,
         [&](const tbb::blocked_range<points_iterator> &r, Associations res) -> Associations {
             res.reserve(r.size());
             for (const auto &point : r) {
-                Eigen::Vector3d closest_neighbor = GetClosestNeighborInMap(point, voxel_map);
+                Eigen::Vector3d closest_neighbor = GetClosestNeighbor(point, voxel_map);
                 if ((closest_neighbor - point).norm() < max_correspondance_distance) {
                     res.emplace_back(point, closest_neighbor);
                 }
