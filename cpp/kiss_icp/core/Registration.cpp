@@ -78,14 +78,12 @@ LinearSystem BuildLinearSystem(const CorrespondenceVector &associations, double 
         LinearSystem(Eigen::Matrix6d::Zero(), Eigen::Vector6d::Zero()),
         // 1st Lambda: Parallel computation
         [&](const tbb::blocked_range<associations_iterator> &r, LinearSystem J) -> LinearSystem {
-            std::for_each(r.begin(), r.end(), [&](const auto &association) {
-                auto &[JTJ_private, JTr_private] = J;
-                const auto &[J_r, residual] = compute_jacobian_and_residual(association);
-                const double w = GM_weight(residual.squaredNorm());
-                JTJ_private.noalias() += J_r.transpose() * w * J_r;
-                JTr_private.noalias() += J_r.transpose() * w * residual;
-            });
-            return J;
+            return std::transform_reduce(
+                r.begin(), r.end(), J, sum_linear_systems, [&](const auto &association) {
+                    const auto &[J_r, residual] = compute_jacobian_and_residual(association);
+                    const double w = GM_weight(residual.squaredNorm());
+                    return LinearSystem(J_r.transpose() * w * J_r, J_r.transpose() * w * residual);
+                });
         },
         // 2nd Lambda: Parallel reduction of the private Jacboians
         sum_linear_systems);
