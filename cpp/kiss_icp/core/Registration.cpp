@@ -51,6 +51,24 @@ void TransformPoints(const Sophus::SE3d &T, std::vector<Eigen::Vector3d> &points
                    [&](const auto &point) { return T * point; });
 }
 
+// Function to obtain the KNN of one point
+Eigen::Vector3d GetClosestNeighborInMap(const Eigen::Vector3d &point,
+                                        const kiss_icp::VoxelHashMap &voxel_map) {
+    const auto &voxels = voxel_map.GetVoxelNeighborhoodAroundPoint(point);
+    const auto &neighbors = voxel_map.PointCloud(voxels);
+    Eigen::Vector3d closest_neighbor;
+    double closest_distance2 = std::numeric_limits<double>::max();
+    std::for_each(neighbors.cbegin(), neighbors.cend(), [&](const auto &neighbor) {
+        double distance = (neighbor - point).squaredNorm();
+        if (distance < closest_distance2) {
+            closest_neighbor = neighbor;
+            closest_distance2 = distance;
+        }
+    });
+
+    return closest_neighbor;
+}
+
 LinearSystem BuildLinearSystem(const CorrespondenceVector &associations, double kernel) {
     auto compute_jacobian_and_residual = [&](auto i) {
         const auto &[p_source, p_target] = associations[i];
@@ -106,7 +124,7 @@ CorrespondenceVector GetCorrespondences(const std::vector<Eigen::Vector3d> &poin
             CorrespondenceVector res) -> CorrespondenceVector {
             res.reserve(r.size());
             for (const auto &point : r) {
-                Eigen::Vector3d closest_neighbor = voxel_map.GetClosestNeighbor(point);
+                Eigen::Vector3d closest_neighbor = GetClosestNeighborInMap(point, voxel_map);
                 if ((closest_neighbor - point).norm() < max_correspondance_distance) {
                     res.emplace_back(point, closest_neighbor);
                 }

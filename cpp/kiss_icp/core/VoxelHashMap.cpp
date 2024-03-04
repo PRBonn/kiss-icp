@@ -31,46 +31,34 @@
 
 namespace kiss_icp {
 
-// Function to obtain the KNN of one point
-Eigen::Vector3d VoxelHashMap::GetClosestNeighbor(const Eigen::Vector3d &point) const {
+std::vector<VoxelHashMap::Voxel> VoxelHashMap::GetVoxelNeighborhoodAroundPoint(
+    const Eigen::Vector3d &point, int adjacent_voxels) const {
     auto kx = static_cast<int>(point[0] / voxel_size_);
     auto ky = static_cast<int>(point[1] / voxel_size_);
     auto kz = static_cast<int>(point[2] / voxel_size_);
-    std::vector<kiss_icp::VoxelHashMap::Voxel> voxels;
-    voxels.reserve(27);
-    for (int i = kx - 1; i < kx + 1 + 1; ++i) {
-        for (int j = ky - 1; j < ky + 1 + 1; ++j) {
-            for (int k = kz - 1; k < kz + 1 + 1; ++k) {
-                voxels.emplace_back(i, j, k);
+    std::vector<Voxel> voxel_neighborhood;
+    for (int i = kx - adjacent_voxels; i < kx + adjacent_voxels + 1; ++i) {
+        for (int j = ky - adjacent_voxels; j < ky + adjacent_voxels + 1; ++j) {
+            for (int k = kz - adjacent_voxels; k < kz + adjacent_voxels + 1; ++k) {
+                voxel_neighborhood.emplace_back(i, j, k);
             }
         }
     }
+    return voxel_neighborhood;
+}
 
-    std::vector<Eigen::Vector3d> neighbors;
-    neighbors.reserve(static_cast<size_t>(27 * max_points_per_voxel_));
+std::vector<Eigen::Vector3d> VoxelHashMap::PointCloud(const std::vector<Voxel> &voxels) const {
+    std::vector<Eigen::Vector3d> points;
+    points.reserve(voxels.size() * static_cast<size_t>(max_points_per_voxel_));
     std::for_each(voxels.cbegin(), voxels.cend(), [&](const auto &voxel) {
         auto search = map_.find(voxel);
         if (search != map_.end()) {
-            const auto &points = search->second.points;
-            if (!points.empty()) {
-                for (const auto &point : points) {
-                    neighbors.emplace_back(point);
-                }
+            for (const auto &point : search->second.points) {
+                points.emplace_back(point);
             }
         }
     });
-
-    Eigen::Vector3d closest_neighbor;
-    double closest_distance2 = std::numeric_limits<double>::max();
-    std::for_each(neighbors.cbegin(), neighbors.cend(), [&](const auto &neighbor) {
-        double distance = (neighbor - point).squaredNorm();
-        if (distance < closest_distance2) {
-            closest_neighbor = neighbor;
-            closest_distance2 = distance;
-        }
-    });
-
-    return closest_neighbor;
+    return points;
 }
 
 std::vector<Eigen::Vector3d> VoxelHashMap::Pointcloud() const {
