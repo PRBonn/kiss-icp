@@ -39,10 +39,11 @@ using Matrix3_6d = Eigen::Matrix<double, 3, 6>;
 using Vector6d = Eigen::Matrix<double, 6, 1>;
 }  // namespace Eigen
 
-namespace {
 // aliases
-using Vector3dVectorTuple = std::tuple<std::vector<Eigen::Vector3d>, std::vector<Eigen::Vector3d>>;
+using CorrespondenceVector = std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>;
+using LinearSystem = std::pair<Eigen::Matrix6d, Eigen::Vector6d>;
 
+namespace {
 inline double square(double x) { return x * x; }
 
 void TransformPoints(const Sophus::SE3d &T, std::vector<Eigen::Vector3d> &points) {
@@ -50,41 +51,23 @@ void TransformPoints(const Sophus::SE3d &T, std::vector<Eigen::Vector3d> &points
                    [&](const auto &point) { return T * point; });
 }
 
-std::tuple<Eigen::Matrix6d, Eigen::Vector6d> BuildLinearSystem(
-    const std::vector<Eigen::Vector3d> &source,
-    const std::vector<Eigen::Vector3d> &target,
-    double kernel) {
-    struct LinearSystemRes {
-        LinearSystemRes() {
-            JTJ.setZero();
-            JTr.setZero();
-        }
-
-        LinearSystemRes operator+(const LinearSystemRes &other) {
-            this->JTJ += other.JTJ;
-            this->JTr += other.JTr;
-            return *this;
-        }
-
-        Eigen::Matrix6d JTJ;
-        Eigen::Vector6d JTr;
-    };
-
+LinearSystem BuildLinearSystem(const CorrespondenceVector &associations, double kernel) {
     auto compute_jacobian_and_residual = [&](auto i) {
-        const Eigen::Vector3d residual = source[i] - target[i];
+        const auto &[p_source, p_target] = associations[i];
+        const Eigen::Vector3d residual = p_source - p_target;
         Eigen::Matrix3_6d J_r;
         J_r.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity();
-        J_r.block<3, 3>(0, 3) = -1.0 * Sophus::SO3d::hat(source[i]);
+        J_r.block<3, 3>(0, 3) = -1.0 * Sophus::SO3d::hat(p_source);
         return std::make_tuple(J_r, residual);
     };
 
     const auto &[JTJ, JTr] = tbb::parallel_reduce(
         // Range
-        tbb::blocked_range<size_t>{0, source.size()},
+        tbb::blocked_range<size_t>{0, associations.size()},
         // Identity
-        LinearSystemRes(),
+        LinearSystem(Eigen::Matrix6d::Zero(), Eigen::Vector6d::Zero()),
         // 1st Lambda: Parallel computation
-        [&](const tbb::blocked_range<size_t> &r, LinearSystemRes J) -> LinearSystemRes {
+        [&](const tbb::blocked_range<size_t> &r, LinearSystem J) -> LinearSystem {
             auto Weight = [&](double residual2) {
                 return square(kernel) / square(kernel + residual2);
             };
@@ -98,56 +81,46 @@ std::tuple<Eigen::Matrix6d, Eigen::Vector6d> BuildLinearSystem(
             return J;
         },
         // 2nd Lambda: Parallel reduction of the private Jacboians
-        [&](LinearSystemRes a, const LinearSystemRes &b) -> LinearSystemRes { return a + b; });
+        [&](LinearSystem a, const LinearSystem &b) -> LinearSystem {
+            a.first += b.first;
+            a.second += b.second;
+            return a;
+        });
 
     return {JTJ, JTr};
 }
 
-Vector3dVectorTuple GetCorrespondences(const std::vector<Eigen::Vector3d> &points,
-                                       const kiss_icp::VoxelHashMap &voxel_map,
-                                       double max_correspondance_distance) {
-    struct CorrespondenceSet {
-        CorrespondenceSet(std::size_t n) {
-            source.reserve(n);
-            target.reserve(n);
-        }
-        std::vector<Eigen::Vector3d> source;
-        std::vector<Eigen::Vector3d> target;
-    };
-
+CorrespondenceVector GetCorrespondences(const std::vector<Eigen::Vector3d> &points,
+                                        const kiss_icp::VoxelHashMap &voxel_map,
+                                        double max_correspondance_distance) {
     using points_iterator = std::vector<Eigen::Vector3d>::const_iterator;
-    const auto [source, target] = tbb::parallel_reduce(
+    CorrespondenceVector points_associated;
+    points_associated.reserve(points.size());
+    points_associated = tbb::parallel_reduce(
         // Range
         tbb::blocked_range<points_iterator>{points.cbegin(), points.cend()},
         // Identity
-        CorrespondenceSet(points.size()),
+        points_associated,
         // 1st lambda: Parallel computation
         [&](const tbb::blocked_range<points_iterator> &r,
-            CorrespondenceSet res) -> CorrespondenceSet {
-            auto &[src, tgt] = res;
-            src.reserve(r.size());
-            tgt.reserve(r.size());
+            CorrespondenceVector res) -> CorrespondenceVector {
+            res.reserve(r.size());
             for (const auto &point : r) {
                 Eigen::Vector3d closest_neighbor = voxel_map.GetClosestNeighbor(point);
                 if ((closest_neighbor - point).norm() < max_correspondance_distance) {
-                    src.emplace_back(point);
-                    tgt.emplace_back(closest_neighbor);
+                    res.emplace_back(point, closest_neighbor);
                 }
             }
             return res;
         },
         // 2nd lambda: Parallel reduction
-        [](CorrespondenceSet a, const CorrespondenceSet &b) -> CorrespondenceSet {
-            auto &[src, tgt] = a;
-            const auto &[srcp, tgtp] = b;
-            src.insert(src.end(),  //
-                       std::make_move_iterator(srcp.begin()), std::make_move_iterator(srcp.end()));
-            tgt.insert(tgt.end(),  //
-                       std::make_move_iterator(tgtp.begin()), std::make_move_iterator(tgtp.end()));
+        [](CorrespondenceVector a, const CorrespondenceVector &b) -> CorrespondenceVector {
+            a.insert(a.end(),  //
+                     std::make_move_iterator(b.cbegin()), std::make_move_iterator(b.cend()));
             return a;
         });
 
-    return {source, target};
+    return points_associated;
 }
 }  // namespace
 
@@ -168,9 +141,9 @@ Sophus::SE3d Registration::AlignCloudToMap(const std::vector<Eigen::Vector3d> &f
     Sophus::SE3d T_icp = Sophus::SE3d();
     for (int j = 0; j < max_num_iterations_; ++j) {
         // Equation (10)
-        const auto &[src, tgt] = GetCorrespondences(source, voxel_map, max_distance);
+        const auto associations = GetCorrespondences(source, voxel_map, max_distance);
         // Equation (11)
-        const auto &[JTJ, JTr] = BuildLinearSystem(src, tgt, kernel);
+        const auto &[JTJ, JTr] = BuildLinearSystem(associations, kernel);
         const Eigen::Vector6d dx = JTJ.ldlt().solve(-JTr);
         const Sophus::SE3d estimation = Sophus::SE3d::exp(dx);
         // Equation (12)
