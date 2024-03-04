@@ -32,7 +32,7 @@
 namespace kiss_icp {
 
 // Function to obtain the KNN of one point
-Eigen::Vector3d VoxelHashMap::GetClosestNeighboor(const Eigen::Vector3d &point) const {
+Eigen::Vector3d VoxelHashMap::GetClosestNeighbor(const Eigen::Vector3d &point) const {
     auto kx = static_cast<int>(point[0] / voxel_size_);
     auto ky = static_cast<int>(point[1] / voxel_size_);
     auto kz = static_cast<int>(point[2] / voxel_size_);
