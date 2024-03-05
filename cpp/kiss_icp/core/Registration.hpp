@@ -32,8 +32,6 @@ namespace kiss_icp {
 struct Registration {
     explicit Registration(int max_num_iteration, double convergence_criterion, int max_num_threads);
 
-    // Register a point cloud to the given internal map representation. The config input parameter
-    // contains all the necessary parametrization for the ICP loop
     Sophus::SE3d AlignPointsToMap(const std::vector<Eigen::Vector3d> &frame,
                                   const VoxelHashMap &voxel_map,
                                   const Sophus::SE3d &initial_guess,
