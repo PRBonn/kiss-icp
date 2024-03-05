@@ -27,15 +27,10 @@ from kiss_icp.pybind import kiss_icp_pybind
 
 
 def get_preprocessor(config: KISSConfig):
-    return Preprocessor(config) if config.data.preprocess else Stubcessor()
+    return Preprocessor(config)
 
 
-class Stubcessor:
-    def __call__(self, frame: np.ndarray):
-        return frame
-
-
-class Preprocessor(Stubcessor):
+class Preprocessor:
     def __init__(self, config: KISSConfig):
         self.config = config
 
