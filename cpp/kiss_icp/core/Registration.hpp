@@ -27,6 +27,7 @@
 #include <vector>
 
 #include "VoxelHashMap.hpp"
+
 namespace kiss_icp {
 
 struct Registration {
