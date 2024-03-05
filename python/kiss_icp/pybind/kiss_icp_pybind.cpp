@@ -57,12 +57,12 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
         .def("_clear", &VoxelHashMap::Clear)
         .def("_empty", &VoxelHashMap::Empty)
         .def("_update",
-             py::overload_cast<const VoxelHashMap::Vector3dVector &, const Eigen::Vector3d &>(
+             py::overload_cast<const std::vector<Eigen::Vector3d> &, const Eigen::Vector3d &>(
                  &VoxelHashMap::Update),
              "points"_a, "origin"_a)
         .def(
             "_update",
-            [](VoxelHashMap &self, const VoxelHashMap::Vector3dVector &points,
+            [](VoxelHashMap &self, const std::vector<Eigen::Vector3d> &points,
                const Eigen::Matrix4d &T) {
                 Sophus::SE3d pose(T);
                 self.Update(points, pose);
@@ -70,21 +70,26 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
             "points"_a, "pose"_a)
         .def("_add_points", &VoxelHashMap::AddPoints, "points"_a)
         .def("_remove_far_away_points", &VoxelHashMap::RemovePointsFarFromLocation, "origin"_a)
-        .def("_point_cloud", &VoxelHashMap::Pointcloud)
-        .def("_get_correspondences", &VoxelHashMap::GetCorrespondences, "points"_a,
-             "max_correspondance_distance"_a);
+        .def("_point_cloud", &VoxelHashMap::Pointcloud);
 
     // Point Cloud registration
-    m.def(
-        "_register_point_cloud",
-        [](const std::vector<Eigen::Vector3d> &points, const VoxelHashMap &voxel_map,
-           const Eigen::Matrix4d &T_guess, double max_correspondence_distance, double kernel) {
-            Sophus::SE3d initial_guess(T_guess);
-            return RegisterFrame(points, voxel_map, initial_guess, max_correspondence_distance,
-                                 kernel)
-                .matrix();
-        },
-        "points"_a, "voxel_map"_a, "initial_guess"_a, "max_correspondance_distance"_a, "kernel"_a);
+    py::class_<Registration> internal_registration(m, "_Registration", "Don't use this");
+    internal_registration
+        .def(py::init<int, double>(), "max_num_iterations"_a, "convergence_criterion"_a)
+        .def(
+            "_align_points_to_map",
+            [](Registration &self, const std::vector<Eigen::Vector3d> &points,
+               const VoxelHashMap &voxel_map, const Eigen::Matrix4d &T_guess,
+               double max_correspondence_distance, double kernel) {
+                Sophus::SE3d initial_guess(T_guess);
+                return self
+                    .AlignPointsToMap(points, voxel_map, initial_guess, max_correspondence_distance,
+                                      kernel)
+                    .matrix();
+            },
+            "points"_a, "voxel_map"_a, "initial_guess"_a, "max_correspondance_distance"_a,
+            "kernel"_a);
+
     // AdaptiveThreshold bindings
     py::class_<AdaptiveThreshold> adaptive_threshold(m, "_AdaptiveThreshold", "Don't use this");
     adaptive_threshold

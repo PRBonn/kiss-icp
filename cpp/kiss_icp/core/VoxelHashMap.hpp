@@ -34,8 +34,6 @@
 
 namespace kiss_icp {
 struct VoxelHashMap {
-    using Vector3dVector = std::vector<Eigen::Vector3d>;
-    using Vector3dVectorTuple = std::tuple<Vector3dVector, Vector3dVector>;
     using Voxel = Eigen::Vector3i;
     struct VoxelBlock {
         // buffer of points with a max limit of n_points
@@ -57,8 +55,6 @@ struct VoxelHashMap {
           max_distance_(max_distance),
           max_points_per_voxel_(max_points_per_voxel) {}
 
-    Vector3dVectorTuple GetCorrespondences(const Vector3dVector &points,
-                                           double max_correspondance_distance) const;
     inline void Clear() { map_.clear(); }
     inline bool Empty() const { return map_.empty(); }
     void Update(const std::vector<Eigen::Vector3d> &points, const Eigen::Vector3d &origin);
@@ -66,6 +62,9 @@ struct VoxelHashMap {
     void AddPoints(const std::vector<Eigen::Vector3d> &points);
     void RemovePointsFarFromLocation(const Eigen::Vector3d &origin);
     std::vector<Eigen::Vector3d> Pointcloud() const;
+    std::vector<Eigen::Vector3d> GetPoints(const std::vector<Voxel> &query_voxels) const;
+    std::vector<Voxel> GetAdjacentVoxels(const Eigen::Vector3d &point,
+                                         int adjacent_voxels = 1) const;
 
     double voxel_size_;
     double max_distance_;

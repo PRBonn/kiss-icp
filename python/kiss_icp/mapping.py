@@ -20,8 +20,6 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from typing import Tuple
-
 import numpy as np
 
 from kiss_icp.config import KISSConfig
@@ -68,15 +66,3 @@ class VoxelHashMap:
     def point_cloud(self) -> np.ndarray:
         """Return the internal representaion as a np.array (pointcloud)."""
         return np.asarray(self._internal_map._point_cloud())
-
-    def get_correspondences(
-        self,
-        points: np.ndarray,
-        max_correspondance_distance: float,
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        """Get the pair of {source, target} pointcloud of the same size."""
-        _points = kiss_icp_pybind._Vector3dVector(points)
-        source, target = self._internal_map._get_correspondences(
-            _points, max_correspondance_distance
-        )
-        return np.asarray(source), np.asarray(target)
