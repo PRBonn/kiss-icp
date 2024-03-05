@@ -39,7 +39,7 @@ struct Registration {
     Sophus::SE3d AlignCloudToMap(const std::vector<Eigen::Vector3d> &frame,
                                  const VoxelHashMap &voxel_map,
                                  const Sophus::SE3d &initial_guess,
-                                 double max_distance,
+                                 double max_correspondence_distance,
                                  double kernel);
 
     int max_num_iterations_;

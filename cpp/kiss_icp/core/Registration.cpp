@@ -145,7 +145,7 @@ namespace kiss_icp {
 Sophus::SE3d Registration::AlignCloudToMap(const std::vector<Eigen::Vector3d> &frame,
                                            const VoxelHashMap &voxel_map,
                                            const Sophus::SE3d &initial_guess,
-                                           double max_distance,
+                                           double max_correspondence_distance,
                                            double kernel) {
     if (voxel_map.Empty()) return initial_guess;
 
@@ -157,7 +157,8 @@ Sophus::SE3d Registration::AlignCloudToMap(const std::vector<Eigen::Vector3d> &f
     Sophus::SE3d T_icp = Sophus::SE3d();
     for (int j = 0; j < max_num_iterations_; ++j) {
         // Equation (10)
-        const auto associations = FindDataAssociations(source, voxel_map, max_distance);
+        const auto associations =
+            FindDataAssociations(source, voxel_map, max_correspondence_distance);
         // Equation (11)
         const auto &[JTJ, JTr] = BuildLinearSystem(associations, kernel);
         const Eigen::Vector6d dx = JTJ.ldlt().solve(-JTr);
