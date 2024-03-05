@@ -129,7 +129,8 @@ LinearSystem BuildLinearSystem(const Associations &associations, double kernel) 
                 r.begin(), r.end(), J, sum_linear_systems, [&](const auto &association) {
                     const auto &[J_r, residual] = compute_jacobian_and_residual(association);
                     const double w = GM_weight(residual.squaredNorm());
-                    return LinearSystem(J_r.transpose() * w * J_r, J_r.transpose() * w * residual);
+                    return LinearSystem(J_r.transpose() * w * J_r,        // JTJ
+                                        J_r.transpose() * w * residual);  // JTr
                 });
         },
         // 2nd Lambda: Parallel reduction of the private Jacboians
