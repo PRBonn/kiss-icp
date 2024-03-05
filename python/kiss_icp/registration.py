@@ -22,21 +22,37 @@
 # SOFTWARE.
 import numpy as np
 
+from kiss_icp.config.parser import KISSConfig
 from kiss_icp.mapping import VoxelHashMap
 from kiss_icp.pybind import kiss_icp_pybind
 
 
-def register_frame(
-    points: np.ndarray,
-    voxel_map: VoxelHashMap,
-    initial_guess: np.ndarray,
-    max_correspondance_distance: float,
-    kernel: float,
-) -> np.ndarray:
-    return kiss_icp_pybind._register_point_cloud(
-        points=kiss_icp_pybind._Vector3dVector(points),
-        voxel_map=voxel_map._internal_map,
-        initial_guess=initial_guess,
-        max_correspondance_distance=max_correspondance_distance,
-        kernel=kernel,
+def get_registration(config: KISSConfig):
+    return Registration(
+        max_num_iterations=config.registration.max_num_iterations,
+        convergence_criterion=config.registration.convergence_criterion,
     )
+
+
+class Registration:
+    def __init__(self, max_num_iterations: int, convergence_criterion: float):
+        self._registration = kiss_icp_pybind._Registration(
+            max_num_iterations=max_num_iterations,
+            convergence_criterion=convergence_criterion,
+        )
+
+    def align_points_to_map(
+        self,
+        points: np.ndarray,
+        voxel_map: VoxelHashMap,
+        initial_guess: np.ndarray,
+        max_correspondance_distance: float,
+        kernel: float,
+    ) -> np.ndarray:
+        return self._registration._align_points_to_map(
+            points=kiss_icp_pybind._Vector3dVector(points),
+            voxel_map=voxel_map._internal_map,
+            initial_guess=initial_guess,
+            max_correspondance_distance=max_correspondance_distance,
+            kernel=kernel,
+        )

@@ -30,13 +30,19 @@ from typing import Any, Dict, Optional
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from kiss_icp.config.config import AdaptiveThresholdConfig, DataConfig, MappingConfig
+from kiss_icp.config.config import (
+    AdaptiveThresholdConfig,
+    DataConfig,
+    MappingConfig,
+    RegistrationConfig,
+)
 
 
 class KISSConfig(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="kiss_icp_")
     out_dir: str = "results"
     data: DataConfig = DataConfig()
+    registration: RegistrationConfig = RegistrationConfig()
     mapping: MappingConfig = MappingConfig()
     adaptive_threshold: AdaptiveThresholdConfig = AdaptiveThresholdConfig()
 

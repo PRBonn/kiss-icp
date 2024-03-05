@@ -26,7 +26,7 @@ from kiss_icp.config import KISSConfig
 from kiss_icp.deskew import get_motion_compensator
 from kiss_icp.mapping import get_voxel_hash_map
 from kiss_icp.preprocess import get_preprocessor
-from kiss_icp.registration import register_frame
+from kiss_icp.registration import get_registration
 from kiss_icp.threshold import get_threshold_estimator
 from kiss_icp.voxelization import voxel_down_sample
 
@@ -37,6 +37,7 @@ class KissICP:
         self.config = config
         self.compensator = get_motion_compensator(config)
         self.adaptive_threshold = get_threshold_estimator(self.config)
+        self.registration = get_registration(self.config)
         self.local_map = get_voxel_hash_map(self.config)
         self.preprocess = get_preprocessor(self.config)
 
@@ -59,7 +60,7 @@ class KissICP:
         initial_guess = last_pose @ prediction
 
         # Run ICP
-        new_pose = register_frame(
+        new_pose = self.registration.align_points_to_map(
             points=source,
             voxel_map=self.local_map,
             initial_guess=initial_guess,

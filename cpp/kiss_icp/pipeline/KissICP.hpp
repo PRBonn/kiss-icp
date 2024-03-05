@@ -26,6 +26,7 @@
 #include <vector>
 
 #include "kiss_icp/core/Deskew.hpp"
+#include "kiss_icp/core/Registration.hpp"
 #include "kiss_icp/core/Threshold.hpp"
 #include "kiss_icp/core/VoxelHashMap.hpp"
 
@@ -42,6 +43,10 @@ struct KISSConfig {
     double min_motion_th = 0.1;
     double initial_threshold = 2.0;
 
+    // registration params
+    int max_num_iterations = 500;
+    double convergence_criterion = 0.0001;
+
     // Motion compensation
     bool deskew = false;
 };
@@ -54,6 +59,7 @@ public:
 public:
     explicit KissICP(const KISSConfig &config)
         : config_(config),
+          registration_(config.max_num_iterations, config.convergence_criterion),
           local_map_(config.voxel_size, config.max_range, config.max_points_per_voxel),
           adaptive_threshold_(config.initial_threshold, config.min_motion_th, config.max_range) {}
 
@@ -77,6 +83,7 @@ private:
     // KISS-ICP pipeline modules
     std::vector<Sophus::SE3d> poses_;
     KISSConfig config_;
+    Registration registration_;
     VoxelHashMap local_map_;
     AdaptiveThreshold adaptive_threshold_;
 };
