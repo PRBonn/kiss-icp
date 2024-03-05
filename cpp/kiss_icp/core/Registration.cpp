@@ -27,6 +27,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <numeric>
 #include <sophus/se3.hpp>
 #include <sophus/so3.hpp>
 #include <tuple>
@@ -62,7 +63,6 @@ Eigen::Vector3d GetClosestNeighbor(const Eigen::Vector3d &point,
             closest_distance2 = distance;
         }
     });
-
     return closest_neighbor;
 }
 
@@ -100,40 +100,40 @@ Associations FindDataAssociations(const std::vector<Eigen::Vector3d> &points,
 }
 
 LinearSystem BuildLinearSystem(const Associations &associations, double kernel) {
-    auto compute_jacobian_and_residual = [&](auto i) {
-        const auto &[p_source, p_target] = associations[i];
-        const Eigen::Vector3d residual = p_source - p_target;
+    auto compute_jacobian_and_residual = [](auto source_and_target) {
+        const auto &[source, target] = source_and_target;
+        const Eigen::Vector3d residual = source - target;
         Eigen::Matrix3_6d J_r;
         J_r.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity();
-        J_r.block<3, 3>(0, 3) = -1.0 * Sophus::SO3d::hat(p_source);
+        J_r.block<3, 3>(0, 3) = -1.0 * Sophus::SO3d::hat(source);
         return std::make_tuple(J_r, residual);
     };
 
+    auto sum_linear_systems = [](LinearSystem a, const LinearSystem &b) {
+        a.first += b.first;
+        a.second += b.second;
+        return a;
+    };
+
+    auto GM_weight = [&](double residual2) { return square(kernel) / square(kernel + residual2); };
+
+    using associations_iterator = Associations::const_iterator;
     const auto &[JTJ, JTr] = tbb::parallel_reduce(
         // Range
-        tbb::blocked_range<size_t>{0, associations.size()},
+        tbb::blocked_range<associations_iterator>{associations.cbegin(), associations.cend()},
         // Identity
         LinearSystem(Eigen::Matrix6d::Zero(), Eigen::Vector6d::Zero()),
         // 1st Lambda: Parallel computation
-        [&](const tbb::blocked_range<size_t> &r, LinearSystem J) -> LinearSystem {
-            auto Weight = [&](double residual2) {
-                return square(kernel) / square(kernel + residual2);
-            };
-            auto &[JTJ_private, JTr_private] = J;
-            for (auto i = r.begin(); i < r.end(); ++i) {
-                const auto &[J_r, residual] = compute_jacobian_and_residual(i);
-                const double w = Weight(residual.squaredNorm());
-                JTJ_private.noalias() += J_r.transpose() * w * J_r;
-                JTr_private.noalias() += J_r.transpose() * w * residual;
-            }
-            return J;
+        [&](const tbb::blocked_range<associations_iterator> &r, LinearSystem J) -> LinearSystem {
+            return std::transform_reduce(
+                r.begin(), r.end(), J, sum_linear_systems, [&](const auto &association) {
+                    const auto &[J_r, residual] = compute_jacobian_and_residual(association);
+                    const double w = GM_weight(residual.squaredNorm());
+                    return LinearSystem(J_r.transpose() * w * J_r, J_r.transpose() * w * residual);
+                });
         },
         // 2nd Lambda: Parallel reduction of the private Jacboians
-        [&](LinearSystem a, const LinearSystem &b) -> LinearSystem {
-            a.first += b.first;
-            a.second += b.second;
-            return a;
-        });
+        sum_linear_systems);
 
     return {JTJ, JTr};
 }
