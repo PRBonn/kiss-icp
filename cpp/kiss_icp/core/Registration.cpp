@@ -66,9 +66,7 @@ std::vector<Voxel> GetAdjacentVoxels(const Voxel &voxel, int adjacent_voxels = 1
 Eigen::Vector3d GetClosestNeighbor(const Eigen::Vector3d &point,
                                    const kiss_icp::VoxelHashMap &voxel_map) {
     // Convert the point to voxel coordinates
-    const Voxel voxel(static_cast<int>(point[0] / voxel_map.voxel_size()),
-                      static_cast<int>(point[1] / voxel_map.voxel_size()),
-                      static_cast<int>(point[2] / voxel_map.voxel_size()));
+    const auto &voxel = voxel_map.PointToVoxel(point);
     // Get nearby voxels on the map
     const auto &query_voxels = GetAdjacentVoxels(voxel);
     // Extract the points contained within the neighborhood voxels
