@@ -142,11 +142,11 @@ LinearSystem BuildLinearSystem(const Associations &associations, double kernel) 
 
 namespace kiss_icp {
 
-Sophus::SE3d Registration::AlignCloudToMap(const std::vector<Eigen::Vector3d> &frame,
-                                           const VoxelHashMap &voxel_map,
-                                           const Sophus::SE3d &initial_guess,
-                                           double max_correspondence_distance,
-                                           double kernel) {
+Sophus::SE3d Registration::AlignPointsToMap(const std::vector<Eigen::Vector3d> &frame,
+                                            const VoxelHashMap &voxel_map,
+                                            const Sophus::SE3d &initial_guess,
+                                            double max_correspondence_distance,
+                                            double kernel) {
     if (voxel_map.Empty()) return initial_guess;
 
     // Equation (9)
