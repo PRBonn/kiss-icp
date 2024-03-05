@@ -30,15 +30,15 @@ from kiss_icp.pybind import kiss_icp_pybind
 def get_registration(config: KISSConfig):
     return Registration(
         max_num_iterations=config.registration.max_num_iterations,
-        estimation_threshold=config.registration.estimation_threshold,
+        convergence_criterion=config.registration.convergence_criterion,
     )
 
 
 class Registration:
-    def __init__(self, max_num_iterations: int, estimation_threshold: float):
+    def __init__(self, max_num_iterations: int, convergence_criterion: float):
         self._registration = kiss_icp_pybind._Registration(
             max_num_iterations=max_num_iterations,
-            estimation_threshold=estimation_threshold,
+            convergence_criterion=convergence_criterion,
         )
 
     def align_points_to_map(

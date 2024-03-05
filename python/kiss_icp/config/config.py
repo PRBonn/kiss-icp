@@ -38,7 +38,7 @@ class MappingConfig(BaseModel):
 
 class RegistrationConfig(BaseModel):
     max_num_iterations: Optional[int] = 500
-    estimation_threshold: Optional[float] = 0.0001
+    convergence_criterion: Optional[float] = 0.0001
 
 
 class AdaptiveThresholdConfig(BaseModel):

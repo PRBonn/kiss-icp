@@ -31,8 +31,8 @@
 namespace kiss_icp {
 
 struct Registration {
-    explicit Registration(int max_num_iteration, double estimation_threshold)
-        : max_num_iterations_(max_num_iteration), estimation_threshold_(estimation_threshold) {}
+    explicit Registration(int max_num_iteration, double convergence_criterion)
+        : max_num_iterations_(max_num_iteration), convergence_criterion_(convergence_criterion) {}
 
     // Register a point cloud to the given internal map representation. The config input parameter
     // contains all the necessary parametrization for the ICP loop
@@ -43,6 +43,6 @@ struct Registration {
                                   double kernel);
 
     int max_num_iterations_;
-    double estimation_threshold_;
+    double convergence_criterion_;
 };
 }  // namespace kiss_icp

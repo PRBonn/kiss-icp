@@ -167,7 +167,7 @@ Sophus::SE3d Registration::AlignPointsToMap(const std::vector<Eigen::Vector3d> &
         // Update iterations
         T_icp = estimation * T_icp;
         // Termination criteria
-        if (dx.norm() < estimation_threshold_) break;
+        if (dx.norm() < convergence_criterion_) break;
     }
     // Spit the final transformation
     return T_icp * initial_guess;

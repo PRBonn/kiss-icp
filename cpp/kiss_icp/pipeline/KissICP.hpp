@@ -45,7 +45,7 @@ struct KISSConfig {
 
     // registration params
     int max_num_iterations = 500;
-    double estimation_threshold = 0.0001;
+    double convergence_criterion = 0.0001;
 
     // Motion compensation
     bool deskew = false;
@@ -59,7 +59,7 @@ public:
 public:
     explicit KissICP(const KISSConfig &config)
         : config_(config),
-          registration_(config.max_num_iterations, config.estimation_threshold),
+          registration_(config.max_num_iterations, config.convergence_criterion),
           local_map_(config.voxel_size, config.max_range, config.max_points_per_voxel),
           adaptive_threshold_(config.initial_threshold, config.min_motion_th, config.max_range) {}
 
