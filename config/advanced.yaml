@@ -5,7 +5,6 @@ out_dir: "results"
 
 data:
   deskew: True
-  preprocess: True
   max_range: 100.0 # can be also changed in the CLI
   min_range: 0.0
 
@@ -17,3 +16,7 @@ adaptive_threshold:
   fixed_threshold: 0.3 # <- optional, disables adaptive threshold
   # initial_threshold: 2.0
   # min_motion_th: 0.1
+
+registration:
+  max_num_iterations: 500 # <- optional
+  convergence_criterion: 0.0001 # <- optional

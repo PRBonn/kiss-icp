@@ -68,11 +68,11 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
     const auto initial_guess = last_pose * prediction;
 
     // Run icp
-    const Sophus::SE3d new_pose = kiss_icp::RegisterFrame(source,         //
-                                                          local_map_,     //
-                                                          initial_guess,  //
-                                                          3.0 * sigma,    //
-                                                          sigma / 3.0);
+    const Sophus::SE3d new_pose = registration_.AlignPointsToMap(source,         //
+                                                                 local_map_,     //
+                                                                 initial_guess,  //
+                                                                 3.0 * sigma,    //
+                                                                 sigma / 3.0);
     const auto model_deviation = initial_guess.inverse() * new_pose;
     adaptive_threshold_.UpdateModelDeviation(model_deviation);
     local_map_.Update(frame_downsample, new_pose);
