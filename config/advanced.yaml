@@ -19,5 +19,5 @@ adaptive_threshold:
 
 registration:
   max_num_iterations: 500 # <- optional
-  estimation_threshold: 0.0001 # <- optional
+  convergence_criterion: 0.0001 # <- optional
   max_num_threads: 0 # <- optional, 0 means automatic
