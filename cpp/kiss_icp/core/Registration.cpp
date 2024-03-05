@@ -100,8 +100,8 @@ Associations FindDataAssociations(const std::vector<Eigen::Vector3d> &points,
 }
 
 LinearSystem BuildLinearSystem(const Associations &associations, double kernel) {
-    auto compute_jacobian_and_residual = [](auto source_and_target) {
-        const auto &[source, target] = source_and_target;
+    auto compute_jacobian_and_residual = [](auto association) {
+        const auto &[source, target] = association;
         const Eigen::Vector3d residual = source - target;
         Eigen::Matrix3_6d J_r;
         J_r.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity();
