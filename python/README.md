@@ -59,7 +59,7 @@ This should print the following help message:
 You can generate a default `config.yaml` by typing
 
 ```sh
-kiss_icp_config
+kiss_icp_dump_config
 ```
 
 Now, you can modify the parameters and pass the file to the `--config` option when running the `kiss_icp_pipeline`.
