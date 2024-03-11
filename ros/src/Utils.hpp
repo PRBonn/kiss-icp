@@ -116,7 +116,7 @@ inline auto NormalizeTimestamps(const std::vector<double> &timestamps) {
 }
 
 inline auto ExtractTimestampsFromMsg(const PointCloud2::ConstSharedPtr msg,
-                                     const PointField &field) {
+                                     const PointField &timestamp_field) {
     auto extract_timestamps =
         [&msg]<typename T>(sensor_msgs::PointCloud2ConstIterator<T> &&it) -> std::vector<double> {
         const size_t n_points = msg->height * msg->width;
@@ -127,9 +127,6 @@ inline auto ExtractTimestampsFromMsg(const PointCloud2::ConstSharedPtr msg,
         }
         return NormalizeTimestamps(timestamps);
     };
-
-    // Get timestamp field that must be one of the following : {t, timestamp, time}
-    auto timestamp_field = GetTimestampField(msg);
 
     // According to the type of the timestamp == type, return a PointCloud2ConstIterator<type>
     using sensor_msgs::PointCloud2ConstIterator;
