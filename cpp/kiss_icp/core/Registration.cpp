@@ -147,14 +147,12 @@ namespace kiss_icp {
 Registration::Registration(int max_num_iteration, double convergence_criterion, int max_num_threads)
     : max_num_iterations_(max_num_iteration),
       convergence_criterion_(convergence_criterion),
-      max_num_threads_(max_num_threads) {
-    // Only manipulate the number of threads if the user specifies something greater than 0
-    int threads_num = max_num_threads > 0 ? max_num_threads : tbb::info::default_concurrency();
-
+      // Only manipulate the number of threads if the user specifies something greater than 0
+      max_num_threads_(max_num_threads > 0 ? max_num_threads : tbb::info::default_concurrency()) {
     // This global variable requires static duration storage to be able to manipulate the max
     // concurrency from TBB across the entire class
     static const auto g = tbb::global_control(tbb::global_control::max_allowed_parallelism,
-                                              static_cast<size_t>(threads_num));
+                                              static_cast<size_t>(max_num_threads_));
 }
 
 Sophus::SE3d Registration::AlignPointsToMap(const std::vector<Eigen::Vector3d> &frame,
