@@ -85,7 +85,7 @@ private:
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr traj_publisher_;
 
     /// KISS-ICP
-    kiss_icp::pipeline::KissICP odometry_;
+    std::unique_ptr<kiss_icp::pipeline::KissICP> odometry_;
     kiss_icp::pipeline::KISSConfig config_;
 
     /// Global/map coordinate frame.
