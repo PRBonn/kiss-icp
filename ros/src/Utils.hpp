@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <memory>
+#include <optional>
 #include <regex>
 #include <sophus/se3.hpp>
 #include <string>
@@ -35,6 +36,8 @@
 #include <geometry_msgs/msg/pose.hpp>
 #include <geometry_msgs/msg/transform.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
+#include <rclcpp/logger.hpp>
+#include <rclcpp/logging.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
 
@@ -88,17 +91,18 @@ inline std::string FixFrameId(const std::string &frame_id) {
     return std::regex_replace(frame_id, std::regex("^/"), "");
 }
 
-inline auto GetTimestampField(const PointCloud2::ConstSharedPtr msg) {
+inline std::optional<PointField> GetTimestampField(const PointCloud2::ConstSharedPtr msg) {
     PointField timestamp_field;
     for (const auto &field : msg->fields) {
         if ((field.name == "t" || field.name == "timestamp" || field.name == "time")) {
             timestamp_field = field;
         }
     }
-    if (!timestamp_field.count) {
-        throw std::runtime_error("Field 't', 'timestamp', or 'time'  does not exist");
-    }
-    return timestamp_field;
+    if (timestamp_field.count) return timestamp_field;
+    RCLCPP_WARN_ONCE(rclcpp::get_logger("odometry_node"),
+                     "Field 't', 'timestamp', or 'time'  does not exist. "
+                     "Disabling scan deskewing");
+    return {};
 }
 
 // Normalize timestamps from 0.0 to 1.0
@@ -188,9 +192,10 @@ inline void FillPointCloud2Timestamp(const std::vector<double> &timestamps, Poin
 
 inline std::vector<double> GetTimestamps(const PointCloud2::ConstSharedPtr msg) {
     auto timestamp_field = GetTimestampField(msg);
+    if (!timestamp_field.has_value()) return {};
 
     // Extract timestamps from cloud_msg
-    std::vector<double> timestamps = ExtractTimestampsFromMsg(msg, timestamp_field);
+    std::vector<double> timestamps = ExtractTimestampsFromMsg(msg, timestamp_field.value());
 
     return timestamps;
 }
