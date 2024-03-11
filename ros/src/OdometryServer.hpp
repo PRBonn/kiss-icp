@@ -86,7 +86,6 @@ private:
 
     /// KISS-ICP
     std::unique_ptr<kiss_icp::pipeline::KissICP> kiss_icp_;
-    kiss_icp::pipeline::KISSConfig config_;
 
     /// Global/map coordinate frame.
     std::string odom_frame_{"odom"};
