@@ -73,7 +73,7 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
     // clang-format on
 
     // Construct the main KISS-ICP odometry node
-    odometry_ = std::make_unique<kiss_icp::pipeline::KissICP>(config_);
+    kiss_icp_ = std::make_unique<kiss_icp::pipeline::KissICP>(config_);
 
     // Initialize subscribers
     pointcloud_sub_ = create_subscription<sensor_msgs::msg::PointCloud2>(
@@ -128,10 +128,10 @@ void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSha
     const auto egocentric_estimation = (base_frame_.empty() || base_frame_ == cloud_frame_id);
 
     // Register frame, main entry point to KISS-ICP pipeline
-    const auto &[frame, keypoints] = odometry_->RegisterFrame(points, timestamps);
+    const auto &[frame, keypoints] = kiss_icp_->RegisterFrame(points, timestamps);
 
     // Compute the pose using KISS, ego-centric to the LiDAR
-    const Sophus::SE3d kiss_pose = odometry_->poses().back();
+    const Sophus::SE3d kiss_pose = kiss_icp_->poses().back();
 
     // If necessary, transform the ego-centric pose to the specified base_link/base_footprint frame
     const auto pose = [&]() -> Sophus::SE3d {
@@ -186,7 +186,7 @@ void OdometryServer::PublishClouds(const std::vector<Eigen::Vector3d> frame,
     odom_header.frame_id = odom_frame_;
 
     // Publish map
-    const auto kiss_map = odometry_->LocalMap();
+    const auto kiss_map = kiss_icp_->LocalMap();
 
     if (!publish_odom_tf_) {
         // debugging happens in an egocentric world
