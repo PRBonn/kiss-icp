@@ -64,11 +64,14 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
     config.min_range = declare_parameter<double>("min_range", config.min_range);
     config.deskew = declare_parameter<bool>("deskew", config.deskew);
     config.voxel_size = declare_parameter<double>("voxel_size", config.max_range / 100.0);
-    config.max_points_per_voxel = declare_parameter<int>("max_points_per_voxel", config.max_points_per_voxel);
-    config.initial_threshold = declare_parameter<double>("initial_threshold", config.initial_threshold);
+    config.max_points_per_voxel =
+        declare_parameter<int>("max_points_per_voxel", config.max_points_per_voxel);
+    config.initial_threshold =
+        declare_parameter<double>("initial_threshold", config.initial_threshold);
     config.min_motion_th = declare_parameter<double>("min_motion_th", config.min_motion_th);
     if (config.max_range < config.min_range) {
-        RCLCPP_WARN(get_logger(), "[WARNING] max_range is smaller than min_range, settng min_range to 0.0");
+        RCLCPP_WARN(get_logger(),
+                    "[WARNING] max_range is smaller than min_range, settng min_range to 0.0");
         config.min_range = 0.0;
     }
 
