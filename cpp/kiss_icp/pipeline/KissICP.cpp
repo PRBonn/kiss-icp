@@ -37,7 +37,7 @@ namespace kiss_icp::pipeline {
 KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vector3d> &frame,
                                                     const std::vector<double> &timestamps) {
     const auto &deskew_frame = [&]() -> std::vector<Eigen::Vector3d> {
-        if (!config_.deskew) return frame;
+        if (!config_.deskew || timestamps.empty()) return frame;
         // TODO(Nacho) Add some asserts here to sanitize the timestamps
 
         //  If not enough poses for the estimation, do not de-skew
@@ -68,11 +68,11 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
     const auto initial_guess = last_pose * prediction;
 
     // Run icp
-    const Sophus::SE3d new_pose = kiss_icp::RegisterFrame(source,         //
-                                                          local_map_,     //
-                                                          initial_guess,  //
-                                                          3.0 * sigma,    //
-                                                          sigma / 3.0);
+    const Sophus::SE3d new_pose = registration_.AlignPointsToMap(source,         //
+                                                                 local_map_,     //
+                                                                 initial_guess,  //
+                                                                 3.0 * sigma,    //
+                                                                 sigma / 3.0);
     const auto model_deviation = initial_guess.inverse() * new_pose;
     adaptive_threshold_.UpdateModelDeviation(model_deviation);
     local_map_.Update(frame_downsample, new_pose);

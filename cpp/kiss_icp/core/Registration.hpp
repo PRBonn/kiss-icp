@@ -30,9 +30,17 @@
 
 namespace kiss_icp {
 
-Sophus::SE3d RegisterFrame(const std::vector<Eigen::Vector3d> &frame,
-                           const VoxelHashMap &voxel_map,
-                           const Sophus::SE3d &initial_guess,
-                           double max_correspondence_distance,
-                           double kernel);
+struct Registration {
+    explicit Registration(int max_num_iteration, double convergence_criterion, int max_num_threads);
+
+    Sophus::SE3d AlignPointsToMap(const std::vector<Eigen::Vector3d> &frame,
+                                  const VoxelHashMap &voxel_map,
+                                  const Sophus::SE3d &initial_guess,
+                                  double max_correspondence_distance,
+                                  double kernel);
+
+    int max_num_iterations_;
+    double convergence_criterion_;
+    int max_num_threads_;
+};
 }  // namespace kiss_icp
