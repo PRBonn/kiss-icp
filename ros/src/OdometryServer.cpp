@@ -70,8 +70,11 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
     config.initial_threshold =
         declare_parameter<double>("initial_threshold", config.initial_threshold);
     config.min_motion_th = declare_parameter<double>("min_motion_th", config.min_motion_th);
-    config.max_num_iterations = declare_parameter<int>("max_num_iterations", config.max_num_iterations);
-    config.convergence_criterion = declare_parameter<double>("convergence_criterion", config.convergence_criterion);
+    config.max_num_iterations =
+        declare_parameter<int>("max_num_iterations", config.max_num_iterations);
+    config.convergence_criterion =
+        declare_parameter<double>("convergence_criterion", config.convergence_criterion);
+    config.max_num_threads = declare_parameter<int>("max_num_threads", config.max_num_threads);
     if (config.max_range < config.min_range) {
         RCLCPP_WARN(get_logger(),
                     "[WARNING] max_range is smaller than min_range, settng min_range to 0.0");
