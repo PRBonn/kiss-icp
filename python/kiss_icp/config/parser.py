@@ -90,7 +90,7 @@ def load_config(
     return config
 
 
-def write_config(config: KISSConfig, filename: str):
+def write_config(config: KISSConfig = KISSConfig(), filename: str = "kiss_icp.yaml"):
     with open(filename, "w") as outfile:
         try:
             yaml = importlib.import_module("yaml")

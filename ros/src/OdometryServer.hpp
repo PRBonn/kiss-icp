@@ -31,7 +31,6 @@
 #include <tf2_ros/transform_listener.h>
 
 #include <nav_msgs/msg/odometry.hpp>
-#include <nav_msgs/msg/path.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <string>
@@ -80,13 +79,8 @@ private:
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr kpoints_publisher_;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr map_publisher_;
 
-    /// Path publisher
-    nav_msgs::msg::Path path_msg_;
-    rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr traj_publisher_;
-
     /// KISS-ICP
-    kiss_icp::pipeline::KissICP odometry_;
-    kiss_icp::pipeline::KISSConfig config_;
+    std::unique_ptr<kiss_icp::pipeline::KissICP> kiss_icp_;
 
     /// Global/map coordinate frame.
     std::string odom_frame_{"odom"};
