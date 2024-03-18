@@ -31,8 +31,7 @@
 namespace kiss_icp {
 
 struct Registration {
-    explicit Registration(int max_num_iteration, double convergence_criterion)
-        : max_num_iterations_(max_num_iteration), convergence_criterion_(convergence_criterion) {}
+    explicit Registration(int max_num_iteration, double convergence_criterion, int max_num_threads);
 
     Sophus::SE3d AlignPointsToMap(const std::vector<Eigen::Vector3d> &frame,
                                   const VoxelHashMap &voxel_map,
@@ -42,5 +41,6 @@ struct Registration {
 
     int max_num_iterations_;
     double convergence_criterion_;
+    int max_num_threads_;
 };
 }  // namespace kiss_icp

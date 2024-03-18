@@ -39,6 +39,7 @@ class MappingConfig(BaseModel):
 class RegistrationConfig(BaseModel):
     max_num_iterations: Optional[int] = 500
     convergence_criterion: Optional[float] = 0.0001
+    max_num_threads: Optional[int] = 0  # 0 means automatic
 
 
 class AdaptiveThresholdConfig(BaseModel):
