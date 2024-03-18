@@ -49,6 +49,11 @@ class config:
     initial_threshold: float = 2.0
     min_motion_th: float = 0.1
 
+    # Registration
+    max_num_iterations: int = 500  #
+    convergence_criterion: float = 0.0001
+    max_num_threads: int = 0
+
     # Covariance diagonal values
     position_covariance: float = 0.1
     orientation_covariance: float = 0.1
@@ -90,8 +95,14 @@ def generate_launch_description():
                 "deskew": config.deskew,
                 "max_points_per_voxel": config.max_points_per_voxel,
                 "voxel_size": config.voxel_size,
+                # Adaptive threshold
                 "initial_threshold": config.initial_threshold,
                 "min_motion_th": config.min_motion_th,
+                # Registration
+                "max_num_iterations": config.max_num_iterations,
+                "convergence_criterion": config.convergence_criterion,
+                "max_num_threads": config.max_num_threads,
+                # Fixed covariances
                 "position_covariance": config.position_covariance,
                 "orientation_covariance": config.orientation_covariance,
                 # ROS CLI arguments
