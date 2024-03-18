@@ -52,7 +52,7 @@ using utils::GetTimestamps;
 using utils::PointCloud2ToEigen;
 
 OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
-    : rclcpp::Node("odometry_node", options) {
+    : rclcpp::Node("kiss_icp_node", options) {
     base_frame_ = declare_parameter<std::string>("base_frame", base_frame_);
     odom_frame_ = declare_parameter<std::string>("odom_frame", odom_frame_);
     publish_odom_tf_ = declare_parameter<bool>("publish_odom_tf", publish_odom_tf_);
@@ -169,9 +169,8 @@ void OdometryServer::PublishOdometry(const Sophus::SE3d &kiss_pose,
 void OdometryServer::PublishClouds(const std::vector<Eigen::Vector3d> frame,
                                    const std::vector<Eigen::Vector3d> keypoints,
                                    const std_msgs::msg::Header &header) {
-    // debugging happens in an egocentric world, always
-    const auto kiss_map = odometry_.LocalMap();
-    const auto kiss_pose = odometry_.poses().back().inverse();
+    const auto kiss_map = kiss_icp_->LocalMap();
+    const auto kiss_pose = kiss_icp_->poses().back().inverse();
 
     frame_publisher_->publish(std::move(EigenToPointCloud2(frame, header)));
     kpoints_publisher_->publish(std::move(EigenToPointCloud2(keypoints, header)));
