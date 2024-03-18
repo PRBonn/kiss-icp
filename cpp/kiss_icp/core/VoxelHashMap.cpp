@@ -31,22 +31,6 @@
 
 namespace kiss_icp {
 
-std::vector<VoxelHashMap::Voxel> VoxelHashMap::GetAdjacentVoxels(const Eigen::Vector3d &point,
-                                                                 int adjacent_voxels) const {
-    auto kx = static_cast<int>(point[0] / voxel_size_);
-    auto ky = static_cast<int>(point[1] / voxel_size_);
-    auto kz = static_cast<int>(point[2] / voxel_size_);
-    std::vector<Voxel> voxel_neighborhood;
-    for (int i = kx - adjacent_voxels; i < kx + adjacent_voxels + 1; ++i) {
-        for (int j = ky - adjacent_voxels; j < ky + adjacent_voxels + 1; ++j) {
-            for (int k = kz - adjacent_voxels; k < kz + adjacent_voxels + 1; ++k) {
-                voxel_neighborhood.emplace_back(i, j, k);
-            }
-        }
-    }
-    return voxel_neighborhood;
-}
-
 std::vector<Eigen::Vector3d> VoxelHashMap::GetPoints(const std::vector<Voxel> &query_voxels) const {
     std::vector<Eigen::Vector3d> points;
     points.reserve(query_voxels.size() * static_cast<size_t>(max_points_per_voxel_));

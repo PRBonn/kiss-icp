@@ -46,6 +46,7 @@ struct KISSConfig {
     // registration params
     int max_num_iterations = 500;
     double convergence_criterion = 0.0001;
+    int max_num_threads = 0;
 
     // Motion compensation
     bool deskew = false;
@@ -59,11 +60,10 @@ public:
 public:
     explicit KissICP(const KISSConfig &config)
         : config_(config),
-          registration_(config.max_num_iterations, config.convergence_criterion),
+          registration_(
+              config.max_num_iterations, config.convergence_criterion, config.max_num_threads),
           local_map_(config.voxel_size, config.max_range, config.max_points_per_voxel),
           adaptive_threshold_(config.initial_threshold, config.min_motion_th, config.max_range) {}
-
-    KissICP() : KissICP(KISSConfig{}) {}
 
 public:
     Vector3dVectorTuple RegisterFrame(const std::vector<Eigen::Vector3d> &frame);
