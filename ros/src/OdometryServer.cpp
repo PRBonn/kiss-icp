@@ -54,26 +54,29 @@ using utils::PointCloud2ToEigen;
 
 OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
     : rclcpp::Node("odometry_node", options) {
-    // clang-format off
     base_frame_ = declare_parameter<std::string>("base_frame", base_frame_);
     odom_frame_ = declare_parameter<std::string>("odom_frame", odom_frame_);
     publish_odom_tf_ = declare_parameter<bool>("publish_odom_tf", publish_odom_tf_);
     publish_debug_clouds_ = declare_parameter<bool>("visualize", publish_debug_clouds_);
-    config_.max_range = declare_parameter<double>("max_range", config_.max_range);
-    config_.min_range = declare_parameter<double>("min_range", config_.min_range);
-    config_.deskew = declare_parameter<bool>("deskew", config_.deskew);
-    config_.voxel_size = declare_parameter<double>("voxel_size", config_.max_range / 100.0);
-    config_.max_points_per_voxel = declare_parameter<int>("max_points_per_voxel", config_.max_points_per_voxel);
-    config_.initial_threshold = declare_parameter<double>("initial_threshold", config_.initial_threshold);
-    config_.min_motion_th = declare_parameter<double>("min_motion_th", config_.min_motion_th);
-    if (config_.max_range < config_.min_range) {
-        RCLCPP_WARN(get_logger(), "[WARNING] max_range is smaller than min_range, settng min_range to 0.0");
-        config_.min_range = 0.0;
+
+    kiss_icp::pipeline::KISSConfig config;
+    config.max_range = declare_parameter<double>("max_range", config.max_range);
+    config.min_range = declare_parameter<double>("min_range", config.min_range);
+    config.deskew = declare_parameter<bool>("deskew", config.deskew);
+    config.voxel_size = declare_parameter<double>("voxel_size", config.max_range / 100.0);
+    config.max_points_per_voxel =
+        declare_parameter<int>("max_points_per_voxel", config.max_points_per_voxel);
+    config.initial_threshold =
+        declare_parameter<double>("initial_threshold", config.initial_threshold);
+    config.min_motion_th = declare_parameter<double>("min_motion_th", config.min_motion_th);
+    if (config.max_range < config.min_range) {
+        RCLCPP_WARN(get_logger(),
+                    "[WARNING] max_range is smaller than min_range, settng min_range to 0.0");
+        config.min_range = 0.0;
     }
-    // clang-format on
 
     // Construct the main KISS-ICP odometry node
-    odometry_ = kiss_icp::pipeline::KissICP(config_);
+    kiss_icp_ = std::make_unique<kiss_icp::pipeline::KissICP>(config);
 
     // Initialize subscribers
     pointcloud_sub_ = create_subscription<sensor_msgs::msg::PointCloud2>(
@@ -121,17 +124,14 @@ Sophus::SE3d OdometryServer::LookupTransform(const std::string &target_frame,
 void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msg) {
     const auto cloud_frame_id = msg->header.frame_id;
     const auto points = PointCloud2ToEigen(msg);
-    const auto timestamps = [&]() -> std::vector<double> {
-        if (!config_.deskew) return {};
-        return GetTimestamps(msg);
-    }();
+    const auto timestamps = GetTimestamps(msg);
     const auto egocentric_estimation = (base_frame_.empty() || base_frame_ == cloud_frame_id);
 
     // Register frame, main entry point to KISS-ICP pipeline
-    const auto &[frame, keypoints] = odometry_.RegisterFrame(points, timestamps);
+    const auto &[frame, keypoints] = kiss_icp_->RegisterFrame(points, timestamps);
 
     // Compute the pose using KISS, ego-centric to the LiDAR
-    const Sophus::SE3d kiss_pose = odometry_.poses().back();
+    const Sophus::SE3d kiss_pose = kiss_icp_->poses().back();
 
     // If necessary, transform the ego-centric pose to the specified base_link/base_footprint frame
     const auto pose = [&]() -> Sophus::SE3d {
@@ -186,7 +186,7 @@ void OdometryServer::PublishClouds(const std::vector<Eigen::Vector3d> frame,
     odom_header.frame_id = odom_frame_;
 
     // Publish map
-    const auto kiss_map = odometry_.LocalMap();
+    const auto kiss_map = kiss_icp_->LocalMap();
 
     if (!publish_odom_tf_) {
         // debugging happens in an egocentric world
