@@ -52,7 +52,7 @@ class config:
     # Registration
     max_num_iterations: int = 500  #
     convergence_criterion: float = 0.0001
-    max_num_threads: int = 1
+    max_num_threads: int = 0
 
     # Covariance diagonal values
     position_covariance: float = 0.1
