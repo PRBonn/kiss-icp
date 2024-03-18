@@ -49,6 +49,10 @@ class config:
     initial_threshold: float = 2.0
     min_motion_th: float = 0.1
 
+    # Covariance diagonal values
+    position_covariance: float = 0.1
+    orientation_covariance: float = 0.1
+
 
 def generate_launch_description():
     use_sim_time = LaunchConfiguration("use_sim_time", default="true")
@@ -88,6 +92,8 @@ def generate_launch_description():
                 "voxel_size": config.voxel_size,
                 "initial_threshold": config.initial_threshold,
                 "min_motion_th": config.min_motion_th,
+                "position_covariance": config.position_covariance,
+                "orientation_covariance": config.orientation_covariance,
                 # ROS CLI arguments
                 "publish_debug_clouds": visualize,
                 "use_sim_time": use_sim_time,

@@ -57,6 +57,8 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
     odom_frame_ = declare_parameter<std::string>("odom_frame", odom_frame_);
     publish_odom_tf_ = declare_parameter<bool>("publish_odom_tf", publish_odom_tf_);
     publish_debug_clouds_ = declare_parameter<bool>("publish_debug_clouds", publish_debug_clouds_);
+    position_covariance_ = declare_parameter<double>("position_covariance", 0.1);
+    orientation_covariance_ = declare_parameter<double>("orientation_covariance",0.1);
 
     kiss_icp::pipeline::KISSConfig config;
     config.max_range = declare_parameter<double>("max_range", config.max_range);
@@ -163,6 +165,13 @@ void OdometryServer::PublishOdometry(const Sophus::SE3d &pose,
     odom_msg.header.stamp = stamp;
     odom_msg.header.frame_id = odom_frame_;
     odom_msg.pose.pose = tf2::sophusToPose(pose);
+    odom_msg.pose.covariance.fill(0.0);
+    odom_msg.pose.covariance[0] = position_covariance_;
+    odom_msg.pose.covariance[7] = position_covariance_;
+    odom_msg.pose.covariance[14] = position_covariance_;
+    odom_msg.pose.covariance[21] = orientation_covariance_;
+    odom_msg.pose.covariance[28] = orientation_covariance_;
+    odom_msg.pose.covariance[35] = orientation_covariance_;
     odom_publisher_->publish(std::move(odom_msg));
 }
 
