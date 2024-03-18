@@ -23,6 +23,8 @@
 #include "Registration.hpp"
 
 #include <tbb/blocked_range.h>
+#include <tbb/global_control.h>
+#include <tbb/info.h>
 #include <tbb/parallel_reduce.h>
 
 #include <algorithm>
@@ -50,10 +52,29 @@ void TransformPoints(const Sophus::SE3d &T, std::vector<Eigen::Vector3d> &points
                    [&](const auto &point) { return T * point; });
 }
 
+using Voxel = kiss_icp::VoxelHashMap::Voxel;
+std::vector<Voxel> GetAdjacentVoxels(const Voxel &voxel, int adjacent_voxels = 1) {
+    std::vector<Voxel> voxel_neighborhood;
+    for (int i = voxel.x() - adjacent_voxels; i < voxel.x() + adjacent_voxels + 1; ++i) {
+        for (int j = voxel.y() - adjacent_voxels; j < voxel.y() + adjacent_voxels + 1; ++j) {
+            for (int k = voxel.z() - adjacent_voxels; k < voxel.z() + adjacent_voxels + 1; ++k) {
+                voxel_neighborhood.emplace_back(i, j, k);
+            }
+        }
+    }
+    return voxel_neighborhood;
+}
+
 Eigen::Vector3d GetClosestNeighbor(const Eigen::Vector3d &point,
                                    const kiss_icp::VoxelHashMap &voxel_map) {
-    const auto &query_voxels = voxel_map.GetAdjacentVoxels(point);
+    // Convert the point to voxel coordinates
+    const auto &voxel = voxel_map.PointToVoxel(point);
+    // Get nearby voxels on the map
+    const auto &query_voxels = GetAdjacentVoxels(voxel);
+    // Extract the points contained within the neighborhood voxels
     const auto &neighbors = voxel_map.GetPoints(query_voxels);
+
+    // Find the nearest neighbor
     Eigen::Vector3d closest_neighbor;
     double closest_distance2 = std::numeric_limits<double>::max();
     std::for_each(neighbors.cbegin(), neighbors.cend(), [&](const auto &neighbor) {
@@ -141,6 +162,17 @@ LinearSystem BuildLinearSystem(const Associations &associations, double kernel) 
 }  // namespace
 
 namespace kiss_icp {
+
+Registration::Registration(int max_num_iteration, double convergence_criterion, int max_num_threads)
+    : max_num_iterations_(max_num_iteration),
+      convergence_criterion_(convergence_criterion),
+      // Only manipulate the number of threads if the user specifies something greater than 0
+      max_num_threads_(max_num_threads > 0 ? max_num_threads : tbb::info::default_concurrency()) {
+    // This global variable requires static duration storage to be able to manipulate the max
+    // concurrency from TBB across the entire class
+    static const auto tbb_control_settings = tbb::global_control(
+        tbb::global_control::max_allowed_parallelism, static_cast<size_t>(max_num_threads_));
+}
 
 Sophus::SE3d Registration::AlignPointsToMap(const std::vector<Eigen::Vector3d> &frame,
                                             const VoxelHashMap &voxel_map,
