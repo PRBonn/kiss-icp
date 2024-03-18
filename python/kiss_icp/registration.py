@@ -31,14 +31,21 @@ def get_registration(config: KISSConfig):
     return Registration(
         max_num_iterations=config.registration.max_num_iterations,
         convergence_criterion=config.registration.convergence_criterion,
+        max_num_threads=config.registration.max_num_threads,
     )
 
 
 class Registration:
-    def __init__(self, max_num_iterations: int, convergence_criterion: float):
+    def __init__(
+        self,
+        max_num_iterations: int,
+        convergence_criterion: float,
+        max_num_threads: int = 0,
+    ):
         self._registration = kiss_icp_pybind._Registration(
             max_num_iterations=max_num_iterations,
             convergence_criterion=convergence_criterion,
+            max_num_threads=max_num_threads,
         )
 
     def align_points_to_map(
