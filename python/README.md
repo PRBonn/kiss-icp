@@ -54,6 +54,16 @@ kiss_icp_pipeline --help
 This should print the following help message:
 ![out](https://user-images.githubusercontent.com/21349875/193282970-25a400aa-ebcd-487a-b839-faa04eeca5b9.png)
 
+### Config
+
+You can generate a default `config.yaml` by typing
+
+```sh
+kiss_icp_dump_config
+```
+
+Now, you can modify the parameters and pass the file to the `--config` option when running the `kiss_icp_pipeline`.
+
 ### Install Python API (developer mode)
 
 If you plan to modify the code then you need to setup the dev dependencies, luckily, the only real

@@ -30,13 +30,19 @@ from typing import Any, Dict, Optional
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from kiss_icp.config.config import AdaptiveThresholdConfig, DataConfig, MappingConfig
+from kiss_icp.config.config import (
+    AdaptiveThresholdConfig,
+    DataConfig,
+    MappingConfig,
+    RegistrationConfig,
+)
 
 
 class KISSConfig(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="kiss_icp_")
     out_dir: str = "results"
     data: DataConfig = DataConfig()
+    registration: RegistrationConfig = RegistrationConfig()
     mapping: MappingConfig = MappingConfig()
     adaptive_threshold: AdaptiveThresholdConfig = AdaptiveThresholdConfig()
 
@@ -84,7 +90,7 @@ def load_config(
     return config
 
 
-def write_config(config: KISSConfig, filename: str):
+def write_config(config: KISSConfig = KISSConfig(), filename: str = "kiss_icp.yaml"):
     with open(filename, "w") as outfile:
         try:
             yaml = importlib.import_module("yaml")
