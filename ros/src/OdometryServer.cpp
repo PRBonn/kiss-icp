@@ -40,7 +40,6 @@
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <nav_msgs/msg/odometry.hpp>
-#include <nav_msgs/msg/path.hpp>
 #include <rclcpp/qos.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
@@ -86,8 +85,6 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
     // Initialize publishers
     rclcpp::QoS qos((rclcpp::SystemDefaultsQoS().keep_last(1).durability_volatile()));
     odom_publisher_ = create_publisher<nav_msgs::msg::Odometry>("/kiss/odometry", qos);
-    traj_publisher_ = create_publisher<nav_msgs::msg::Path>("/kiss/trajectory", qos);
-    path_msg_.header.frame_id = odom_frame_;
     if (publish_debug_clouds_) {
         frame_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("/kiss/frame", qos);
         kpoints_publisher_ =
@@ -160,14 +157,6 @@ void OdometryServer::PublishOdometry(const Sophus::SE3d &pose,
         transform_msg.transform = tf2::sophusToTransform(pose);
         tf_broadcaster_->sendTransform(transform_msg);
     }
-
-    // publish trajectory msg
-    geometry_msgs::msg::PoseStamped pose_msg;
-    pose_msg.header.stamp = stamp;
-    pose_msg.header.frame_id = odom_frame_;
-    pose_msg.pose = tf2::sophusToPose(pose);
-    path_msg_.poses.push_back(pose_msg);
-    traj_publisher_->publish(path_msg_);
 
     // publish odometry msg
     nav_msgs::msg::Odometry odom_msg;
