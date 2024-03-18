@@ -151,8 +151,8 @@ Registration::Registration(int max_num_iteration, double convergence_criterion, 
       max_num_threads_(max_num_threads > 0 ? max_num_threads : tbb::info::default_concurrency()) {
     // This global variable requires static duration storage to be able to manipulate the max
     // concurrency from TBB across the entire class
-    static const auto g = tbb::global_control(tbb::global_control::max_allowed_parallelism,
-                                              static_cast<size_t>(max_num_threads_));
+    static const auto tbb_control_settings = tbb::global_control(
+        tbb::global_control::max_allowed_parallelism, static_cast<size_t>(max_num_threads_));
 }
 
 Sophus::SE3d Registration::AlignPointsToMap(const std::vector<Eigen::Vector3d> &frame,
