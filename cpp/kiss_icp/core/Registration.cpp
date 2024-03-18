@@ -52,10 +52,29 @@ void TransformPoints(const Sophus::SE3d &T, std::vector<Eigen::Vector3d> &points
                    [&](const auto &point) { return T * point; });
 }
 
+using Voxel = kiss_icp::VoxelHashMap::Voxel;
+std::vector<Voxel> GetAdjacentVoxels(const Voxel &voxel, int adjacent_voxels = 1) {
+    std::vector<Voxel> voxel_neighborhood;
+    for (int i = voxel.x() - adjacent_voxels; i < voxel.x() + adjacent_voxels + 1; ++i) {
+        for (int j = voxel.y() - adjacent_voxels; j < voxel.y() + adjacent_voxels + 1; ++j) {
+            for (int k = voxel.z() - adjacent_voxels; k < voxel.z() + adjacent_voxels + 1; ++k) {
+                voxel_neighborhood.emplace_back(i, j, k);
+            }
+        }
+    }
+    return voxel_neighborhood;
+}
+
 Eigen::Vector3d GetClosestNeighbor(const Eigen::Vector3d &point,
                                    const kiss_icp::VoxelHashMap &voxel_map) {
-    const auto &query_voxels = voxel_map.GetAdjacentVoxels(point);
+    // Convert the point to voxel coordinates
+    const auto &voxel = voxel_map.PointToVoxel(point);
+    // Get nearby voxels on the map
+    const auto &query_voxels = GetAdjacentVoxels(voxel);
+    // Extract the points contained within the neighborhood voxels
     const auto &neighbors = voxel_map.GetPoints(query_voxels);
+
+    // Find the nearest neighbor
     Eigen::Vector3d closest_neighbor;
     double closest_distance2 = std::numeric_limits<double>::max();
     std::for_each(neighbors.cbegin(), neighbors.cend(), [&](const auto &neighbor) {
