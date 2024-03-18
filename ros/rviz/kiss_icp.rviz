@@ -23,7 +23,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: frame_deskew
+    SyncSource: ""
 Visualization Manager:
   Class: ""
   Displays:
@@ -38,7 +38,7 @@ Visualization Manager:
           Axis: Z
           Channel Name: intensity
           Class: rviz_default_plugins/PointCloud2
-          Color: 255; 255; 0
+          Color: 61; 229; 255
           Color Transformer: FlatColor
           Decay Time: 0
           Enabled: true
@@ -52,7 +52,7 @@ Visualization Manager:
           Selectable: true
           Size (Pixels): 3
           Size (m): 0.019999999552965164
-          Style: Flat Squares
+          Style: Points
           Topic:
             Depth: 5
             Durability Policy: Volatile
@@ -84,8 +84,8 @@ Visualization Manager:
           Name: kiss_keypoints
           Position Transformer: XYZ
           Selectable: true
-          Size (Pixels): 10
-          Size (m): 1
+          Size (Pixels): 3
+          Size (m): 0.20000000298023224
           Style: Points
           Topic:
             Depth: 5
@@ -100,14 +100,14 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 98.31531524658203
-            Min Value: 0.6587954163551331
+            Max Value: 14.369325637817383
+            Min Value: 0.20239250361919403
             Value: true
           Axis: Z
           Channel Name: intensity
           Class: rviz_default_plugins/PointCloud2
-          Color: 255; 255; 255
-          Color Transformer: AxisColor
+          Color: 102; 102; 102
+          Color Transformer: FlatColor
           Decay Time: 0
           Enabled: true
           Invert Rainbow: false
@@ -185,7 +185,7 @@ Visualization Manager:
       Value: true
   Enabled: true
   Global Options:
-    Background Color: 48; 48; 48
+    Background Color: 0; 0; 0
     Fixed Frame: odom
     Frame Rate: 30
   Name: root
@@ -229,16 +229,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 39.488563537597656
+      Distance: 178.319580078125
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 3.482842445373535
-        Y: 4.3972296714782715
-        Z: 10.242613792419434
+        X: -68.01193237304688
+        Y: 258.05126953125
+        Z: -27.22064781188965
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
