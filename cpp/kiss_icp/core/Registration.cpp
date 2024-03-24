@@ -33,6 +33,7 @@
 #include <sophus/se3.hpp>
 #include <sophus/so3.hpp>
 #include <tuple>
+#include <optional>
 
 #include "VoxelHashMap.hpp"
 
@@ -65,7 +66,7 @@ std::vector<Voxel> GetAdjacentVoxels(const Voxel &voxel, int adjacent_voxels = 1
     return voxel_neighborhood;
 }
 
-Eigen::Vector3d GetClosestNeighbor(const Eigen::Vector3d &point,
+std::optional<Eigen::Vector3d> GetClosestNeighbor(const Eigen::Vector3d &point,
                                    const kiss_icp::VoxelHashMap &voxel_map) {
     // Convert the point to voxel coordinates
     const auto &voxel = voxel_map.PointToVoxel(point);
@@ -75,12 +76,12 @@ Eigen::Vector3d GetClosestNeighbor(const Eigen::Vector3d &point,
     const auto &neighbors = voxel_map.GetPoints(query_voxels);
 
     // Find the nearest neighbor
-    Eigen::Vector3d closest_neighbor;
+    std::optional<Eigen::Vector3d> closest_neighbor;
     double closest_distance2 = std::numeric_limits<double>::max();
     std::for_each(neighbors.cbegin(), neighbors.cend(), [&](const auto &neighbor) {
         double distance = (neighbor - point).squaredNorm();
-        if (distance < closest_distance2) {
-            closest_neighbor = neighbor;
+        if (closest_neighbor == std::nullopt || distance < closest_distance2) {
+            closest_neighbor = std::make_optional(neighbor);
             closest_distance2 = distance;
         }
     });
@@ -102,9 +103,9 @@ Associations FindAssociations(const std::vector<Eigen::Vector3d> &points,
         [&](const tbb::blocked_range<points_iterator> &r, Associations res) -> Associations {
             res.reserve(r.size());
             for (const auto &point : r) {
-                Eigen::Vector3d closest_neighbor = GetClosestNeighbor(point, voxel_map);
-                if ((closest_neighbor - point).norm() < max_correspondance_distance) {
-                    res.emplace_back(point, closest_neighbor);
+                std::optional<Eigen::Vector3d> closest_neighbor = GetClosestNeighbor(point, voxel_map);
+                if (closest_neighbor != std::nullopt && (closest_neighbor.value() - point).norm() < max_correspondance_distance) {
+                    res.emplace_back(point, closest_neighbor.value());
                 }
             }
             return res;
