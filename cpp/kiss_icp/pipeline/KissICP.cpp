@@ -41,7 +41,7 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
         // TODO(Nacho) Add some asserts here to sanitize the timestamps
 
         //  If not enough poses for the estimation, do not de-skew
-        const size_t N = poses().size();
+        const size_t N = estimates().size();
         if (N <= 2) return frame;
 
         // Estimate linear and angular velocities

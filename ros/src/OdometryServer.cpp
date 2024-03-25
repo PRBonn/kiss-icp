@@ -177,12 +177,11 @@ void OdometryServer::PublishOdometry(const kiss_icp::Estimate &estimate,
     odom_msg.header.frame_id = odom_frame_;
     odom_msg.pose.pose = tf2::sophusToPose(pose);
     odom_msg.pose.covariance.fill(0.0);
-    odom_msg.pose.covariance[0] = position_covariance_;
-    odom_msg.pose.covariance[7] = position_covariance_;
-    odom_msg.pose.covariance[14] = position_covariance_;
-    odom_msg.pose.covariance[21] = orientation_covariance_;
-    odom_msg.pose.covariance[28] = orientation_covariance_;
-    odom_msg.pose.covariance[35] = orientation_covariance_;
+    for (int r = 0; r < 6; ++r) {
+        for (int c = 0; c < 6; ++c) {
+            odom_msg.pose.covariance[r * 6 + c] = estimate.covariance(r, c);
+        }
+    }
     odom_publisher_->publish(std::move(odom_msg));
 }
 
