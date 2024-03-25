@@ -28,16 +28,27 @@
 
 #include "VoxelHashMap.hpp"
 
+namespace Eigen {
+using Matrix6d = Eigen::Matrix<double, 6, 6>;
+using Matrix3_6d = Eigen::Matrix<double, 3, 6>;
+using Vector6d = Eigen::Matrix<double, 6, 1>;
+}  // namespace Eigen
+
 namespace kiss_icp {
+
+struct Estimate {
+    Sophus::SE3d pose;
+    Eigen::Matrix6d covariance = Eigen::Matrix6d::Zero();
+};
 
 struct Registration {
     explicit Registration(int max_num_iteration, double convergence_criterion, int max_num_threads);
 
-    Sophus::SE3d AlignPointsToMap(const std::vector<Eigen::Vector3d> &frame,
-                                  const VoxelHashMap &voxel_map,
-                                  const Sophus::SE3d &initial_guess,
-                                  double max_correspondence_distance,
-                                  double kernel);
+    Estimate AlignPointsToMap(const std::vector<Eigen::Vector3d> &frame,
+                              const VoxelHashMap &voxel_map,
+                              const Estimate &initial_guess,
+                              double max_correspondence_distance,
+                              double kernel_threshold);
 
     int max_num_iterations_;
     double convergence_criterion_;
