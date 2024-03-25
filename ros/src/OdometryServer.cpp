@@ -137,35 +137,38 @@ void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSha
     // Register frame, main entry point to KISS-ICP pipeline
     const auto &[frame, keypoints] = kiss_icp_->RegisterFrame(points, timestamps);
 
-    // Extract the last KISS-ICP pose, ego-centric to the LiDAR
-    const Sophus::SE3d kiss_pose = kiss_icp_->poses().back();
+    // Compute the pose using KISS, ego-centric to the LiDAR
+    const auto kiss_estimate = kiss_icp_->estimates().back();
 
-    // Spit the current estimated pose to ROS msgs handling the desired target frame
-    PublishOdometry(kiss_pose, msg->header);
-    // Publishing these clouds is a bit costly, so do it only if we are debugging
+    // If necessary, transform the ego-centric pose to the specified base_link/base_footprint frame
+    const auto estimate = [&]() -> kiss_icp::Estimate {
+        if (egocentric_estimation) return kiss_estimate;
+        kiss_icp::Estimate transformed;
+        const Sophus::SE3d cloud2base = LookupTransform(base_frame_, cloud_frame_id);
+        transformed.pose = cloud2base * kiss_estimate.pose * cloud2base.inverse();
+        transformed.covariance =
+            cloud2base.Adj() * kiss_estimate.covariance * cloud2base.Adj().transpose();
+        return transformed;
+    }();
+
+    // Spit the current estimated pose to ROS msgs
+    PublishOdometry(estimate, msg->header.stamp, cloud_frame_id);
+    // Publishing this clouds is a bit costly, so do it only if we are debugging
     if (publish_debug_clouds_) {
         PublishClouds(frame, keypoints, msg->header);
     }
 }
 
-void OdometryServer::PublishOdometry(const Sophus::SE3d &kiss_pose,
-                                     const std_msgs::msg::Header &header) {
-    // If necessary, transform the ego-centric pose to the specified base_link/base_footprint frame
-    const auto cloud_frame_id = header.frame_id;
-    const auto egocentric_estimation = (base_frame_.empty() || base_frame_ == cloud_frame_id);
-    const auto pose = [&]() -> Sophus::SE3d {
-        if (egocentric_estimation) return kiss_pose;
-        const Sophus::SE3d cloud2base = LookupTransform(base_frame_, cloud_frame_id, tf2_buffer_);
-        return cloud2base * kiss_pose * cloud2base.inverse();
-    }();
-
+void OdometryServer::PublishOdometry(const kiss_icp::Estimate &estimate,
+                                     const rclcpp::Time &stamp,
+                                     const std::string &cloud_frame_id) {
     // Broadcast the tf ---
     if (publish_odom_tf_) {
         geometry_msgs::msg::TransformStamped transform_msg;
         transform_msg.header.stamp = header.stamp;
         transform_msg.header.frame_id = odom_frame_;
-        transform_msg.child_frame_id = egocentric_estimation ? cloud_frame_id : base_frame_;
-        transform_msg.transform = tf2::sophusToTransform(pose);
+        transform_msg.child_frame_id = base_frame_.empty() ? cloud_frame_id : base_frame_;
+        transform_msg.transform = tf2::sophusToTransform(estimate.pose);
         tf_broadcaster_->sendTransform(transform_msg);
     }
 
