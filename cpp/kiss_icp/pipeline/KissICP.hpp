@@ -77,11 +77,11 @@ public:
 public:
     // Extra C++ API to facilitate ROS debugging
     std::vector<Eigen::Vector3d> LocalMap() const { return local_map_.Pointcloud(); };
-    std::vector<Sophus::SE3d> poses() const { return poses_; };
+    std::vector<Estimate> poses() const { return estimates_; };
 
 private:
     // KISS-ICP pipeline modules
-    std::vector<Sophus::SE3d> poses_;
+    std::vector<Estimate> estimates_;
     KISSConfig config_;
     Registration registration_;
     VoxelHashMap local_map_;

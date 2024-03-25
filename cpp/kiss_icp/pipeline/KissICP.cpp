@@ -45,8 +45,8 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
         if (N <= 2) return frame;
 
         // Estimate linear and angular velocities
-        const auto &start_pose = poses_[N - 2];
-        const auto &finish_pose = poses_[N - 1];
+        const auto &start_pose = estimates_[N - 2].pose;
+        const auto &finish_pose = estimates_[N - 1].pose;
         return DeSkewScan(frame, timestamps, start_pose, finish_pose);
     }();
     return RegisterFrame(deskew_frame);
@@ -64,19 +64,18 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
 
     // Compute initial_guess for ICP
     const auto prediction = GetPredictionModel();
-    const auto last_pose = !poses_.empty() ? poses_.back() : Sophus::SE3d();
-    const auto initial_guess = last_pose * prediction;
-
+    auto initial_guess = !estimates_.empty() ? estimates_.back() : Estimate();
+    initial_guess.pose = initial_guess.pose * prediction;
     // Run icp
-    const Sophus::SE3d new_pose = registration_.AlignPointsToMap(source,         //
-                                                                 local_map_,     //
-                                                                 initial_guess,  //
-                                                                 3.0 * sigma,    //
-                                                                 sigma / 3.0);
-    const auto model_deviation = initial_guess.inverse() * new_pose;
+    const auto new_estimate = registration_.AlignPointsToMap(source,         //
+                                                             local_map_,     //
+                                                             initial_guess,  //
+                                                             3.0 * sigma,    //
+                                                             sigma / 3.0);
+    const auto model_deviation = initial_guess.pose.inverse() * new_estimate.pose;
     adaptive_threshold_.UpdateModelDeviation(model_deviation);
-    local_map_.Update(frame_downsample, new_pose);
-    poses_.push_back(new_pose);
+    local_map_.Update(frame_downsample, new_estimate.pose);
+    estimates_.push_back(new_estimate);
     return {frame, source};
 }
 
@@ -96,14 +95,15 @@ double KissICP::GetAdaptiveThreshold() {
 
 Sophus::SE3d KissICP::GetPredictionModel() const {
     Sophus::SE3d pred = Sophus::SE3d();
-    const size_t N = poses_.size();
+    const size_t N = estimates_.size();
     if (N < 2) return pred;
-    return poses_[N - 2].inverse() * poses_[N - 1];
+    return estimates_[N - 2].pose.inverse() * estimates_[N - 1].pose;
 }
 
 bool KissICP::HasMoved() {
-    if (poses_.empty()) return false;
-    const double motion = (poses_.front().inverse() * poses_.back()).translation().norm();
+    if (estimates_.empty()) return false;
+    const double motion =
+        (estimates_.front().pose.inverse() * estimates_.back().pose).translation().norm();
     return motion > 5.0 * config_.min_motion_th;
 }
 
