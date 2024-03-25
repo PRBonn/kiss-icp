@@ -52,11 +52,13 @@ using utils::GetTimestamps;
 using utils::PointCloud2ToEigen;
 
 OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
-    : rclcpp::Node("odometry_node", options) {
+    : rclcpp::Node("kiss_icp_node", options) {
     base_frame_ = declare_parameter<std::string>("base_frame", base_frame_);
     odom_frame_ = declare_parameter<std::string>("odom_frame", odom_frame_);
     publish_odom_tf_ = declare_parameter<bool>("publish_odom_tf", publish_odom_tf_);
-    publish_debug_clouds_ = declare_parameter<bool>("visualize", publish_debug_clouds_);
+    publish_debug_clouds_ = declare_parameter<bool>("publish_debug_clouds", publish_debug_clouds_);
+    position_covariance_ = declare_parameter<double>("position_covariance", 0.1);
+    orientation_covariance_ = declare_parameter<double>("orientation_covariance", 0.1);
 
     kiss_icp::pipeline::KISSConfig config;
     config.max_range = declare_parameter<double>("max_range", config.max_range);
@@ -68,6 +70,11 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
     config.initial_threshold =
         declare_parameter<double>("initial_threshold", config.initial_threshold);
     config.min_motion_th = declare_parameter<double>("min_motion_th", config.min_motion_th);
+    config.max_num_iterations =
+        declare_parameter<int>("max_num_iterations", config.max_num_iterations);
+    config.convergence_criterion =
+        declare_parameter<double>("convergence_criterion", config.convergence_criterion);
+    config.max_num_threads = declare_parameter<int>("max_num_threads", config.max_num_threads);
     if (config.max_range < config.min_range) {
         RCLCPP_WARN(get_logger(),
                     "[WARNING] max_range is smaller than min_range, settng min_range to 0.0");
@@ -163,6 +170,13 @@ void OdometryServer::PublishOdometry(const Sophus::SE3d &pose,
     odom_msg.header.stamp = stamp;
     odom_msg.header.frame_id = odom_frame_;
     odom_msg.pose.pose = tf2::sophusToPose(pose);
+    odom_msg.pose.covariance.fill(0.0);
+    odom_msg.pose.covariance[0] = position_covariance_;
+    odom_msg.pose.covariance[7] = position_covariance_;
+    odom_msg.pose.covariance[14] = position_covariance_;
+    odom_msg.pose.covariance[21] = orientation_covariance_;
+    odom_msg.pose.covariance[28] = orientation_covariance_;
+    odom_msg.pose.covariance[35] = orientation_covariance_;
     odom_publisher_->publish(std::move(odom_msg));
 }
 

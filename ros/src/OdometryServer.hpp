@@ -85,6 +85,10 @@ private:
     /// Global/map coordinate frame.
     std::string odom_frame_{"odom"};
     std::string base_frame_{};
+
+    /// Covariance diagonal
+    double position_covariance_;
+    double orientation_covariance_;
 };
 
 }  // namespace kiss_icp_ros
