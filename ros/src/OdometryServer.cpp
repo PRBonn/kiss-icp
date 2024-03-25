@@ -45,6 +45,26 @@
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <std_msgs/msg/string.hpp>
 
+namespace {
+Sophus::SE3d LookupTransform(const std::string &target_frame,
+                             const std::string &source_frame,
+                             const std::unique_ptr<tf2_ros::Buffer> &tf2_buffer) {
+    std::string err_msg;
+    if (tf2_buffer->canTransform(target_frame, source_frame, tf2::TimePointZero, &err_msg)) {
+        try {
+            auto tf = tf2_buffer->lookupTransform(target_frame, source_frame, tf2::TimePointZero);
+            return tf2::transformToSophus(tf);
+        } catch (tf2::TransformException &ex) {
+            RCLCPP_WARN(rclcpp::get_logger("LookupTransform"), "%s", ex.what());
+        }
+    }
+    RCLCPP_WARN(rclcpp::get_logger("LookupTransform"), "Failed to find tf. Reason=%s",
+                err_msg.c_str());
+    // default construction is the identity
+    return Sophus::SE3d();
+}
+}  // namespace
+
 namespace kiss_icp_ros {
 
 using utils::EigenToPointCloud2;
@@ -101,66 +121,49 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
     RCLCPP_INFO(this->get_logger(), "KISS-ICP ROS 2 odometry node initialized");
 }
 
-Sophus::SE3d OdometryServer::LookupTransform(const std::string &target_frame,
-                                             const std::string &source_frame) const {
-    std::string err_msg;
-    if (tf2_buffer_->_frameExists(source_frame) &&  //
-        tf2_buffer_->_frameExists(target_frame) &&  //
-        tf2_buffer_->canTransform(target_frame, source_frame, tf2::TimePointZero, &err_msg)) {
-        try {
-            auto tf = tf2_buffer_->lookupTransform(target_frame, source_frame, tf2::TimePointZero);
-            return tf2::transformToSophus(tf);
-        } catch (tf2::TransformException &ex) {
-            RCLCPP_WARN(this->get_logger(), "%s", ex.what());
-        }
-    }
-    RCLCPP_WARN(this->get_logger(), "Failed to find tf. Reason=%s", err_msg.c_str());
-    return {};
-}
-
 void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msg) {
     const auto cloud_frame_id = msg->header.frame_id;
     const auto points = PointCloud2ToEigen(msg);
     const auto timestamps = GetTimestamps(msg);
-    const auto egocentric_estimation = (base_frame_.empty() || base_frame_ == cloud_frame_id);
 
     // Register frame, main entry point to KISS-ICP pipeline
     const auto &[frame, keypoints] = kiss_icp_->RegisterFrame(points, timestamps);
 
-    // Compute the pose using KISS, ego-centric to the LiDAR
+    // Extract the last KISS-ICP pose, ego-centric to the LiDAR
     const Sophus::SE3d kiss_pose = kiss_icp_->poses().back();
 
-    // If necessary, transform the ego-centric pose to the specified base_link/base_footprint frame
-    const auto pose = [&]() -> Sophus::SE3d {
-        if (egocentric_estimation) return kiss_pose;
-        const Sophus::SE3d cloud2base = LookupTransform(base_frame_, cloud_frame_id);
-        return cloud2base * kiss_pose * cloud2base.inverse();
-    }();
-
-    // Spit the current estimated pose to ROS msgs
-    PublishOdometry(pose, msg->header.stamp, cloud_frame_id);
-    // Publishing this clouds is a bit costly, so do it only if we are debugging
+    // Spit the current estimated pose to ROS msgs handling the desired target frame
+    PublishOdometry(kiss_pose, msg->header);
+    // Publishing these clouds is a bit costly, so do it only if we are debugging
     if (publish_debug_clouds_) {
-        PublishClouds(frame, keypoints, msg->header.stamp, cloud_frame_id);
+        PublishClouds(frame, keypoints, msg->header);
     }
 }
 
-void OdometryServer::PublishOdometry(const Sophus::SE3d &pose,
-                                     const rclcpp::Time &stamp,
-                                     const std::string &cloud_frame_id) {
+void OdometryServer::PublishOdometry(const Sophus::SE3d &kiss_pose,
+                                     const std_msgs::msg::Header &header) {
+    // If necessary, transform the ego-centric pose to the specified base_link/base_footprint frame
+    const auto cloud_frame_id = header.frame_id;
+    const auto egocentric_estimation = (base_frame_.empty() || base_frame_ == cloud_frame_id);
+    const auto pose = [&]() -> Sophus::SE3d {
+        if (egocentric_estimation) return kiss_pose;
+        const Sophus::SE3d cloud2base = LookupTransform(base_frame_, cloud_frame_id, tf2_buffer_);
+        return cloud2base * kiss_pose * cloud2base.inverse();
+    }();
+
     // Broadcast the tf ---
     if (publish_odom_tf_) {
         geometry_msgs::msg::TransformStamped transform_msg;
-        transform_msg.header.stamp = stamp;
+        transform_msg.header.stamp = header.stamp;
         transform_msg.header.frame_id = odom_frame_;
-        transform_msg.child_frame_id = base_frame_.empty() ? cloud_frame_id : base_frame_;
+        transform_msg.child_frame_id = egocentric_estimation ? cloud_frame_id : base_frame_;
         transform_msg.transform = tf2::sophusToTransform(pose);
         tf_broadcaster_->sendTransform(transform_msg);
     }
 
     // publish odometry msg
     nav_msgs::msg::Odometry odom_msg;
-    odom_msg.header.stamp = stamp;
+    odom_msg.header.stamp = header.stamp;
     odom_msg.header.frame_id = odom_frame_;
     odom_msg.pose.pose = tf2::sophusToPose(pose);
     odom_publisher_->publish(std::move(odom_msg));
@@ -168,39 +171,13 @@ void OdometryServer::PublishOdometry(const Sophus::SE3d &pose,
 
 void OdometryServer::PublishClouds(const std::vector<Eigen::Vector3d> frame,
                                    const std::vector<Eigen::Vector3d> keypoints,
-                                   const rclcpp::Time &stamp,
-                                   const std::string &cloud_frame_id) {
-    std_msgs::msg::Header odom_header;
-    odom_header.stamp = stamp;
-    odom_header.frame_id = odom_frame_;
-
-    // Publish map
+                                   const std_msgs::msg::Header &header) {
     const auto kiss_map = kiss_icp_->LocalMap();
+    const auto kiss_pose = kiss_icp_->poses().back().inverse();
 
-    if (!publish_odom_tf_) {
-        // debugging happens in an egocentric world
-        std_msgs::msg::Header cloud_header;
-        cloud_header.stamp = stamp;
-        cloud_header.frame_id = cloud_frame_id;
-
-        frame_publisher_->publish(std::move(EigenToPointCloud2(frame, cloud_header)));
-        kpoints_publisher_->publish(std::move(EigenToPointCloud2(keypoints, cloud_header)));
-        map_publisher_->publish(std::move(EigenToPointCloud2(kiss_map, odom_header)));
-
-        return;
-    }
-
-    // If transmitting to tf tree we know where the clouds are exactly
-    const auto cloud2odom = LookupTransform(odom_frame_, cloud_frame_id);
-    frame_publisher_->publish(std::move(EigenToPointCloud2(frame, cloud2odom, odom_header)));
-    kpoints_publisher_->publish(std::move(EigenToPointCloud2(keypoints, cloud2odom, odom_header)));
-
-    if (!base_frame_.empty()) {
-        const Sophus::SE3d cloud2base = LookupTransform(base_frame_, cloud_frame_id);
-        map_publisher_->publish(std::move(EigenToPointCloud2(kiss_map, cloud2base, odom_header)));
-    } else {
-        map_publisher_->publish(std::move(EigenToPointCloud2(kiss_map, odom_header)));
-    }
+    frame_publisher_->publish(std::move(EigenToPointCloud2(frame, header)));
+    kpoints_publisher_->publish(std::move(EigenToPointCloud2(keypoints, header)));
+    map_publisher_->publish(std::move(EigenToPointCloud2(kiss_map, kiss_pose, header)));
 }
 }  // namespace kiss_icp_ros
 
