@@ -23,6 +23,7 @@
 #pragma once
 
 // KISS-ICP
+#include "kiss_icp/core/Registration.hpp"
 #include "kiss_icp/pipeline/KissICP.hpp"
 
 // ROS 2
@@ -49,7 +50,8 @@ private:
     void RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msg);
 
     /// Stream the estimated pose to ROS
-    void PublishOdometry(const Sophus::SE3d &kiss_pose, const std_msgs::msg::Header &header);
+    void PublishOdometry(const kiss_icp::Estimate &kiss_estimate,
+                         const std_msgs::msg::Header &header);
 
     /// Stream the debugging point clouds for visualization (if required)
     void PublishClouds(const std::vector<Eigen::Vector3d> frame,
