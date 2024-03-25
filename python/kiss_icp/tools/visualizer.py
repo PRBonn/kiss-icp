@@ -29,7 +29,7 @@ from typing import Callable, List
 
 import numpy as np
 
-YELLOW = np.array([1, 0.706, 0])
+CYAN = np.array([0.24, 0.898, 1])
 RED = np.array([128, 0, 0]) / 255.0
 BLACK = np.array([0, 0, 0]) / 255.0
 BLUE = np.array([0.4, 0.5, 0.9])
@@ -198,7 +198,7 @@ class RegistrationVisualizer(StubVisualizer):
         # Source hot frame
         if self.render_source:
             self.source.points = self.o3d.utility.Vector3dVector(source)
-            self.source.paint_uniform_color(YELLOW)
+            self.source.paint_uniform_color(CYAN)
             if self.global_view:
                 self.source.transform(pose)
         else:
@@ -207,7 +207,7 @@ class RegistrationVisualizer(StubVisualizer):
         # Keypoints
         if self.render_keypoints:
             self.keypoints.points = self.o3d.utility.Vector3dVector(keypoints)
-            self.keypoints.paint_uniform_color(YELLOW)
+            self.keypoints.paint_uniform_color(CYAN)
             if self.global_view:
                 self.keypoints.transform(pose)
         else:
