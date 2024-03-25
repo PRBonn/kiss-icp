@@ -33,7 +33,6 @@
 #include <nav_msgs/msg/odometry.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
-#include <std_msgs/msg/header.hpp>
 #include <string>
 
 namespace kiss_icp_ros {
@@ -49,12 +48,19 @@ private:
     void RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msg);
 
     /// Stream the estimated pose to ROS
-    void PublishOdometry(const Sophus::SE3d &kiss_pose, const std_msgs::msg::Header &header);
+    void PublishOdometry(const Sophus::SE3d &pose,
+                         const rclcpp::Time &stamp,
+                         const std::string &cloud_frame_id);
 
     /// Stream the debugging point clouds for visualization (if required)
     void PublishClouds(const std::vector<Eigen::Vector3d> frame,
                        const std::vector<Eigen::Vector3d> keypoints,
-                       const std_msgs::msg::Header &header);
+                       const rclcpp::Time &stamp,
+                       const std::string &cloud_frame_id);
+
+    /// Utility function to compute transformation using tf tree
+    Sophus::SE3d LookupTransform(const std::string &target_frame,
+                                 const std::string &source_frame) const;
 
 private:
     /// Tools for broadcasting TFs.
