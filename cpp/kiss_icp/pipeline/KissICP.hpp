@@ -77,7 +77,7 @@ public:
 public:
     // Extra C++ API to facilitate ROS debugging
     std::vector<Eigen::Vector3d> LocalMap() const { return local_map_.Pointcloud(); };
-    std::vector<Estimate> poses() const { return estimates_; };
+    std::vector<Estimate> estimates() const { return estimates_; };
 
 private:
     // KISS-ICP pipeline modules
