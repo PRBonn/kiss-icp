@@ -60,7 +60,8 @@ Sophus::SE3d LookupTransform(const std::string &target_frame,
     }
     RCLCPP_WARN(rclcpp::get_logger("LookupTransform"), "Failed to find tf. Reason=%s",
                 err_msg.c_str());
-    return {};
+    // default construction is the identity
+    return Sophus::SE3d();
 }
 }  // namespace
 
