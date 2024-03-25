@@ -65,7 +65,7 @@ std::vector<Voxel> GetAdjacentVoxels(const Voxel &voxel, int adjacent_voxels = 1
     return voxel_neighborhood;
 }
 
-std::tuple<double, Eigen::Vector3d> GetClosestNeighbor(const Eigen::Vector3d &point,
+std::tuple<Eigen::Vector3d, double> GetClosestNeighbor(const Eigen::Vector3d &point,
                                                        const kiss_icp::VoxelHashMap &voxel_map) {
     // Convert the point to voxel coordinates
     const auto &voxel = voxel_map.PointToVoxel(point);
@@ -84,7 +84,7 @@ std::tuple<double, Eigen::Vector3d> GetClosestNeighbor(const Eigen::Vector3d &po
             closest_distance = distance;
         }
     });
-    return std::make_tuple(closest_distance, closest_neighbor);
+    return std::make_tuple(closest_neighbor, closest_distance);
 }
 
 Associations FindAssociations(const std::vector<Eigen::Vector3d> &points,
@@ -102,7 +102,7 @@ Associations FindAssociations(const std::vector<Eigen::Vector3d> &points,
         [&](const tbb::blocked_range<points_iterator> &r, Associations res) -> Associations {
             res.reserve(r.size());
             std::for_each(r.begin(), r.end(), [&](const auto &point) {
-                const auto &[distance, closest_neighbor] = GetClosestNeighbor(point, voxel_map);
+                const auto &[closest_neighbor, distance] = GetClosestNeighbor(point, voxel_map);
                 if (distance < max_correspondance_distance) {
                     res.emplace_back(point, closest_neighbor);
                 }
