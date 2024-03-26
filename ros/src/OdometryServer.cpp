@@ -155,6 +155,7 @@ void OdometryServer::PublishOdometry(const kiss_icp::Estimate &kiss_estimate,
         kiss_icp::Estimate transformed;
         const Sophus::SE3d cloud2base = LookupTransform(base_frame_, cloud_frame_id, tf2_buffer_);
         transformed.pose = cloud2base * kiss_estimate.pose * cloud2base.inverse();
+        // TODO verify equation
         transformed.covariance =
             cloud2base.Adj() * kiss_estimate.covariance * cloud2base.Adj().transpose();
         return transformed;
