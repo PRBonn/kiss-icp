@@ -99,7 +99,7 @@ inline std::optional<PointField> GetTimestampField(const PointCloud2::ConstShare
         }
     }
     if (timestamp_field.count) return timestamp_field;
-    RCLCPP_WARN_ONCE(rclcpp::get_logger("odometry_node"),
+    RCLCPP_WARN_ONCE(rclcpp::get_logger("kiss_icp_node"),
                      "Field 't', 'timestamp', or 'time'  does not exist. "
                      "Disabling scan deskewing");
     return {};
