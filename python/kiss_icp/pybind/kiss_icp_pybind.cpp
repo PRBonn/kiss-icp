@@ -76,11 +76,9 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
                                   "Estimate from the icp, it contains a pose and a 6x6 covariance");
     estimate.def(py::init<>())
         .def_property(
-            "pose", [](Estimate &self) { return self.pose.matrix(); },
+            "pose", [](const Estimate &self) { return self.pose.matrix(); },
             [](Estimate &self, const Eigen::Matrix4d &T) { self.pose = Sophus::SE3d(T); })
-        .def_property(
-            "covariance", [](Estimate &self) { return self.covariance; },
-            [](Estimate &self, const Eigen::Matrix6d &Sigma) { self.covariance = Sigma; });
+        .def_readwrite("covariance", &Estimate::covariance);
     // Point Cloud registration
     py::class_<Registration> internal_registration(m, "_Registration", "Don't use this");
     internal_registration
