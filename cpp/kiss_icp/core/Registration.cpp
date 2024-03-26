@@ -37,14 +37,15 @@
 
 #include "VoxelHashMap.hpp"
 
-using Correspondence = std::pair<Eigen::Vector3d, Eigen::Vector3d>;
-using Associations = std::vector<Correspondence>;
-using LinearSystem = std::tuple<Eigen::Matrix6d, Eigen::Vector6d, double>;
-
 namespace Eigen {
+using Matrix6d = Eigen::Matrix<double, 6, 6>;
 using Matrix3_6d = Eigen::Matrix<double, 3, 6>;
 using Vector6d = Eigen::Matrix<double, 6, 1>;
 }  // namespace Eigen
+
+using Correspondence = std::pair<Eigen::Vector3d, Eigen::Vector3d>;
+using Associations = std::vector<Correspondence>;
+using LinearSystem = std::tuple<Eigen::Matrix6d, Eigen::Vector6d, double>;
 
 namespace {
 inline double square(double x) { return x * x; }

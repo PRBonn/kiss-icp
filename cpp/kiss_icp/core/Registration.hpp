@@ -28,15 +28,13 @@
 
 #include "VoxelHashMap.hpp"
 
-namespace Eigen {
-using Matrix6d = Eigen::Matrix<double, 6, 6>;
-}
+using CovarianceMatrixType = Eigen::Matrix<double, 6, 6>;
 
 namespace kiss_icp {
 
 struct Estimate {
     Sophus::SE3d pose;
-    Eigen::Matrix6d covariance = Eigen::Matrix6d::Zero();
+    CovarianceMatrixType covariance = CovarianceMatrixType::Zero();
 };
 
 struct Registration {
