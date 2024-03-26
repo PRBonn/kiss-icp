@@ -28,23 +28,23 @@ from pathlib import Path
 import numpy as np
 
 __raw_to_odometry_mapping__ = {
-    0: "2011_10_03/2011_10_03_drive_0027_sync/",
-    1: "2011_10_03/2011_10_03_drive_0042_sync/",
-    2: "2011_10_03/2011_10_03_drive_0034_sync/",
-    4: "2011_09_30/2011_09_30_drive_0016_sync/",
-    5: "2011_09_30/2011_09_30_drive_0018_sync/",
-    6: "2011_09_30/2011_09_30_drive_0020_sync/",
-    7: "2011_09_30/2011_09_30_drive_0027_sync/",
-    8: "2011_09_30/2011_09_30_drive_0028_sync/",
-    9: "2011_09_30/2011_09_30_drive_0033_sync/",
-    10: "2011_09_30/2011_09_30_drive_0034_sync/",
+    "00": "2011_10_03/2011_10_03_drive_0027_sync/",
+    "01": "2011_10_03/2011_10_03_drive_0042_sync/",
+    "02": "2011_10_03/2011_10_03_drive_0034_sync/",
+    "04": "2011_09_30/2011_09_30_drive_0016_sync/",
+    "05": "2011_09_30/2011_09_30_drive_0018_sync/",
+    "06": "2011_09_30/2011_09_30_drive_0020_sync/",
+    "07": "2011_09_30/2011_09_30_drive_0027_sync/",
+    "08": "2011_09_30/2011_09_30_drive_0028_sync/",
+    "09": "2011_09_30/2011_09_30_drive_0033_sync/",
+    "10": "2011_09_30/2011_09_30_drive_0034_sync/",
 }
 
 
 class KITTIRawDataset:
-    def __init__(self, data_dir: Path, sequence: int, *_, **__):
-        self.sequence_id = str(int(sequence)).zfill(2)
-        self.root_dir = os.path.realpath(data_dir / __raw_to_odometry_mapping__[sequence])
+    def __init__(self, data_dir: Path, sequence: str, *_, **__):
+        self.sequence_id = str(sequence).zfill(2)
+        self.root_dir = os.path.realpath(data_dir / __raw_to_odometry_mapping__[self.sequence_id])
         self.date_id = self.root_dir.split("/")[-2]
         self.valid_idx = self.get_benchmark_indices(self.sequence_id)
 

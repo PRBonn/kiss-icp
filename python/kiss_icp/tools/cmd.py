@@ -164,7 +164,7 @@ def kiss_icp_pipeline(
         help="[Optional] Open an online visualization of the KISS-ICP pipeline",
         rich_help_panel="Additional Options",
     ),
-    sequence: Optional[int] = typer.Option(
+    sequence: Optional[str] = typer.Option(
         None,
         "--sequence",
         "-s",
