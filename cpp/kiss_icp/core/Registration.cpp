@@ -167,6 +167,13 @@ LinearSystem BuildLinearSystem(const Associations &associations,
 
 namespace kiss_icp {
 
+Estimate operator*(Estimate lhs, const Estimate &rhs) {
+    lhs.pose *= rhs.pose;
+    const auto Proj = rhs.pose.Adj().inverse();
+    lhs.covariance = Proj * lhs.covariance * Proj.transpose() + rhs.covariance;
+    return lhs;
+}
+
 Registration::Registration(int max_num_iteration, double convergence_criterion, int max_num_threads)
     : max_num_iterations_(max_num_iteration),
       convergence_criterion_(convergence_criterion),
@@ -211,14 +218,11 @@ Estimate Registration::AlignPointsToMap(const std::vector<Eigen::Vector3d> &fram
     const auto associations = FindAssociations(source, voxel_map, max_correspondence_distance);
     const auto &[H, b, chi_square] =
         BuildLinearSystem(associations, [](double x) { return x / x; });
-    const auto icp_covariance =
-        (chi_square / static_cast<double>(associations.size()) * H).inverse();
-    Estimate estimate;
-    estimate.pose = T_icp * initial_guess.pose;
-    const auto A = T_icp.inverse().Adj();
-    estimate.covariance = A * initial_guess.covariance * A.transpose() + icp_covariance;
+    Estimate delta;
+    delta.pose = T_icp;
+    delta.covariance = (chi_square / static_cast<double>(associations.size()) * H).inverse();
     // Spit the final transformation
-    return estimate;
+    return delta * initial_guess;
 }
 
 }  // namespace kiss_icp

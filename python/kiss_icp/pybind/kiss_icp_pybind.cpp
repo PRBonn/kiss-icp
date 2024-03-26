@@ -75,6 +75,7 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
     py::class_<Estimate> estimate(m, "_Estimate",
                                   "Estimate from the icp, it contains a pose and a 6x6 covariance");
     estimate.def(py::init<>())
+        .def("__matmul__", [](Estimate lhs, const Estimate &rhs) { return lhs * rhs; })
         .def_property(
             "pose", [](const Estimate &self) { return self.pose.matrix(); },
             [](Estimate &self, const Eigen::Matrix4d &T) { self.pose = Sophus::SE3d(T); })
