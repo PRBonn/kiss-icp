@@ -49,7 +49,7 @@ class NuScenesDataset:
         from nuscenes.nuscenes import NuScenes
         from nuscenes.utils.splits import create_splits_logs
 
-        self.sequence_id = sequence.zfill(4)
+        self.sequence_id = str(sequence).zfill(4)
 
         self.nusc = NuScenes(dataroot=str(data_dir), version=nusc_version)
         self.scene_name = f"scene-{self.sequence_id}"

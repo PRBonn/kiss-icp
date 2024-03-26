@@ -28,7 +28,7 @@ import numpy as np
 
 class KITTIOdometryDataset:
     def __init__(self, data_dir, sequence: str, *_, **__):
-        self.sequence_id = sequence.zfill(2)
+        self.sequence_id = str(sequence).zfill(2)
         self.kitti_sequence_dir = os.path.join(data_dir, "sequences", self.sequence_id)
         self.velodyne_dir = os.path.join(self.kitti_sequence_dir, "velodyne/")
 

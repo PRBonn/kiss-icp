@@ -43,7 +43,7 @@ __raw_to_odometry_mapping__ = {
 
 class KITTIRawDataset:
     def __init__(self, data_dir: Path, sequence: str, *_, **__):
-        self.sequence_id = sequence.zfill(2)
+        self.sequence_id = str(sequence).zfill(2)
         self.root_dir = os.path.realpath(data_dir / __raw_to_odometry_mapping__[self.sequence_id])
         self.date_id = self.root_dir.split("/")[-2]
         self.valid_idx = self.get_benchmark_indices(self.sequence_id)
