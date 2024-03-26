@@ -35,6 +35,7 @@ namespace kiss_icp {
 struct Estimate {
     Sophus::SE3d pose;
     CovarianceMatrixType covariance = CovarianceMatrixType::Zero();
+    friend Estimate operator*(Estimate lhs, const Estimate &rhs);
 };
 
 struct Registration {

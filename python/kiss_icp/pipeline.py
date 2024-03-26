@@ -65,7 +65,7 @@ class OdometryPipeline:
         self.odometry = KissICP(config=self.config)
         self.results = PipelineResults()
         self.times = []
-        self.poses = self.odometry.poses
+        self.estimates = self.odometry.estimates
         self.has_gt = hasattr(self._dataset, "gt_poses")
         self.gt_poses = self._dataset.gt_poses[self._first : self._last] if self.has_gt else None
         self.dataset_name = self._dataset.__class__.__name__
@@ -98,7 +98,9 @@ class OdometryPipeline:
             start_time = time.perf_counter_ns()
             source, keypoints = self.odometry.register_frame(raw_frame, timestamps)
             self.times.append(time.perf_counter_ns() - start_time)
-            self.visualizer.update(source, keypoints, self.odometry.local_map, self.poses[-1])
+            self.visualizer.update(
+                source, keypoints, self.odometry.local_map, self.estimates[-1].pose
+            )
 
     def _next(self, idx):
         """TODO: re-arrange this logic"""
@@ -167,9 +169,10 @@ class OdometryPipeline:
 
     def _run_evaluation(self):
         # Run estimation metrics evaluation, only when GT data was provided
+        poses = [x.pose for x in self.estimates]
         if self.has_gt:
-            avg_tra, avg_rot = sequence_error(self.gt_poses, self.poses)
-            ate_rot, ate_trans = absolute_trajectory_error(self.gt_poses, self.poses)
+            avg_tra, avg_rot = sequence_error(self.gt_poses, poses)
+            ate_rot, ate_trans = absolute_trajectory_error(self.gt_poses, poses)
             self.results.append(desc="Average Translation Error", units="%", value=avg_tra)
             self.results.append(desc="Average Rotational Error", units="deg/m", value=avg_rot)
             self.results.append(desc="Absolute Trajectory Error (ATE)", units="m", value=ate_trans)
