@@ -83,12 +83,14 @@ class OdometryPipeline:
     # Public interface  ------
     def run(self):
         self._run_pipeline()
+        self._get_poses_and_covariances()
         self._run_evaluation()
         self._create_output_dir()
         self._write_result_poses()
         self._write_gt_poses()
         self._write_cfg()
         self._write_log()
+        self._write_covariances()
         return self.results
 
     # Private interface  ------
@@ -111,6 +113,10 @@ class OdometryPipeline:
             frame = dataframe
             timestamps = np.zeros(frame.shape[0])
         return frame, timestamps
+
+    def _get_poses_and_covariances(self):
+        self.poses = [x.pose for x in self.estimates]
+        self.covariances = [x.covariance for x in self.estimates]
 
     @staticmethod
     def save_poses_kitti_format(filename: str, poses: List[np.ndarray]):
@@ -167,12 +173,14 @@ class OdometryPipeline:
             timestamps=self._get_frames_timestamps(),
         )
 
+    def _write_covariances(self):
+        np.save(f"{self.results_dir}/covariances.npy", np.stack(self.covariances))
+
     def _run_evaluation(self):
         # Run estimation metrics evaluation, only when GT data was provided
-        poses = [x.pose for x in self.estimates]
         if self.has_gt:
-            avg_tra, avg_rot = sequence_error(self.gt_poses, poses)
-            ate_rot, ate_trans = absolute_trajectory_error(self.gt_poses, poses)
+            avg_tra, avg_rot = sequence_error(self.gt_poses, self.poses)
+            ate_rot, ate_trans = absolute_trajectory_error(self.gt_poses, self.poses)
             self.results.append(desc="Average Translation Error", units="%", value=avg_tra)
             self.results.append(desc="Average Rotational Error", units="deg/m", value=avg_rot)
             self.results.append(desc="Absolute Trajectory Error (ATE)", units="m", value=ate_trans)
