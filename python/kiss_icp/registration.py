@@ -25,6 +25,7 @@ import numpy as np
 from kiss_icp.config.parser import KISSConfig
 from kiss_icp.mapping import VoxelHashMap
 from kiss_icp.pybind import kiss_icp_pybind
+from typing import TypeAlias
 
 
 def get_registration(config: KISSConfig):
@@ -35,17 +36,8 @@ def get_registration(config: KISSConfig):
     )
 
 
-class Estimate:
-    def __init__(self):
-        self._estimate = kiss_icp_pybind._Estimate()
-
-    @property
-    def pose(self):
-        return self._estimate.pose
-
-    @property
-    def covariance(self):
-        return self._estimate.covariance
+# Nice trick with the type aliasing for structs
+Estimate: TypeAlias = kiss_icp_pybind._Estimate
 
 
 class Registration:
