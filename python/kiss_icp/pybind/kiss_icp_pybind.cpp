@@ -72,6 +72,15 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
         .def("_remove_far_away_points", &VoxelHashMap::RemovePointsFarFromLocation, "origin"_a)
         .def("_point_cloud", &VoxelHashMap::Pointcloud);
 
+    py::class_<Estimate> estimate(m, "_Estimate",
+                                  "Estimate from the icp, it contains a pose and a 6x6 covariance");
+    estimate.def(py::init<>())
+        .def_property(
+            "pose", [](Estimate &self) { return self.pose.matrix(); },
+            [](Estimate &self, const Eigen::Matrix4d &T) { self.pose = Sophus::SE3d(T); })
+        .def_property(
+            "covariance", [](Estimate &self) { return self.covariance; },
+            [](Estimate &self, const Eigen::Matrix6d &Sigma) { self.covariance = Sigma; });
     // Point Cloud registration
     py::class_<Registration> internal_registration(m, "_Registration", "Don't use this");
     internal_registration
@@ -80,13 +89,10 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
         .def(
             "_align_points_to_map",
             [](Registration &self, const std::vector<Eigen::Vector3d> &points,
-               const VoxelHashMap &voxel_map, const Eigen::Matrix4d &T_guess,
+               const VoxelHashMap &voxel_map, const Estimate &initial_guess,
                double max_correspondence_distance, double kernel) {
-                Sophus::SE3d initial_guess(T_guess);
-                return self
-                    .AlignPointsToMap(points, voxel_map, initial_guess, max_correspondence_distance,
-                                      kernel)
-                    .matrix();
+                return self.AlignPointsToMap(points, voxel_map, initial_guess,
+                                             max_correspondence_distance, kernel);
             },
             "points"_a, "voxel_map"_a, "initial_guess"_a, "max_correspondance_distance"_a,
             "kernel"_a);

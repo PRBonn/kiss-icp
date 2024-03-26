@@ -41,6 +41,11 @@ using Correspondence = std::pair<Eigen::Vector3d, Eigen::Vector3d>;
 using Associations = std::vector<Correspondence>;
 using LinearSystem = std::tuple<Eigen::Matrix6d, Eigen::Vector6d, double>;
 
+namespace Eigen {
+using Matrix3_6d = Eigen::Matrix<double, 3, 6>;
+using Vector6d = Eigen::Matrix<double, 6, 1>;
+}  // namespace Eigen
+
 namespace {
 inline double square(double x) { return x * x; }
 
@@ -203,7 +208,7 @@ Estimate Registration::AlignPointsToMap(const std::vector<Eigen::Vector3d> &fram
         if (dx.norm() < convergence_criterion_) break;
     }
     const auto associations = FindAssociations(source, voxel_map, max_correspondence_distance);
-    const auto &[H, std::ignore, chi_square] =
+    const auto &[H, b, chi_square] =
         BuildLinearSystem(associations, [](double x) { return x / x; });
     const auto icp_covariance =
         (chi_square / static_cast<double>(associations.size()) * H).inverse();

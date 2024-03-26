@@ -35,6 +35,19 @@ def get_registration(config: KISSConfig):
     )
 
 
+class Estimate:
+    def __init__(self):
+        self._estimate = kiss_icp_pybind._Estimate()
+
+    @property
+    def pose(self):
+        return self._estimate.pose
+
+    @property
+    def covariance(self):
+        return self._estimate.covariance
+
+
 class Registration:
     def __init__(
         self,
