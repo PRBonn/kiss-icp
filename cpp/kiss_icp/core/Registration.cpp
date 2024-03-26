@@ -188,10 +188,9 @@ Estimate Registration::AlignPointsToMap(const std::vector<Eigen::Vector3d> &fram
 
     // ICP-loop
     Sophus::SE3d T_icp = Sophus::SE3d();
-    Associations associations;
     for (int j = 0; j < max_num_iterations_; ++j) {
         // Equation (10)
-        associations = FindAssociations(source, voxel_map, max_correspondence_distance);
+        const auto associations = FindAssociations(source, voxel_map, max_correspondence_distance);
         // Equation (11)
         const auto &[JTJ, JTr, chi_square] = BuildLinearSystem(associations, GM);
         const Eigen::Vector6d dx = JTJ.ldlt().solve(-JTr);
@@ -203,14 +202,15 @@ Estimate Registration::AlignPointsToMap(const std::vector<Eigen::Vector3d> &fram
         // Termination criteria
         if (dx.norm() < convergence_criterion_) break;
     }
-    const auto &[information_matrix, information_vector, chi_square] =
+    const auto associations = FindAssociations(source, voxel_map, max_correspondence_distance);
+    const auto &[H, std::ignore, chi_square] =
         BuildLinearSystem(associations, [](double x) { return x / x; });
+    const auto icp_covariance =
+        (chi_square / static_cast<double>(associations.size()) * H).inverse();
     Estimate estimate;
     estimate.pose = T_icp * initial_guess.pose;
     const auto A = T_icp.inverse().Adj();
-    estimate.covariance =
-        A * initial_guess.covariance * A.transpose() +
-        (chi_square / static_cast<double>(associations.size()) * information_matrix).inverse();
+    estimate.covariance = A * initial_guess.covariance * A.transpose() + icp_covariance;
     // Spit the final transformation
     return estimate;
 }
