@@ -167,10 +167,19 @@ LinearSystem BuildLinearSystem(const Associations &associations,
 
 namespace kiss_icp {
 
+Estimate::Estimate() : pose(), covariance(Eigen::Matrix6d::Zero()) {}
+Estimate::Estimate(const Sophus::SE3d &T, const Eigen::Matrix6d &Sigma)
+    : pose(T), covariance(Sigma) {}
+
+Estimate Estimate::inverse() const {
+    const auto Adj = pose.inverse().Adj();
+    return {pose.inverse(), Adj * covariance * Adj.transpose()};
+}
+
 Estimate operator*(Estimate lhs, const Estimate &rhs) {
     lhs.pose *= rhs.pose;
-    const auto Proj = lhs.pose.Adj();
-    lhs.covariance += Proj * rhs.covariance * Proj.transpose();
+    const auto Adj = lhs.pose.Adj();
+    lhs.covariance += Adj * rhs.covariance * Adj.transpose();
     return lhs;
 }
 

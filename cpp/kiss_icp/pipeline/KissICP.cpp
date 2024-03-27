@@ -65,14 +65,14 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
     // Compute initial_guess for ICP
     const auto prediction = GetPredictionModel();
     auto initial_guess = !estimates_.empty() ? estimates_.back() : Estimate();
-    initial_guess.pose = initial_guess.pose * prediction;
+    initial_guess = initial_guess * prediction;
     // Run icp
     const auto new_estimate = registration_.AlignPointsToMap(source,         //
                                                              local_map_,     //
                                                              initial_guess,  //
                                                              3.0 * sigma,    //
                                                              sigma / 3.0);
-    const auto model_deviation = initial_guess.pose.inverse() * new_estimate.pose;
+    const auto model_deviation = (initial_guess.inverse() * new_estimate).pose;
     adaptive_threshold_.UpdateModelDeviation(model_deviation);
     local_map_.Update(frame_downsample, new_estimate.pose);
     estimates_.push_back(new_estimate);
@@ -93,11 +93,10 @@ double KissICP::GetAdaptiveThreshold() {
     return adaptive_threshold_.ComputeThreshold();
 }
 
-Sophus::SE3d KissICP::GetPredictionModel() const {
-    Sophus::SE3d pred = Sophus::SE3d();
+Estimate KissICP::GetPredictionModel() const {
     const size_t N = estimates_.size();
-    if (N < 2) return pred;
-    return estimates_[N - 2].pose.inverse() * estimates_[N - 1].pose;
+    if (N < 2) return Estimate();
+    return estimates_[N - 2].inverse() * estimates_[N - 1];
 }
 
 bool KissICP::HasMoved() {

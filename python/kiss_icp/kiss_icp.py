@@ -68,7 +68,7 @@ class KissICP:
             kernel=sigma / 3,
         )
 
-        pose_deviation = np.linalg.inv(initial_guess.pose) @ new_estimate.pose
+        pose_deviation = (initial_guess.inverse() @ new_estimate).pose
         self.adaptive_threshold.update_model_deviation(pose_deviation)
         self.local_map.update(frame_downsample, new_estimate.pose)
         self.estimates.append(new_estimate)
@@ -89,12 +89,12 @@ class KissICP:
     def get_prediction_model(self):
         prediction = Estimate()
         if len(self.estimates) > 1:
-            prediction.pose = np.linalg.inv(self.estimates[-2].pose) @ self.estimates[-1].pose
+            prediction.pose = (self.estimates[-2].inverse() @ self.estimates[-1]).pose
         return prediction
 
     def has_moved(self):
         if len(self.estimates) < 1:
             return False
-        compute_motion = lambda T1, T2: np.linalg.norm((np.linalg.inv(T1.pose) @ T2.pose)[:3, -1])
+        compute_motion = lambda T1, T2: np.linalg.norm((T1.inverse() @ T2).pose[:3, -1])
         motion = compute_motion(self.estimates[0], self.estimates[-1])
         return motion > 5 * self.config.adaptive_threshold.min_motion_th

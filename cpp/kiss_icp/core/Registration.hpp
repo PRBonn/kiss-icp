@@ -33,8 +33,11 @@ using CovarianceMatrixType = Eigen::Matrix<double, 6, 6>;
 namespace kiss_icp {
 
 struct Estimate {
+    Estimate();
+    Estimate(const Sophus::SE3d &T, const CovarianceMatrixType &Sigma);
     Sophus::SE3d pose;
-    CovarianceMatrixType covariance = CovarianceMatrixType::Zero();
+    CovarianceMatrixType covariance;
+    Estimate inverse() const;
     friend Estimate operator*(Estimate lhs, const Estimate &rhs);
 };
 
