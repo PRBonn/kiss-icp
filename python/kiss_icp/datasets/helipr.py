@@ -143,7 +143,6 @@ class HeLiPRDataset:
                 [(name, np_type) for name, np_type in self.fields if name != "intensity"]
             )
 
-        points = np.stack(
-            [[line[0], line[1], line[2]] for line in np.fromfile(file_path, dtype=dtype).tolist()]
-        )
+        data = np.fromfile(file_path, dtype=dtype)
+        points = np.stack([[line[0], line[1], line[2]] for line in data])
         return points
