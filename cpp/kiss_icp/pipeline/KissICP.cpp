@@ -64,8 +64,8 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
 
     // Compute initial_guess for ICP
     const auto prediction = GetPredictionModel();
-    auto initial_guess = !estimates_.empty() ? estimates_.back() : Estimate();
-    initial_guess = initial_guess * prediction;
+    const auto last_estimate = !estimates_.empty() ? estimates_.back() : Estimate();
+    const auto initial_guess = last_estimate * prediction;
     // Run icp
     const auto new_estimate = registration_.AlignPointsToMap(source,         //
                                                              local_map_,     //
