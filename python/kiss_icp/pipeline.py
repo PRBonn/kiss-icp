@@ -66,6 +66,8 @@ class OdometryPipeline:
         self.results = PipelineResults()
         self.times = []
         self.estimates = self.odometry.estimates
+        self.poses = []
+        self.covariances = []
         self.has_gt = hasattr(self._dataset, "gt_poses")
         self.gt_poses = self._dataset.gt_poses[self._first : self._last] if self.has_gt else None
         self.dataset_name = self._dataset.__class__.__name__
@@ -83,7 +85,6 @@ class OdometryPipeline:
     # Public interface  ------
     def run(self):
         self._run_pipeline()
-        self._get_poses_and_covariances()
         self._run_evaluation()
         self._create_output_dir()
         self._write_result_poses()
@@ -99,6 +100,8 @@ class OdometryPipeline:
             raw_frame, timestamps = self._next(idx)
             start_time = time.perf_counter_ns()
             source, keypoints = self.odometry.register_frame(raw_frame, timestamps)
+            self.poses.append(self.estimates[-1].pose)
+            self.covariances.append(self.estimates[-1].covariance)
             self.times.append(time.perf_counter_ns() - start_time)
             self.visualizer.update(
                 source, keypoints, self.odometry.local_map, self.estimates[-1].pose
@@ -113,10 +116,6 @@ class OdometryPipeline:
             frame = dataframe
             timestamps = np.zeros(frame.shape[0])
         return frame, timestamps
-
-    def _get_poses_and_covariances(self):
-        self.poses = [x.pose for x in self.estimates]
-        self.covariances = [x.covariance for x in self.estimates]
 
     @staticmethod
     def save_poses_kitti_format(filename: str, poses: List[np.ndarray]):
