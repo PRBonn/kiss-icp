@@ -42,10 +42,6 @@ class HeLiPRDataset:
                 'run "pip install open3d" '
                 "or check https://www.open3d.org/docs/release/getting_started.html"
             ) from e
-        # Intensity stuff
-        import matplotlib.cm as cm
-
-        self.cmap = cm.viridis
 
         self.sequence_id = sequence
         self.sequence_dir = os.path.join(data_dir, "LiDAR", self.sequence_id)
