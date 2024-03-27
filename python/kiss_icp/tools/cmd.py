@@ -150,11 +150,11 @@ def kiss_icp_pipeline(
         help="[Optional] Overrides the max_range from the default configuration",
     ),
     deskew: bool = typer.Option(
-        False,
+        None,
         "--deskew",
-        help="[Optional] Whether or not to deskew the scan or not",
         show_default=False,
         is_flag=True,
+        help="[Optional] Whether or not to deskew the scan or not",
     ),
     # Aditional Options ---------------------------------------------------------------------------
     visualize: bool = typer.Option(
