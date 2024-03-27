@@ -123,12 +123,10 @@ class HeLiPRDataset:
 
     def read_poses(self, pose_file: str):
         gt = np.loadtxt(pose_file, delimiter=" ")
-
         xyz = gt[:, 1:4]
         rotations = np.array(
             [Quaternion(x=x, y=y, z=z, w=w).rotation_matrix for x, y, z, w in gt[:, 4:]]
         )
-
         poses = np.eye(4, dtype=np.float64).reshape(1, 4, 4).repeat(len(gt), axis=0)
         poses[:, :3, :3] = rotations
         poses[:, :3, 3] = xyz
