@@ -119,7 +119,10 @@ class HeLiPRDataset:
         return len(self.scan_files)
 
     def __getitem__(self, idx):
-        return self.read_point_cloud(idx)
+        data = self.get_data(idx)
+        points = self.read_point_cloud(data)
+        timestamps = self.get_frames_timestamps(data)
+        return points, timestamps
 
     def read_poses(self, pose_file: str):
         gt = np.loadtxt(pose_file, delimiter=" ")
@@ -132,9 +135,8 @@ class HeLiPRDataset:
         poses[:, :3, 3] = xyz
         return poses
 
-    def read_point_cloud(self, idx: int):
+    def get_data(self, idx: int):
         file_path = self.scan_files[idx]
-
         dtype = np.dtype(self.fields)
 
         # Special case, see https://github.com/minwoo0611/HeLiPR-File-Player/blob/e8d95e390454ece1415ae9deb51515f63730c10a/src/ROSThread.cpp#L632
@@ -142,7 +144,23 @@ class HeLiPRDataset:
             dtype = np.dtype(
                 [(name, np_type) for name, np_type in self.fields if name != "intensity"]
             )
+        return np.fromfile(file_path, dtype=dtype)
 
-        data = np.fromfile(file_path, dtype=dtype)
+    def get_frames_timestamps(self, data: np.ndarray) -> np.ndarray:
+        timestamp_index = [
+            index
+            for index, (name, _) in enumerate(self.fields)
+            if name
+            in [
+                "offset_time",
+                "time_offset_ns",
+                "t",
+                "time",
+            ]
+        ][0]
+        time = np.array([val[timestamp_index] for val in data])
+        return (time - time.min()) / (time.max() - time.min())
+
+    def read_point_cloud(self, data: np.ndarray) -> np.ndarray:
         points = np.stack([[line[0], line[1], line[2]] for line in data])
         return points
