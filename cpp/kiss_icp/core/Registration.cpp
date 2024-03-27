@@ -169,8 +169,8 @@ namespace kiss_icp {
 
 Estimate operator*(Estimate lhs, const Estimate &rhs) {
     lhs.pose *= rhs.pose;
-    const auto Proj = rhs.pose.Adj().inverse();
-    lhs.covariance = Proj * lhs.covariance * Proj.transpose() + rhs.covariance;
+    const auto Proj = lhs.pose.Adj();
+    lhs.covariance += Proj * rhs.covariance * Proj.transpose();
     return lhs;
 }
 
