@@ -66,21 +66,21 @@ class HeLiPRDataset:
         # Obtain the pointcloud reader for the given data folder
         if self.sequence_id == "Avia":
             self.format_string = "fffBBBL"
-            self.index_intensity = None
-            self.index_time = 6
+            self.intensity_channel = None
+            self.time_channel = 6
         elif self.sequence_id == "Aeva":
             self.format_string = "ffffflBf"
             self.format_string_no_intensity = "ffffflB"
-            self.index_intensity = 7
-            self.index_time = 5
+            self.intensity_channel = 7
+            self.time_channel = 5
         elif self.sequence_id == "Ouster":
             self.format_string = "ffffIHHH"
-            self.index_intensity = 3
-            self.index_time = 4
+            self.intensity_channel = 3
+            self.time_channel = 4
         elif self.sequence_id == "Velodyne":
             self.format_string = "ffffHf"
-            self.index_intensity = 3
-            self.index_time = 5
+            self.intensity_channel = 3
+            self.time_channel = 5
         else:
             print("[ERROR] Unsupported LiDAR Type")
             sys.exit()
@@ -114,7 +114,7 @@ class HeLiPRDataset:
 
         # Special case, see https://github.com/minwoo0611/HeLiPR-File-Player/blob/e8d95e390454ece1415ae9deb51515f63730c10a/src/ROSThread.cpp#L632
         if self.sequence_id == "Aeva" and int(Path(file_path).stem) <= 1691936557946849179:
-            self.index_intensity = None
+            self.intensity_channel = None
             format_string = self.format_string_no_intensity
         else:
             format_string = self.format_string
@@ -130,7 +130,7 @@ class HeLiPRDataset:
         return data
 
     def read_timestamps(self, data: np.ndarray) -> np.ndarray:
-        time = data[:, self.index_time]
+        time = data[:, self.time_channel]
         return (time - time.min()) / (time.max() - time.min())
 
     def read_point_cloud(self, data: np.ndarray) -> np.ndarray:
