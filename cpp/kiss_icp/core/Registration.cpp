@@ -201,7 +201,7 @@ Estimate Registration::AlignPointsToMap(const std::vector<Eigen::Vector3d> &fram
                                         double kernel_threshold) {
     if (voxel_map.Empty()) return initial_guess;
 
-    auto no_kernel = [&](double residual2) { return residual2 / residual2; };
+    auto no_kernel = [&](double residual2) { return residual2 > 0.0 ? 1.0 : 1.0; };
     auto GM = [&](double residual2) {
         return square(kernel_threshold) / square(kernel_threshold + residual2);
     };
@@ -226,7 +226,7 @@ Estimate Registration::AlignPointsToMap(const std::vector<Eigen::Vector3d> &fram
         if (dx.norm() < convergence_criterion_) break;
     }
     // tg UGLY PART
-    const auto associations = FindAssociations(source, voxel_map, kernel_threshold);
+    const auto associations = FindAssociations(source, voxel_map, voxel_map.voxel_size_ * 0.5);
     const auto &[H, b, chi_square] = BuildLinearSystem(associations, no_kernel);
     const auto covariance_icp = chi_square / static_cast<double>(associations.size()) * H.inverse();
     Estimate icp_correction(T_icp, covariance_icp);

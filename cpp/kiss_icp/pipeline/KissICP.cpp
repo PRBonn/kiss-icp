@@ -94,9 +94,12 @@ double KissICP::GetAdaptiveThreshold() {
 }
 
 Estimate KissICP::GetPredictionModel() const {
+    Estimate prediction;
     const size_t N = estimates_.size();
-    if (N < 2) return Estimate();
-    return estimates_[N - 2].inverse() * estimates_[N - 1];
+    if (N > 1) {
+        prediction.pose = (estimates_[N - 2].inverse() * estimates_[N - 1]).pose;
+    }
+    return prediction;
 }
 
 bool KissICP::HasMoved() {
