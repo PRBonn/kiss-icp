@@ -89,7 +89,9 @@ class KissICP:
     def get_prediction_model(self):
         prediction = Estimate()
         if len(self.estimates) > 1:
-            prediction = self.estimates[-2].inverse() @ self.estimates[-1]
+            pose_from = self.estimates[-2].pose
+            pose_to = self.estimates[-1].pose
+            prediction.pose = np.linalg.inv(pose_from) @ pose_to
         return prediction
 
     def has_moved(self):
