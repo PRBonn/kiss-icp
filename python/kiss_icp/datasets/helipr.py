@@ -29,8 +29,8 @@ from pathlib import Path
 import natsort
 import numpy as np
 
-from pyquaternion import Quaternion
 from lidar_visualizer.datasets import supported_file_extensions
+from pyquaternion import Quaternion
 
 
 class HeLiPRDataset:
