@@ -94,7 +94,7 @@ class HeLiPRDataset:
     def __getitem__(self, idx):
         data = self.get_data(idx)
         points = self.read_point_cloud(data)
-        timestamps = self.get_frames_timestamps(data)
+        timestamps = self.read_timestamps(data)
         return points, timestamps
 
     def read_poses(self, pose_file: str):
@@ -129,7 +129,7 @@ class HeLiPRDataset:
         data = np.stack(list_lines)
         return data
 
-    def get_frames_timestamps(self, data: np.ndarray) -> np.ndarray:
+    def read_timestamps(self, data: np.ndarray) -> np.ndarray:
         time = data[:, self.index_time]
         return (time - time.min()) / (time.max() - time.min())
 
