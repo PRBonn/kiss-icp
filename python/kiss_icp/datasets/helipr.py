@@ -27,6 +27,7 @@ from pathlib import Path
 
 import natsort
 import numpy as np
+import struct
 
 from pyquaternion import Quaternion
 from lidar_visualizer.datasets import supported_file_extensions
@@ -64,50 +65,22 @@ class HeLiPRDataset:
 
         # Obtain the pointcloud reader for the given data folder
         if self.sequence_id == "Avia":
-            self.fields = [
-                ("x", np.float32),
-                ("y", np.float32),
-                ("z", np.float32),
-                ("reflectivity", np.uint8),
-                ("tag", np.uint8),
-                ("line", np.uint8),
-                ("offset_time", np.uint32),
-            ]
-
+            self.format_string = "fffBBBL"
+            self.index_intensity = None
+            self.index_time = 6
         elif self.sequence_id == "Aeva":
-            self.fields = [
-                ("x", np.float32),
-                ("y", np.float32),
-                ("z", np.float32),
-                ("reflectivity", np.float32),
-                ("velocity", np.float32),
-                ("time_offset_ns", np.int32),
-                ("line_index", np.uint8),
-                ("intensity", np.float32),
-            ]
-
+            self.format_string = "ffffflBf"
+            self.format_string_no_intensity = "ffffflB"
+            self.index_intensity = 7
+            self.index_time = 5
         elif self.sequence_id == "Ouster":
-            self.fields = [
-                ("x", np.float32),
-                ("y", np.float32),
-                ("z", np.float32),
-                ("intensity", np.float32),
-                ("t", np.uint32),
-                ("reflectivity", np.uint16),
-                ("ring", np.uint16),
-                ("ambient", np.uint16),
-            ]
-
+            self.format_string = "ffffIHHH"
+            self.index_intensity = 3
+            self.index_time = 4
         elif self.sequence_id == "Velodyne":
-            self.fields = [
-                ("x", np.float32),
-                ("y", np.float32),
-                ("z", np.float32),
-                ("intensity", np.float32),
-                ("ring", np.uint16),
-                ("time", np.float32),
-            ]
-
+            self.format_string = "ffffHf"
+            self.index_intensity = 3
+            self.index_time = 5
         else:
             print("[ERROR] Unsupported LiDAR Type")
             sys.exit()
@@ -137,30 +110,28 @@ class HeLiPRDataset:
 
     def get_data(self, idx: int):
         file_path = self.scan_files[idx]
-        dtype = np.dtype(self.fields)
+        list_lines = []
 
         # Special case, see https://github.com/minwoo0611/HeLiPR-File-Player/blob/e8d95e390454ece1415ae9deb51515f63730c10a/src/ROSThread.cpp#L632
         if self.sequence_id == "Aeva" and int(Path(file_path).stem) <= 1691936557946849179:
-            dtype = np.dtype(
-                [(name, np_type) for name, np_type in self.fields if name != "intensity"]
-            )
-        return np.fromfile(file_path, dtype=dtype)
+            self.index_intensity = None
+            format_string = self.format_string_no_intensity
+        else:
+            format_string = self.format_string
+
+        chunk_size = struct.calcsize(f"={format_string}")
+        with open(file_path, "rb") as f:
+            binary = f.read()
+            offset = 0
+            while offset < len(binary):
+                list_lines.append(struct.unpack_from(f"={format_string}", binary, offset))
+                offset += chunk_size
+        data = np.stack(list_lines)
+        return data
 
     def get_frames_timestamps(self, data: np.ndarray) -> np.ndarray:
-        timestamp_index = [
-            index
-            for index, (name, _) in enumerate(self.fields)
-            if name
-            in [
-                "offset_time",
-                "time_offset_ns",
-                "t",
-                "time",
-            ]
-        ][0]
-        time = np.array([val[timestamp_index] for val in data])
+        time = data[:, self.index_time]
         return (time - time.min()) / (time.max() - time.min())
 
     def read_point_cloud(self, data: np.ndarray) -> np.ndarray:
-        points = np.stack([[line[0], line[1], line[2]] for line in data])
-        return points
+        return data[:, :3]
