@@ -54,7 +54,17 @@ class NCLTDataset:
         return len(self.scan_files)
 
     def __getitem__(self, idx):
-        return self.read_point_cloud(os.path.join(self.scans_dir, self.scan_files[idx]))
+        points = self.read_point_cloud(os.path.join(self.scans_dir, self.scan_files[idx]))
+        timestamps = self.get_timestamps(points)
+        return points, timestamps
+
+    @staticmethod
+    def get_timestamps(points):
+        x = points[:, 0]
+        y = points[:, 1]
+        yaw = -np.arctan2(y, x)
+        timestamps = 0.5 * (yaw / np.pi + 1.0)
+        return timestamps
 
     def read_point_cloud(self, file_path: str):
         def _convert(x_s, y_s, z_s):

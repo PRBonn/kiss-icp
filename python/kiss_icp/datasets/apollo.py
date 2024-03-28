@@ -49,11 +49,14 @@ class ApolloDataset:
         return len(self.scan_files)
 
     def __getitem__(self, idx):
-        return self.get_scan(self.scan_files[idx])
+        return self.read_point_cloud(self.scan_files[idx])
 
-    def get_scan(self, scan_file: str):
-        points = np.asarray(self.o3d.io.read_point_cloud(scan_file).points, dtype=np.float64)
-        return points.astype(np.float64)
+    def read_point_cloud(self, scan_file: str):
+        pcd = self.o3d.t.io.read_point_cloud(scan_file)
+        points = pcd.point.positions.numpy()
+        timestamps = pcd.point.timestamp.numpy().reshape(-1)
+        timestamps = (timestamps - timestamps.min()) / (timestamps.max() - timestamps.min())
+        return points.astype(np.float64), timestamps
 
     @staticmethod
     def read_poses(file):

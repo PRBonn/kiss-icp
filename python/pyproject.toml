@@ -58,7 +58,7 @@ test = [
     "pytest",
 ]
 visualizer = [
-    "open3d>=0.13",
+    "open3d>=0.16",
 ]
 
 [project.scripts]
