@@ -22,12 +22,12 @@
 # SOFTWARE.
 import importlib
 import os
+import struct
 import sys
 from pathlib import Path
 
 import natsort
 import numpy as np
-import struct
 
 from pyquaternion import Quaternion
 from lidar_visualizer.datasets import supported_file_extensions
