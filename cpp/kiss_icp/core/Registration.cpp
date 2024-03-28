@@ -227,8 +227,9 @@ Estimate Registration::AlignPointsToMap(const std::vector<Eigen::Vector3d> &fram
     }
     // tg UGLY PART
     const auto associations = FindAssociations(source, voxel_map, voxel_map.voxel_size_ * 0.5);
-    const auto &[H, b, chi_square] = BuildLinearSystem(associations, no_kernel);
-    const auto covariance_icp = chi_square / static_cast<double>(associations.size()) * H.inverse();
+    const auto &[JTJ, JTr, chi_square] = BuildLinearSystem(associations, no_kernel);
+    const auto covariance_icp =
+        chi_square / static_cast<double>(associations.size()) * JTJ.inverse();
     Estimate icp_correction(T_icp, covariance_icp);
     // Spit the final transformation
     return icp_correction * initial_guess;
