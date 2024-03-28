@@ -152,13 +152,9 @@ void OdometryServer::PublishOdometry(const kiss_icp::Estimate &kiss_estimate,
     const auto egocentric_estimation = (base_frame_.empty() || base_frame_ == cloud_frame_id);
     const auto estimate = [&]() -> kiss_icp::Estimate {
         if (egocentric_estimation) return kiss_estimate;
-        kiss_icp::Estimate transformed;
-        const Sophus::SE3d cloud2base = LookupTransform(base_frame_, cloud_frame_id, tf2_buffer_);
-        transformed.pose = cloud2base * kiss_estimate.pose * cloud2base.inverse();
-        // TODO verify equation
-        transformed.covariance =
-            cloud2base.Adj() * kiss_estimate.covariance * cloud2base.Adj().transpose();
-        return transformed;
+        kiss_icp::Estimate cloud2base;
+        cloud2base.pose = LookupTransform(base_frame_, cloud_frame_id, tf2_buffer_);
+        return cloud2base * kiss_estimate * cloud2base.inverse();
     }();
     // Broadcast the tf ---
     if (publish_odom_tf_) {

@@ -171,6 +171,7 @@ Estimate::Estimate() : pose(), covariance(Eigen::Matrix6d::Zero()) {}
 Estimate::Estimate(const Sophus::SE3d &T, const Eigen::Matrix6d &Sigma)
     : pose(T), covariance(Sigma) {}
 
+// Equations from figure 3 of https://arxiv.org/pdf/1906.07795.pdf
 Estimate Estimate::inverse() const {
     const auto Adj = pose.inverse().Adj();
     return {pose.inverse(), Adj * covariance * Adj.transpose()};
