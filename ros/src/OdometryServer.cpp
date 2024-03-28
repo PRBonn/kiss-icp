@@ -174,7 +174,7 @@ void OdometryServer::PublishOdometry(const kiss_icp::Estimate &kiss_estimate,
     nav_msgs::msg::Odometry odom_msg;
     odom_msg.header.stamp = header.stamp;
     odom_msg.header.frame_id = odom_frame_;
-    odom_msg.pose.pose = tf2::sophusToPose(pose);
+    odom_msg.pose.pose = tf2::sophusToPose(estimate.pose);
     odom_msg.pose.covariance.fill(0.0);
     for (int r = 0; r < 6; ++r) {
         for (int c = 0; c < 6; ++c) {
