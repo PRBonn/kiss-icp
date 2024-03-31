@@ -28,8 +28,9 @@ from pathlib import Path
 
 import natsort
 import numpy as np
-from kiss_icp.datasets import supported_file_extensions
 from pyquaternion import Quaternion
+
+from kiss_icp.datasets import supported_file_extensions
 
 
 class HeLiPRDataset:
