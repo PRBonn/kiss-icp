@@ -52,7 +52,7 @@ struct VoxelHashMap {
 
     explicit VoxelHashMap(double voxel_size, double max_distance, int max_points_per_voxel)
         : voxel_size_(voxel_size),
-          max_distance_(max_distance),
+          max_distance2_(max_distance * max_distance),
           max_points_per_voxel_(max_points_per_voxel) {}
 
     inline void Clear() { map_.clear(); }
@@ -70,7 +70,7 @@ struct VoxelHashMap {
     std::vector<Eigen::Vector3d> GetPoints(const std::vector<Voxel> &query_voxels) const;
 
     double voxel_size_;
-    double max_distance_;
+    double max_distance2_;
     int max_points_per_voxel_;
     tsl::robin_map<Voxel, VoxelBlock, VoxelHash> map_;
 };
