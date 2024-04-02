@@ -89,7 +89,7 @@ void VoxelHashMap::RemovePointsFarFromLocation(const Eigen::Vector3d &origin) {
         const auto &[voxel, voxel_block] = *it;
         const auto &pt = voxel_block.points.front();
         const auto max_distance2 = max_distance_ * max_distance_;
-        if ((pt - origin).squaredNorm() > (max_distance2)) {
+        if ((pt - origin).squaredNorm() >= (max_distance2)) {
             it = map_.erase(it);
         } else {
             ++it;
