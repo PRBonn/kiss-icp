@@ -85,8 +85,12 @@ class HeLiPRDataset:
             print("[ERROR] Unsupported LiDAR Type")
             sys.exit()
 
+        # Read poses and match with timestamps of scan files
         pose_file = os.path.join(data_dir, "LiDAR_GT", f"{self.sequence_id}_gt.txt")
-        self.gt_poses = self.read_poses(pose_file)
+        list_timestamps = [int(time.strip(".bin")) for time in os.listdir(self.sequence_dir)]
+        gt_times, gt_poses = self.read_poses(pose_file)
+        self.poses = [pose for time, pose in zip(gt_times, gt_poses) if time in list_timestamps]
+        assert len(self.poses) == len(self.scan_files)
 
     def __len__(self):
         return len(self.scan_files)
@@ -99,6 +103,7 @@ class HeLiPRDataset:
 
     def read_poses(self, pose_file: str):
         gt = np.loadtxt(pose_file, delimiter=" ")
+        time = gt[:, 0]
         xyz = gt[:, 1:4]
         rotations = np.array(
             [Quaternion(x=x, y=y, z=z, w=w).rotation_matrix for x, y, z, w in gt[:, 4:]]
@@ -106,7 +111,7 @@ class HeLiPRDataset:
         poses = np.eye(4, dtype=np.float64).reshape(1, 4, 4).repeat(len(gt), axis=0)
         poses[:, :3, :3] = rotations
         poses[:, :3, 3] = xyz
-        return poses
+        return time, poses
 
     def get_data(self, idx: int):
         file_path = self.scan_files[idx]
