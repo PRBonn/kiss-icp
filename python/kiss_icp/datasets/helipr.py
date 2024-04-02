@@ -46,6 +46,15 @@ class HeLiPRDataset:
 
         self.sequence_id = sequence
         self.sequence_dir = os.path.join(data_dir, "LiDAR", self.sequence_id)
+        scan_files = os.listdir(self.sequence_dir)
+        scan_timestamps = [int(Path(file).stem) for file in scan_files]
+
+        pose_file = os.path.join(data_dir, "LiDAR_GT", f"{self.sequence_id}_gt.txt")
+        pose_timestamps, poses = self.read_poses(pose_file)
+
+        # Match number of scans with number of references poses available
+        self.poses = [pose for time, pose in zip(pose_timestamps, poses) if time in scan_timestamps]
+        scan_files = [file for file in scan_files if int(Path(file).stem) in pose_timestamps]
 
         self.scan_files = np.array(
             natsort.natsorted(
@@ -84,13 +93,6 @@ class HeLiPRDataset:
         else:
             print("[ERROR] Unsupported LiDAR Type")
             sys.exit()
-
-        # Read poses and match with timestamps of scan files
-        pose_file = os.path.join(data_dir, "LiDAR_GT", f"{self.sequence_id}_gt.txt")
-        list_timestamps = [int(time.strip(".bin")) for time in os.listdir(self.sequence_dir)]
-        gt_times, gt_poses = self.read_poses(pose_file)
-        self.poses = [pose for time, pose in zip(gt_times, gt_poses) if time in list_timestamps]
-        assert len(self.poses) == len(self.scan_files)
 
     def __len__(self):
         return len(self.scan_files)
