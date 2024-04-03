@@ -123,8 +123,7 @@ Associations FindAssociations(const std::vector<Eigen::Vector3d> &points,
     return associations;
 }
 
-LinearSystem BuildLinearSystem(const Associations &associations,
-                               std::function<double_t(double_t)> kernel) {
+LinearSystem BuildLinearSystem(const Associations &associations, const double kernel_threshold) {
     auto compute_jacobian_and_residual = [](auto association) {
         const auto &[source, target] = association;
         const Eigen::Vector3d residual = source - target;
@@ -141,6 +140,10 @@ LinearSystem BuildLinearSystem(const Associations &associations,
         return a;
     };
 
+    auto GM_kernel = [&](double residual2) {
+        return square(kernel_threshold) / square(kernel_threshold + residual2);
+    };
+
     using associations_iterator = Associations::const_iterator;
     const auto &[JTJ, JTr, chi_square] = tbb::parallel_reduce(
         // Range
@@ -153,7 +156,7 @@ LinearSystem BuildLinearSystem(const Associations &associations,
                 r.begin(), r.end(), J, sum_linear_systems, [&](const auto &association) {
                     const auto &[J_r, residual] = compute_jacobian_and_residual(association);
                     const double chi_square = residual.squaredNorm();
-                    const double w = kernel(chi_square);
+                    const double w = GM_kernel(chi_square);
                     return LinearSystem(J_r.transpose() * w * J_r,                    // JTJ
                                         J_r.transpose() * w * residual, chi_square);  // JTr
                 });
@@ -202,36 +205,29 @@ Estimate Registration::AlignPointsToMap(const std::vector<Eigen::Vector3d> &fram
                                         double kernel_threshold) {
     if (voxel_map.Empty()) return initial_guess;
 
-    auto no_kernel = [&](double residual2) { return residual2 > 0.0 ? 1.0 : 1.0; };
-    auto GM = [&](double residual2) {
-        return square(kernel_threshold) / square(kernel_threshold + residual2);
-    };
     // Equation (9)
     std::vector<Eigen::Vector3d> source = frame;
     TransformPoints(initial_guess.pose, source);
 
     // ICP-loop
-    Sophus::SE3d T_icp = Sophus::SE3d();
+    Estimate icp_correction;
     for (int j = 0; j < max_num_iterations_; ++j) {
         // Equation (10)
-        const auto associations = FindAssociations(source, voxel_map, max_correspondence_distance);
+        const auto &associations = FindAssociations(source, voxel_map, max_correspondence_distance);
         // Equation (11)
-        const auto &[JTJ, JTr, chi_square] = BuildLinearSystem(associations, GM);
-        const Eigen::Vector6d dx = JTJ.ldlt().solve(-JTr);
+        const auto &[JTJ, JTr, chi_square] = BuildLinearSystem(associations, kernel_threshold);
+        const auto JTJ_inverse = JTJ.inverse();
+        const Eigen::Vector6d dx = -JTJ_inverse * JTr;
         const Sophus::SE3d estimation = Sophus::SE3d::exp(dx);
+        icp_correction.pose = estimation * icp_correction.pose;
+        // Follow Ollila et.al. https://arxiv.org/pdf/2006.10005.pdf - Eq. (2) for sample covariance
+        // using an M estimator
+        icp_correction.covariance = 1.0 / static_cast<double>(associations.size()) * JTJ_inverse;
         // Equation (12)
         TransformPoints(estimation, source);
-        // Update iterations
-        T_icp = estimation * T_icp;
         // Termination criteria
         if (dx.norm() < convergence_criterion_) break;
     }
-    // tg UGLY PART
-    const auto associations = FindAssociations(source, voxel_map, voxel_map.voxel_size_ * 0.5);
-    const auto &[JTJ, JTr, chi_square] = BuildLinearSystem(associations, no_kernel);
-    const auto covariance_icp =
-        chi_square / static_cast<double>(associations.size()) * JTJ.inverse();
-    Estimate icp_correction(T_icp, covariance_icp);
     // Spit the final transformation
     return icp_correction * initial_guess;
 }
