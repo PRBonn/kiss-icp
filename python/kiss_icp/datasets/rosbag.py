@@ -20,6 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import glob
 import os
 import sys
 from pathlib import Path
@@ -29,7 +30,7 @@ import natsort
 
 
 class RosbagDataset:
-    def __init__(self, data_dir: Sequence[Path], topic: str, *_, **__):
+    def __init__(self, data_dir: Path, topic: str, *_, **__):
         """ROS1 / ROS2 bagfile dataloader.
 
         It can take either one ROS2 bag file or one or more ROS1 bag files belonging to a split bag.
@@ -46,16 +47,22 @@ class RosbagDataset:
         from kiss_icp.tools.point_cloud2 import read_point_cloud
 
         self.read_point_cloud = read_point_cloud
-
-        # FIXME: This is quite hacky, trying to guess if we have multiple .bag, one or a dir
-        if isinstance(data_dir, Path):
+        if data_dir.is_file():
             self.sequence_id = os.path.basename(data_dir).split(".")[0]
             self.bag = AnyReader([data_dir])
         else:
-            self.sequence_id = os.path.basename(data_dir[0]).split(".")[0]
-            self.bag = AnyReader(data_dir)
+            bagfiles = [Path(path) for path in glob.glob(os.path.join(data_dir, "*.bag"))]
+            if len(bagfiles) > 0:
+                self.sequence_id = os.path.basename(bagfiles[0]).split(".")[0]
+                self.bag = AnyReader(bagfiles)
+            else:
+                self.sequence_id = os.path.basename(data_dir).split(".")[0]
+                self.bag = AnyReader([data_dir])
+
+        if len(self.bag.paths) > 1:
             print("Reading multiple .bag files in directory:")
             print("\n".join(natsort.natsorted([path.name for path in self.bag.paths])))
+
         self.bag.open()
         self.topic = self.check_topic(topic)
         self.n_scans = self.bag.topics[self.topic].msgcount
