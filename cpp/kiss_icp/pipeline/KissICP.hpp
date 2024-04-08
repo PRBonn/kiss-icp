@@ -72,8 +72,6 @@ public:
     Vector3dVectorTuple RegisterFrame(const std::vector<Eigen::Vector3d> &frame,
                                       const std::vector<double> &timestamps);
     Vector3dVectorTuple Voxelize(const std::vector<Eigen::Vector3d> &frame) const;
-    double GetAdaptiveThreshold();
-    bool HasMoved();
 
 public:
     // Extra C++ API to facilitate ROS debugging

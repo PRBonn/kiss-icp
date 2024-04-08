@@ -51,7 +51,7 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
     const auto &[source, frame_downsample] = Voxelize(cropped_frame);
 
     // Get motion prediction and adaptive_threshold
-    const double sigma = GetAdaptiveThreshold();
+    const double sigma = adaptive_threshold_.ComputeThreshold();
 
     // Compute initial_guess for ICP
     const auto initial_guess = last_pose_ * last_prediction_;
@@ -76,9 +76,5 @@ KissICP::Vector3dVectorTuple KissICP::Voxelize(const std::vector<Eigen::Vector3d
     const auto source = kiss_icp::VoxelDownsample(frame_downsample, voxel_size * 1.5);
     return {source, frame_downsample};
 }
-
-double KissICP::GetAdaptiveThreshold() { return adaptive_threshold_.ComputeThreshold(); }
-
-bool KissICP::HasMoved() { return true; }
 
 }  // namespace kiss_icp::pipeline
