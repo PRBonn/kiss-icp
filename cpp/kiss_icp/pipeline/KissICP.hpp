@@ -22,12 +22,10 @@
 #pragma once
 
 #include <Eigen/Core>
-#include <deque>
 #include <sophus/se3.hpp>
 #include <tuple>
 #include <vector>
 
-#include "kiss_icp/core/Deskew.hpp"
 #include "kiss_icp/core/Registration.hpp"
 #include "kiss_icp/core/Threshold.hpp"
 #include "kiss_icp/core/VoxelHashMap.hpp"
