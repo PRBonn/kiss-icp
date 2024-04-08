@@ -33,7 +33,6 @@ from kiss_icp.voxelization import voxel_down_sample
 
 class KissICP:
     def __init__(self, config: KISSConfig):
-        self.poses = []
         self.current_pose = np.eye(4)
         self.current_delta = np.eye(4)
         self.config = config
@@ -45,7 +44,7 @@ class KissICP:
 
     def register_frame(self, frame, timestamps):
         # Apply motion compensation
-        frame = self.compensator.deskew_scan(frame, self.poses, timestamps)
+        frame = self.compensator.deskew_scan(frame, timestamps, self.current_delta)
 
         # Preprocess the input cloud
         frame = self.preprocess(frame)
@@ -79,9 +78,6 @@ class KissICP:
         self.local_map.update(frame_downsample, new_pose)
         self.current_delta = np.linalg.inv(last_pose) @ new_pose
         self.current_pose = new_pose
-
-        # Unique in Pyton pipeline, update trajectory
-        self.poses.append(new_pose)
 
         # Return the (deskew) input raw scan (frame) and the points used for registration (source)
         return frame, source

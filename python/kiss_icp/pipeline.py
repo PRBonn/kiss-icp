@@ -65,7 +65,7 @@ class OdometryPipeline:
         self.odometry = KissICP(config=self.config)
         self.results = PipelineResults()
         self.times = []
-        self.poses = self.odometry.poses
+        self.poses = []
         self.has_gt = hasattr(self._dataset, "gt_poses")
         self.gt_poses = self._dataset.gt_poses[self._first : self._last] if self.has_gt else None
         self.dataset_name = self._dataset.__class__.__name__
@@ -97,6 +97,7 @@ class OdometryPipeline:
             raw_frame, timestamps = self._next(idx)
             start_time = time.perf_counter_ns()
             source, keypoints = self.odometry.register_frame(raw_frame, timestamps)
+            self.poses.append(self.odometry.current_pose)
             self.times.append(time.perf_counter_ns() - start_time)
             self.visualizer.update(source, keypoints, self.odometry.local_map, self.poses[-1])
 
