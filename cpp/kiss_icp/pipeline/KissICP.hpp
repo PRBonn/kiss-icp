@@ -22,6 +22,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <deque>
 #include <tuple>
 #include <vector>
 
@@ -57,6 +58,25 @@ public:
     using Vector3dVector = std::vector<Eigen::Vector3d>;
     using Vector3dVectorTuple = std::tuple<Vector3dVector, Vector3dVector>;
 
+    /// Template class to avoid growing infinitely the number of poses_
+    template <typename T, std::size_t MAX_SIZE = 2>
+    struct fixed_size_vector {
+        void push_back(const T &elem) {
+            if (deque_.size() == MAX_SIZE) deque_.pop_front();
+            deque_.push_back(elem);
+        }
+        operator std::vector<T>() const { return std::vector<T>(deque_.begin(), deque_.end()); }
+        auto empty() const { return deque_.empty(); }
+        auto size() const { return deque_.size(); }
+        const auto &front() const { return deque_.front(); }
+        auto &front() { return deque_.front(); }
+        const auto &back() const { return deque_.back(); }
+        auto &back() { return deque_.back(); }
+        const T &operator[](size_t index) const { return deque_[index]; }
+        T &operator[](size_t index) { return deque_[index]; }
+        std::deque<T> deque_;
+    };
+
 public:
     explicit KissICP(const KISSConfig &config)
         : config_(config),
@@ -81,7 +101,7 @@ public:
 
 private:
     // KISS-ICP pipeline modules
-    std::vector<Sophus::SE3d> poses_;
+    fixed_size_vector<Sophus::SE3d> poses_;
     KISSConfig config_;
     Registration registration_;
     VoxelHashMap local_map_;
