@@ -73,8 +73,6 @@ public:
                                       const std::vector<double> &timestamps);
     Vector3dVectorTuple Voxelize(const std::vector<Eigen::Vector3d> &frame) const;
 
-public:
-    // Extra C++ API to facilitate ROS debugging
     std::vector<Eigen::Vector3d> LocalMap() const { return local_map_.Pointcloud(); };
     Sophus::SE3d CurrentPose() const { return last_pose_; }
 

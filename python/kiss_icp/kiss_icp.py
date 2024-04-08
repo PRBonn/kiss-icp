@@ -52,7 +52,7 @@ class KissICP:
         source, frame_downsample = self.voxelize(frame)
 
         # Get motion prediction and adaptive_threshold
-        sigma = self.get_adaptive_threshold()
+        sigma = self.adaptive_threshold.get_threshold()
 
         # Compute initial_guess for ICP
         prediction = self.get_prediction_model()
@@ -78,22 +78,7 @@ class KissICP:
         source = voxel_down_sample(frame_downsample, self.config.mapping.voxel_size * 1.5)
         return source, frame_downsample
 
-    def get_adaptive_threshold(self):
-        return (
-            self.config.adaptive_threshold.initial_threshold
-            if not self.has_moved()
-            else self.adaptive_threshold.get_threshold()
-        )
-
     def get_prediction_model(self):
         if len(self.poses) < 2:
             return np.eye(4)
         return np.linalg.inv(self.poses[-2]) @ self.poses[-1]
-
-    def has_moved(self):
-        return True
-        # if len(self.poses) < 1:
-        #     return False
-        # compute_motion = lambda T1, T2: np.linalg.norm((np.linalg.inv(T1) @ T2)[:3, -1])
-        # motion = compute_motion(self.poses[0], self.poses[-1])
-        # return motion > 5 * self.config.adaptive_threshold.min_motion_th
