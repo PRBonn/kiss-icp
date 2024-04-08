@@ -91,8 +91,9 @@ class KissICP:
         return np.linalg.inv(self.poses[-2]) @ self.poses[-1]
 
     def has_moved(self):
-        if len(self.poses) < 1:
-            return False
-        compute_motion = lambda T1, T2: np.linalg.norm((np.linalg.inv(T1) @ T2)[:3, -1])
-        motion = compute_motion(self.poses[0], self.poses[-1])
-        return motion > 5 * self.config.adaptive_threshold.min_motion_th
+        return True
+        # if len(self.poses) < 1:
+        #     return False
+        # compute_motion = lambda T1, T2: np.linalg.norm((np.linalg.inv(T1) @ T2)[:3, -1])
+        # motion = compute_motion(self.poses[0], self.poses[-1])
+        # return motion > 5 * self.config.adaptive_threshold.min_motion_th
