@@ -73,7 +73,7 @@ public:
 
     std::vector<Eigen::Vector3d> LocalMap() const { return local_map_.Pointcloud(); };
     Sophus::SE3d pose() const { return current_pose_; }
-    Sophus::SE3d delta() const { return current_pose_; }
+    Sophus::SE3d delta() const { return current_delta_; }
 
 private:
     Sophus::SE3d current_pose_;
