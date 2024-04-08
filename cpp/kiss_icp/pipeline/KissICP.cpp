@@ -49,7 +49,7 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
     // Voxelize
     const auto &[source, frame_downsample] = Voxelize(cropped_frame);
 
-    // Get motion prediction and adaptive_threshold
+    // Get adaptive_threshold
     const double sigma = adaptive_threshold_.ComputeThreshold();
 
     // Compute initial_guess for ICP
@@ -58,7 +58,7 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
     // Save current pose before the ICP loop to compute the current_delta_ later
     const auto last_pose = current_pose_;
 
-    // Run ICP and update the current estimation
+    // Run ICP
     const auto new_pose = registration_.AlignPointsToMap(source,         // frame
                                                          local_map_,     // voxel_map
                                                          initial_guess,  // initial_guess

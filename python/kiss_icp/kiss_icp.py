@@ -34,6 +34,8 @@ from kiss_icp.voxelization import voxel_down_sample
 class KissICP:
     def __init__(self, config: KISSConfig):
         self.poses = []
+        self.current_pose = np.eye(4)
+        self.current_delta = np.eye(4)
         self.config = config
         self.compensator = get_motion_compensator(config)
         self.adaptive_threshold = get_threshold_estimator(self.config)
@@ -51,13 +53,14 @@ class KissICP:
         # Voxelize
         source, frame_downsample = self.voxelize(frame)
 
-        # Get motion prediction and adaptive_threshold
+        # Get adaptive_threshold
         sigma = self.adaptive_threshold.get_threshold()
 
         # Compute initial_guess for ICP
-        prediction = self.get_prediction_model()
-        last_pose = self.poses[-1] if self.poses else np.eye(4)
-        initial_guess = last_pose @ prediction
+        initial_guess = self.current_pose @ self.current_delta
+
+        # Save current pose before the ICP loop to compute the current_delta_ later
+        last_pose = self.current_pose
 
         # Run ICP
         new_pose = self.registration.align_points_to_map(
@@ -68,17 +71,22 @@ class KissICP:
             kernel=sigma / 3,
         )
 
-        self.adaptive_threshold.update_model_deviation(np.linalg.inv(initial_guess) @ new_pose)
+        # Compute the difference between the prediction and the actual estimate
+        model_deviation = np.linalg.inv(initial_guess) @ new_pose
+
+        # Update step: threshold, local map, delta, and the current pose
+        self.adaptive_threshold.update_model_deviation(model_deviation)
         self.local_map.update(frame_downsample, new_pose)
+        self.current_delta = np.linalg.inv(last_pose) @ new_pose
+        self.current_pose = new_pose
+
+        # Unique in Pyton pipeline, update trajectory
         self.poses.append(new_pose)
+
+        # Return the (deskew) input raw scan (frame) and the points used for registration (source)
         return frame, source
 
     def voxelize(self, iframe):
         frame_downsample = voxel_down_sample(iframe, self.config.mapping.voxel_size * 0.5)
         source = voxel_down_sample(frame_downsample, self.config.mapping.voxel_size * 1.5)
         return source, frame_downsample
-
-    def get_prediction_model(self):
-        if len(self.poses) < 2:
-            return np.eye(4)
-        return np.linalg.inv(self.poses[-2]) @ self.poses[-1]
