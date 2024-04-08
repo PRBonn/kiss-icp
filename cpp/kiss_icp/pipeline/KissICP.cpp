@@ -24,7 +24,6 @@
 #include "KissICP.hpp"
 
 #include <Eigen/Core>
-#include <tuple>
 #include <vector>
 
 #include "kiss_icp/core/Deskew.hpp"
@@ -38,7 +37,7 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
                                                     const std::vector<double> &timestamps) {
     const auto &deskew_frame = [&]() -> std::vector<Eigen::Vector3d> {
         if (!config_.deskew || timestamps.empty()) return frame;
-        return DeSkewScan(frame, timestamps, last_prediction_);
+        return DeSkewScan(frame, timestamps, current_delta_);
     }();
     return RegisterFrame(deskew_frame);
 }
@@ -54,19 +53,28 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
     const double sigma = adaptive_threshold_.ComputeThreshold();
 
     // Compute initial_guess for ICP
-    const auto initial_guess = last_pose_ * last_prediction_;
+    const auto initial_guess = current_pose_ * current_delta_;
 
-    // Run icp
-    const Sophus::SE3d new_pose = registration_.AlignPointsToMap(source,         //
-                                                                 local_map_,     //
-                                                                 initial_guess,  //
-                                                                 3.0 * sigma,    //
-                                                                 sigma / 3.0);
+    // Save current pose before the ICP loop to compute the current_delta_ later
+    const auto last_pose = current_pose_;
+
+    // Run ICP and update the current estimation
+    const auto new_pose = registration_.AlignPointsToMap(source,         // frame
+                                                         local_map_,     // voxel_map
+                                                         initial_guess,  // initial_guess
+                                                         3.0 * sigma,    // max_correspondence_dist
+                                                         sigma / 3.0);   // kernel
+
+    // Compute the difference between the prediction and the actual estimate
     const auto model_deviation = initial_guess.inverse() * new_pose;
+
+    // Update step: threshold, local map, delta, and the current pose
     adaptive_threshold_.UpdateModelDeviation(model_deviation);
     local_map_.Update(frame_downsample, new_pose);
-    last_prediction_ = last_pose_.inverse() * new_pose;
-    last_pose_ = new_pose;
+    current_delta_ = last_pose.inverse() * new_pose;
+    current_pose_ = new_pose;
+
+    // Return the (deskew) input raw scan (frame) and the points used for registration (source)
     return {frame, source};
 }
 

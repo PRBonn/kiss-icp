@@ -74,12 +74,14 @@ public:
     Vector3dVectorTuple Voxelize(const std::vector<Eigen::Vector3d> &frame) const;
 
     std::vector<Eigen::Vector3d> LocalMap() const { return local_map_.Pointcloud(); };
-    Sophus::SE3d CurrentPose() const { return last_pose_; }
+    Sophus::SE3d pose() const { return current_pose_; }
+    Sophus::SE3d delta() const { return current_pose_; }
 
 private:
+    Sophus::SE3d current_pose_;
+    Sophus::SE3d current_delta_;
+
     // KISS-ICP pipeline modules
-    Sophus::SE3d last_pose_;
-    Sophus::SE3d last_prediction_;
     KISSConfig config_;
     Registration registration_;
     VoxelHashMap local_map_;

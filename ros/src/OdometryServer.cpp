@@ -137,7 +137,7 @@ void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSha
     const auto &[frame, keypoints] = kiss_icp_->RegisterFrame(points, timestamps);
 
     // Extract the last KISS-ICP pose, ego-centric to the LiDAR
-    const Sophus::SE3d kiss_pose = kiss_icp_->CurrentPose();
+    const Sophus::SE3d kiss_pose = kiss_icp_->pose();
 
     // Spit the current estimated pose to ROS msgs handling the desired target frame
     PublishOdometry(kiss_pose, msg->header);
@@ -187,7 +187,7 @@ void OdometryServer::PublishClouds(const std::vector<Eigen::Vector3d> frame,
                                    const std::vector<Eigen::Vector3d> keypoints,
                                    const std_msgs::msg::Header &header) {
     const auto kiss_map = kiss_icp_->LocalMap();
-    const auto kiss_pose = kiss_icp_->CurrentPose().inverse();
+    const auto kiss_pose = kiss_icp_->pose().inverse();
 
     frame_publisher_->publish(std::move(EigenToPointCloud2(frame, header)));
     kpoints_publisher_->publish(std::move(EigenToPointCloud2(keypoints, header)));
