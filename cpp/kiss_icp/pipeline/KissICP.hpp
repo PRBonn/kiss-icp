@@ -73,7 +73,6 @@ public:
                                       const std::vector<double> &timestamps);
     Vector3dVectorTuple Voxelize(const std::vector<Eigen::Vector3d> &frame) const;
     double GetAdaptiveThreshold();
-    Sophus::SE3d GetPredictionModel() const;
     bool HasMoved();
 
 public:
@@ -83,7 +82,7 @@ public:
 private:
     // KISS-ICP pipeline modules
     Sophus::SE3d last_pose_;
-    Sophus::SE3d last_delta_;
+    Sophus::SE3d last_prediction_;
     KISSConfig config_;
     Registration registration_;
     VoxelHashMap local_map_;
