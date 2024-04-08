@@ -78,6 +78,7 @@ public:
 public:
     // Extra C++ API to facilitate ROS debugging
     std::vector<Eigen::Vector3d> LocalMap() const { return local_map_.Pointcloud(); };
+    Sophus::SE3d CurrentPose() const { return last_pose_; }
 
 private:
     // KISS-ICP pipeline modules
