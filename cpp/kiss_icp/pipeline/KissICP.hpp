@@ -23,6 +23,7 @@
 
 #include <Eigen/Core>
 #include <deque>
+#include <sophus/se3.hpp>
 #include <tuple>
 #include <vector>
 
@@ -58,16 +59,6 @@ public:
     using Vector3dVector = std::vector<Eigen::Vector3d>;
     using Vector3dVectorTuple = std::tuple<Vector3dVector, Vector3dVector>;
 
-    /// Template class to avoid growing infinitely the number of poses_
-    struct PosesSlidingWindow {
-        inline void updatePose(const Sophus::SE3d &pose) {
-            std::swap(last_pose, before_last_pose);
-            last_pose = pose;
-        }
-        Sophus::SE3d last_pose;
-        Sophus::SE3d before_last_pose;
-    };
-
 public:
     explicit KissICP(const KISSConfig &config)
         : config_(config),
@@ -88,11 +79,11 @@ public:
 public:
     // Extra C++ API to facilitate ROS debugging
     std::vector<Eigen::Vector3d> LocalMap() const { return local_map_.Pointcloud(); };
-    // std::vector<Sophus::SE3d> poses() const { return poses_; };
 
 private:
     // KISS-ICP pipeline modules
-    PosesSlidingWindow poses_;
+    Sophus::SE3d last_pose_;
+    Sophus::SE3d last_delta_;
     KISSConfig config_;
     Registration registration_;
     VoxelHashMap local_map_;
