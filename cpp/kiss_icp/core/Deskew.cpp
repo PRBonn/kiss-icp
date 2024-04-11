@@ -36,14 +36,6 @@ constexpr double mid_pose_timestamp{0.5};
 namespace kiss_icp {
 std::vector<Eigen::Vector3d> DeSkewScan(const std::vector<Eigen::Vector3d> &frame,
                                         const std::vector<double> &timestamps,
-                                        const Sophus::SE3d &start_pose,
-                                        const Sophus::SE3d &finish_pose) {
-    const auto delta = start_pose.inverse() * finish_pose;
-    return DeSkewScan(frame, timestamps, delta);
-}
-
-std::vector<Eigen::Vector3d> DeSkewScan(const std::vector<Eigen::Vector3d> &frame,
-                                        const std::vector<double> &timestamps,
                                         const Sophus::SE3d &delta) {
     const auto delta_pose = delta.log();
     std::vector<Eigen::Vector3d> corrected_frame(frame.size());
