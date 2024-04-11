@@ -26,7 +26,7 @@ from pathlib import Path
 import numpy as np
 import typer
 
-from kiss_icp.metrics import sequence_error, absolute_trajectory_error
+from kiss_icp.metrics import absolute_trajectory_error, sequence_error
 
 run = typer.Typer(add_completion=False, rich_markup_mode="rich")
 
