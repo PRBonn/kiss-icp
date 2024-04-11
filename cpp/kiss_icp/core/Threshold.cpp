@@ -25,24 +25,29 @@
 #include <Eigen/Core>
 #include <cmath>
 
-namespace {
-double ComputeModelError(const Sophus::SE3d &model_deviation, double max_range) {
-    const double theta = Eigen::AngleAxisd(model_deviation.rotationMatrix()).angle();
-    const double delta_rot = 2.0 * max_range * std::sin(theta / 2.0);
-    const double delta_trans = model_deviation.translation().norm();
-    return delta_trans + delta_rot;
-}
-}  // namespace
-
 namespace kiss_icp {
+AdaptiveThreshold::AdaptiveThreshold(double initial_threshold,
+                                     double min_motion_threshold,
+                                     double max_range)
+    : min_motion_threshold_(min_motion_threshold),
+      max_range_(max_range),
+      model_sse_(initial_threshold * initial_threshold),
+      model_error_(0.0),
+      num_samples_(1) {}
+
+void AdaptiveThreshold::UpdateModelDeviation(const Sophus::SE3d &current_deviation) {
+    const double theta = Eigen::AngleAxisd(current_deviation.rotationMatrix()).angle();
+    const double delta_rot = 2.0 * max_range_ * std::sin(theta / 2.0);
+    const double delta_trans = current_deviation.translation().norm();
+    model_error_ = delta_trans + delta_rot;
+}
 
 double AdaptiveThreshold::ComputeThreshold() {
-    double model_error = ComputeModelError(model_deviation_, max_range_);
-    if (model_error > min_motion_th_) {
-        model_error_sse2_ += model_error * model_error;
+    if (model_error_ > min_motion_threshold_) {
+        model_sse_ += model_error_ * model_error_;
         num_samples_++;
     }
-    return std::sqrt(model_error_sse2_ / num_samples_);
+    return std::sqrt(model_sse_ / num_samples_);
 }
 
 }  // namespace kiss_icp
