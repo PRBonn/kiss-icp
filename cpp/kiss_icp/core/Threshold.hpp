@@ -35,7 +35,7 @@ struct AdaptiveThreshold {
     void UpdateModelDeviation(const Sophus::SE3d &current_deviation);
 
     /// Returns the KISS-ICP adaptive threshold used in registration
-    constexpr double ComputeThreshold() const { return std::sqrt(model_sse_ / num_samples_); }
+    double ComputeThreshold() const { return std::sqrt(model_sse_ / num_samples_); }
 
     // configurable parameters
     double min_motion_threshold_;
