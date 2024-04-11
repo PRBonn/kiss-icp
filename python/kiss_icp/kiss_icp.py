@@ -33,8 +33,8 @@ from kiss_icp.voxelization import voxel_down_sample
 
 class KissICP:
     def __init__(self, config: KISSConfig):
-        self.current_pose = np.eye(4)
-        self.current_delta = np.eye(4)
+        self.last_pose = np.eye(4)
+        self.last_delta = np.eye(4)
         self.config = config
         self.compensator = get_motion_compensator(config)
         self.adaptive_threshold = get_threshold_estimator(self.config)
@@ -44,7 +44,7 @@ class KissICP:
 
     def register_frame(self, frame, timestamps):
         # Apply motion compensation
-        frame = self.compensator.deskew_scan(frame, timestamps, self.current_delta)
+        frame = self.compensator.deskew_scan(frame, timestamps, self.last_delta)
 
         # Preprocess the input cloud
         frame = self.preprocess(frame)
@@ -56,10 +56,7 @@ class KissICP:
         sigma = self.adaptive_threshold.get_threshold()
 
         # Compute initial_guess for ICP
-        initial_guess = self.current_pose @ self.current_delta
-
-        # Save current pose before the ICP loop to compute the current_delta_ later
-        last_pose = self.current_pose
+        initial_guess = self.last_pose @ self.last_delta
 
         # Run ICP
         new_pose = self.registration.align_points_to_map(
@@ -73,11 +70,11 @@ class KissICP:
         # Compute the difference between the prediction and the actual estimate
         model_deviation = np.linalg.inv(initial_guess) @ new_pose
 
-        # Update step: threshold, local map, delta, and the current pose
+        # Update step: threshold, local map, delta, and the last pose
         self.adaptive_threshold.update_model_deviation(model_deviation)
         self.local_map.update(frame_downsample, new_pose)
-        self.current_delta = np.linalg.inv(last_pose) @ new_pose
-        self.current_pose = new_pose
+        self.last_delta = np.linalg.inv(self.last_pose) @ new_pose
+        self.last_pose = new_pose
 
         # Return the (deskew) input raw scan (frame) and the points used for registration (source)
         return frame, source

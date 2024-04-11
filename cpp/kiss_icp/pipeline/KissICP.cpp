@@ -37,7 +37,7 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
                                                     const std::vector<double> &timestamps) {
     const auto &deskew_frame = [&]() -> std::vector<Eigen::Vector3d> {
         if (!config_.deskew || timestamps.empty()) return frame;
-        return DeSkewScan(frame, timestamps, current_delta_);
+        return DeSkewScan(frame, timestamps, last_delta_);
     }();
     return RegisterFrame(deskew_frame);
 }
@@ -53,10 +53,7 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
     const double sigma = adaptive_threshold_.ComputeThreshold();
 
     // Compute initial_guess for ICP
-    const auto initial_guess = current_pose_ * current_delta_;
-
-    // Save current pose before the ICP loop to compute the current_delta_ later
-    const auto last_pose = current_pose_;
+    const auto initial_guess = last_pose_ * last_delta_;
 
     // Run ICP
     const auto new_pose = registration_.AlignPointsToMap(source,         // frame
@@ -68,11 +65,11 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
     // Compute the difference between the prediction and the actual estimate
     const auto model_deviation = initial_guess.inverse() * new_pose;
 
-    // Update step: threshold, local map, delta, and the current pose
+    // Update step: threshold, local map, delta, and the last pose
     adaptive_threshold_.UpdateModelDeviation(model_deviation);
     local_map_.Update(frame_downsample, new_pose);
-    current_delta_ = last_pose.inverse() * new_pose;
-    current_pose_ = new_pose;
+    last_delta_ = last_pose_.inverse() * new_pose;
+    last_pose_ = new_pose;
 
     // Return the (deskew) input raw scan (frame) and the points used for registration (source)
     return {frame, source};

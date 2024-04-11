@@ -97,7 +97,7 @@ class OdometryPipeline:
             raw_frame, timestamps = self._next(idx)
             start_time = time.perf_counter_ns()
             source, keypoints = self.odometry.register_frame(raw_frame, timestamps)
-            self.poses.append(self.odometry.current_pose)
+            self.poses.append(self.odometry.last_pose)
             self.times.append(time.perf_counter_ns() - start_time)
             self.visualizer.update(source, keypoints, self.odometry.local_map, self.poses[-1])
 
