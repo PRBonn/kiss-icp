@@ -21,9 +21,11 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import typer
-import numpy as np
 from pathlib import Path
+
+import numpy as np
+import typer
+
 from kiss_icp.metrics import sequence_error, absolute_trajectory_error
 
 run = typer.Typer(add_completion=False, rich_markup_mode="rich")
