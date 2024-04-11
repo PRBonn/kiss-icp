@@ -68,9 +68,6 @@ class HeLiPRDataset:
         )
         if len(self.scan_files) == 0:
             raise ValueError(f"Tried to read point cloud files in {data_dir} but none found")
-        self.file_extension = self.scan_files[0].split(".")[-1]
-        if self.file_extension not in supported_file_extensions():
-            raise ValueError(f"Supported formats are: {supported_file_extensions()}")
 
         # Obtain the pointcloud reader for the given data folder
         if self.sequence_id == "Avia":
