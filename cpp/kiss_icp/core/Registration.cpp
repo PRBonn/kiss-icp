@@ -90,7 +90,7 @@ std::tuple<Eigen::Vector3d, double> GetClosestNeighbor(const Eigen::Vector3d &po
 
 Correspondences DataAssociation(const std::vector<Eigen::Vector3d> &points,
                                 const kiss_icp::VoxelHashMap &voxel_map,
-                                double max_correspondance_distance) {
+                                const double max_correspondance_distance) {
     using points_iterator = std::vector<Eigen::Vector3d>::const_iterator;
     Correspondences correspondences;
     correspondences.reserve(points.size());
@@ -121,9 +121,9 @@ Correspondences DataAssociation(const std::vector<Eigen::Vector3d> &points,
     return correspondences;
 }
 
-LinearSystem BuildLinearSystem(const Correspondences &correspondences, double kernel) {
-    auto compute_jacobian_and_residual = [](auto association) {
-        const auto &[source, target] = association;
+LinearSystem BuildLinearSystem(const Correspondences &correspondences, const double kernel_scale) {
+    auto compute_jacobian_and_residual = [](const auto &correspondence) {
+        const auto &[source, target] = correspondence;
         const Eigen::Vector3d residual = source - target;
         Eigen::Matrix3_6d J_r;
         J_r.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity();
@@ -137,7 +137,9 @@ LinearSystem BuildLinearSystem(const Correspondences &correspondences, double ke
         return a;
     };
 
-    auto GM_weight = [&](double residual2) { return square(kernel) / square(kernel + residual2); };
+    auto GM_weight = [&](const double &residual2) {
+        return square(kernel_scale) / square(kernel_scale + residual2);
+    };
 
     using correspondence_iterator = Correspondences::const_iterator;
     const auto &[JTJ, JTr] = tbb::parallel_reduce(
@@ -149,8 +151,8 @@ LinearSystem BuildLinearSystem(const Correspondences &correspondences, double ke
         // 1st Lambda: Parallel computation
         [&](const tbb::blocked_range<correspondence_iterator> &r, LinearSystem J) -> LinearSystem {
             return std::transform_reduce(
-                r.begin(), r.end(), J, sum_linear_systems, [&](const auto &association) {
-                    const auto &[J_r, residual] = compute_jacobian_and_residual(association);
+                r.begin(), r.end(), J, sum_linear_systems, [&](const auto &correspondence) {
+                    const auto &[J_r, residual] = compute_jacobian_and_residual(correspondence);
                     const double w = GM_weight(residual.squaredNorm());
                     return LinearSystem(J_r.transpose() * w * J_r,        // JTJ
                                         J_r.transpose() * w * residual);  // JTr
@@ -179,8 +181,8 @@ Registration::Registration(int max_num_iteration, double convergence_criterion, 
 Sophus::SE3d Registration::AlignPointsToMap(const std::vector<Eigen::Vector3d> &frame,
                                             const VoxelHashMap &voxel_map,
                                             const Sophus::SE3d &initial_guess,
-                                            double max_distance,
-                                            double kernel_scale) {
+                                            const double max_distance,
+                                            const double kernel_scale) {
     if (voxel_map.Empty()) return initial_guess;
 
     // Equation (9)
