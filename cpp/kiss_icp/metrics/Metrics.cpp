@@ -172,14 +172,17 @@ std::tuple<float, float> AbsoluteTrajectoryError(const std::vector<Eigen::Matrix
     for (size_t j = 0; j < num_poses; ++j) {
         // Apply alignement matrix
         const Eigen::Matrix4d T_estimate = T_align_trajectories * poses_result[j];
-        const Eigen::Matrix4d T_ground_truth = poses_gt[j];
-        const auto delta_T = T_estimate.inverse() * T_ground_truth;
+        const Eigen::Matrix4d &T_ground_truth = poses_gt[j];
+        // Compute error in translation and rotation matrix (ungly)
+        const Eigen::Matrix3d delta_R =
+            T_ground_truth.block<3, 3>(0, 0) * T_estimate.block<3, 3>(0, 0).transpose();
+        const Eigen::Vector3d delta_t =
+            T_ground_truth.block<3, 1>(0, 3) - delta_R * T_estimate.block<3, 1>(0, 3);
         // Get angular error
-        const double delta_theta = Eigen::AngleAxisd(delta_T.block<3, 3>(0, 0)).angle();
-        const auto delta_trans = delta_T.block<3, 1>(0, 3);
+        const double theta = Eigen::AngleAxisd(delta_R).angle();
         // Sum of Squares
-        ATE_rot += delta_theta * delta_theta;
-        ATE_trans += delta_trans.squaredNorm();
+        ATE_rot += theta * theta;
+        ATE_trans += delta_t.squaredNorm();
     }
     // Get the RMSE
     ATE_rot /= static_cast<double>(num_poses);
