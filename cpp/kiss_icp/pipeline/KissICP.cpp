@@ -24,7 +24,6 @@
 #include "KissICP.hpp"
 
 #include <Eigen/Core>
-#include <tuple>
 #include <vector>
 
 #include "kiss_icp/core/Deskew.hpp"
@@ -38,16 +37,7 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
                                                     const std::vector<double> &timestamps) {
     const auto &deskew_frame = [&]() -> std::vector<Eigen::Vector3d> {
         if (!config_.deskew || timestamps.empty()) return frame;
-        // TODO(Nacho) Add some asserts here to sanitize the timestamps
-
-        //  If not enough poses for the estimation, do not de-skew
-        const size_t N = poses().size();
-        if (N <= 2) return frame;
-
-        // Estimate linear and angular velocities
-        const auto &start_pose = poses_[N - 2];
-        const auto &finish_pose = poses_[N - 1];
-        return DeSkewScan(frame, timestamps, start_pose, finish_pose);
+        return DeSkewScan(frame, timestamps, last_delta_);
     }();
     return RegisterFrame(deskew_frame);
 }
@@ -59,24 +49,29 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
     // Voxelize
     const auto &[source, frame_downsample] = Voxelize(cropped_frame);
 
-    // Get motion prediction and adaptive_threshold
-    const double sigma = GetAdaptiveThreshold();
+    // Get adaptive_threshold
+    const double sigma = adaptive_threshold_.ComputeThreshold();
 
     // Compute initial_guess for ICP
-    const auto prediction = GetPredictionModel();
-    const auto last_pose = !poses_.empty() ? poses_.back() : Sophus::SE3d();
-    const auto initial_guess = last_pose * prediction;
+    const auto initial_guess = last_pose_ * last_delta_;
 
-    // Run icp
-    const Sophus::SE3d new_pose = registration_.AlignPointsToMap(source,         //
-                                                                 local_map_,     //
-                                                                 initial_guess,  //
-                                                                 3.0 * sigma,    //
-                                                                 sigma / 3.0);
+    // Run ICP
+    const auto new_pose = registration_.AlignPointsToMap(source,         // frame
+                                                         local_map_,     // voxel_map
+                                                         initial_guess,  // initial_guess
+                                                         3.0 * sigma,    // max_correspondence_dist
+                                                         sigma / 3.0);   // kernel
+
+    // Compute the difference between the prediction and the actual estimate
     const auto model_deviation = initial_guess.inverse() * new_pose;
+
+    // Update step: threshold, local map, delta, and the last pose
     adaptive_threshold_.UpdateModelDeviation(model_deviation);
     local_map_.Update(frame_downsample, new_pose);
-    poses_.push_back(new_pose);
+    last_delta_ = last_pose_.inverse() * new_pose;
+    last_pose_ = new_pose;
+
+    // Return the (deskew) input raw scan (frame) and the points used for registration (source)
     return {frame, source};
 }
 
@@ -85,26 +80,6 @@ KissICP::Vector3dVectorTuple KissICP::Voxelize(const std::vector<Eigen::Vector3d
     const auto frame_downsample = kiss_icp::VoxelDownsample(frame, voxel_size * 0.5);
     const auto source = kiss_icp::VoxelDownsample(frame_downsample, voxel_size * 1.5);
     return {source, frame_downsample};
-}
-
-double KissICP::GetAdaptiveThreshold() {
-    if (!HasMoved()) {
-        return config_.initial_threshold;
-    }
-    return adaptive_threshold_.ComputeThreshold();
-}
-
-Sophus::SE3d KissICP::GetPredictionModel() const {
-    Sophus::SE3d pred = Sophus::SE3d();
-    const size_t N = poses_.size();
-    if (N < 2) return pred;
-    return poses_[N - 2].inverse() * poses_[N - 1];
-}
-
-bool KissICP::HasMoved() {
-    if (poses_.empty()) return false;
-    const double motion = (poses_.front().inverse() * poses_.back()).translation().norm();
-    return motion > 5.0 * config_.min_motion_th;
 }
 
 }  // namespace kiss_icp::pipeline

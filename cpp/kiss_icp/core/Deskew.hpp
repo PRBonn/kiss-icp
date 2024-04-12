@@ -28,10 +28,9 @@
 
 namespace kiss_icp {
 
-/// Compensate the frame by estimatng the velocity between the given poses
+/// Compensate the frame by interpolating the delta pose
 std::vector<Eigen::Vector3d> DeSkewScan(const std::vector<Eigen::Vector3d> &frame,
                                         const std::vector<double> &timestamps,
-                                        const Sophus::SE3d &start_pose,
-                                        const Sophus::SE3d &finish_pose);
+                                        const Sophus::SE3d &delta);
 
 }  // namespace kiss_icp
