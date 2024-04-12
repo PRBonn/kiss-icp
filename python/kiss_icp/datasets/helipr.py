@@ -53,7 +53,9 @@ class HeLiPRDataset:
         pose_timestamps, poses = self.read_poses(pose_file)
 
         # Match number of scans with number of references poses available
-        self.poses = [pose for time, pose in zip(pose_timestamps, poses) if time in scan_timestamps]
+        self.gt_poses = [
+            pose for time, pose in zip(pose_timestamps, poses) if time in scan_timestamps
+        ]
         scan_files = [file for file in scan_files if int(Path(file).stem) in pose_timestamps]
 
         self.scan_files = np.array(
