@@ -36,8 +36,8 @@ struct Registration {
     Sophus::SE3d AlignPointsToMap(const std::vector<Eigen::Vector3d> &frame,
                                   const VoxelHashMap &voxel_map,
                                   const Sophus::SE3d &initial_guess,
-                                  double max_correspondence_distance,
-                                  double kernel);
+                                  const double max_correspondence_distance,
+                                  const double kernel_scale);
 
     int max_num_iterations_;
     double convergence_criterion_;

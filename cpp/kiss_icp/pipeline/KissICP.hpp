@@ -22,10 +22,10 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <sophus/se3.hpp>
 #include <tuple>
 #include <vector>
 
-#include "kiss_icp/core/Deskew.hpp"
 #include "kiss_icp/core/Registration.hpp"
 #include "kiss_icp/core/Threshold.hpp"
 #include "kiss_icp/core/VoxelHashMap.hpp"
@@ -70,18 +70,16 @@ public:
     Vector3dVectorTuple RegisterFrame(const std::vector<Eigen::Vector3d> &frame,
                                       const std::vector<double> &timestamps);
     Vector3dVectorTuple Voxelize(const std::vector<Eigen::Vector3d> &frame) const;
-    double GetAdaptiveThreshold();
-    Sophus::SE3d GetPredictionModel() const;
-    bool HasMoved();
 
-public:
-    // Extra C++ API to facilitate ROS debugging
     std::vector<Eigen::Vector3d> LocalMap() const { return local_map_.Pointcloud(); };
-    std::vector<Sophus::SE3d> poses() const { return poses_; };
+    Sophus::SE3d pose() const { return last_pose_; }
+    Sophus::SE3d delta() const { return last_delta_; }
 
 private:
+    Sophus::SE3d last_pose_;
+    Sophus::SE3d last_delta_;
+
     // KISS-ICP pipeline modules
-    std::vector<Sophus::SE3d> poses_;
     KISSConfig config_;
     Registration registration_;
     VoxelHashMap local_map_;
