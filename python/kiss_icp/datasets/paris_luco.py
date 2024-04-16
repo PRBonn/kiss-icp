@@ -59,7 +59,7 @@ class ParisLucoDataset:
             T = np.eye(4)
             T[:3, 3] = xyz
             gt_poses.append(T)
-        return gt_poses
+        return np.array(gt_poses).reshape(-1, 4, 4)
 
     def apply_calibration(self, poses):
         """ParisLucoDataset only has a x, y, z trajectory, so we must will em all"""
