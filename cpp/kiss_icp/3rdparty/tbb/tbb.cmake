@@ -27,7 +27,7 @@ option(TBB_EXAMPLES OFF)
 option(TBB_STRICT OFF)
 option(TBB_TEST OFF)
 
+set_directory_properties(PROPERTIES EXCLUDE_FROM_ALL YES)
 include(FetchContent)
-FetchContent_Declare(tbb URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.8.0.tar.gz EXCLUDE_FROM_ALL
-                             TRUE)
+FetchContent_Declare(tbb URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.8.0.tar.gz SYSTEM)
 FetchContent_MakeAvailable(tbb)
