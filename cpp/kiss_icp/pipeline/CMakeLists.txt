@@ -21,8 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-add_library(pipeline STATIC)
-add_library(kiss_icp::pipeline ALIAS pipeline)
-target_sources(pipeline PRIVATE KissICP.cpp)
-target_link_libraries(pipeline PUBLIC kiss_icp::core)
-set_global_target_properties(pipeline)
+add_library(kiss_icp_pipeline STATIC)
+target_sources(kiss_icp_pipeline PRIVATE KissICP.cpp)
+target_link_libraries(kiss_icp_pipeline PUBLIC kiss_icp_core)
+set_global_target_properties(kiss_icp_pipeline)
