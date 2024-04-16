@@ -20,17 +20,19 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-# option(BUILD_SHARED_LIBS ON)
-option(BUILD_SHARED_LIBS OFF)
-option(TBBMALLOC_BUILD OFF)
-option(TBB_EXAMPLES OFF)
-option(TBB_STRICT OFF)
-option(TBB_TEST OFF)
 
-include(FetchContent)
-FetchContent_Declare(tbb URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.8.0.tar.gz)
+FetchContent_GetProperties(tbb)
 if(NOT tbb_POPULATED)
+  option(BUILD_SHARED_LIBS OFF)
+  option(TBBMALLOC_BUILD OFF)
+  option(TBB_EXAMPLES OFF)
+  option(TBB_STRICT OFF)
+  option(TBB_TEST OFF)
+
+  include(FetchContent)
+  FetchContent_Declare(tbb URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.8.0.tar.gz)
   FetchContent_Populate(tbb)
+
   if(${CMAKE_VERSION} GREATER_EQUAL 3.25)
     add_subdirectory(${tbb_SOURCE_DIR} ${tbb_BINARY_DIR} SYSTEM EXCLUDE_FROM_ALL)
   else()
