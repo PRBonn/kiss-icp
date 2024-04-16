@@ -31,7 +31,7 @@ set(EIGEN_BUILD_PKGCONFIG OFF CACHE BOOL "Don't build Eigen pkg-config")
 set(EIGEN_BUILD_BLAS OFF CACHE BOOL "Don't build blas module")
 set(EIGEN_BUILD_LAPACK OFF CACHE BOOL "Don't build lapack module")
 
-set_directory_properties(PROPERTIES EXCLUDE_FROM_ALL YES)
 include(FetchContent)
-FetchContent_Declare(eigen URL https://github.com/nachovizzo/eigen/archive/refs/tags/3.4.90.tar.gz SYSTEM)
+FetchContent_Declare(eigen URL https://github.com/nachovizzo/eigen/archive/refs/tags/3.4.90.tar.gz EXCLUDE_FROM_ALL
+                               SYSTEM)
 FetchContent_MakeAvailable(eigen)
