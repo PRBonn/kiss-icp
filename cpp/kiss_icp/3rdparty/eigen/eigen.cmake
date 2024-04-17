@@ -33,6 +33,7 @@ set(EIGEN_BUILD_LAPACK OFF CACHE BOOL "Don't build lapack module")
 
 include(FetchContent)
 FetchContent_Declare(eigen URL https://github.com/nachovizzo/eigen/archive/refs/tags/3.4.90.tar.gz)
+FetchContent_GetProperties(eigen)
 if(NOT eigen_POPULATED)
   FetchContent_Populate(eigen)
   if(${CMAKE_VERSION} GREATER_EQUAL 3.25)
