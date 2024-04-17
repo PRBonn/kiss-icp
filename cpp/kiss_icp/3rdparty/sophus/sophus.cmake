@@ -27,9 +27,9 @@ set(BUILD_SOPHUS_EXAMPLES OFF CACHE BOOL "Don't build Sophus Examples")
 
 # TODO: Remove patch in case https://github.com/strasdat/Sophus/pull/502 gets merged
 FetchContent_Declare(
-  sophus 
-  SYSTEM 
-  GIT_REPOSITORY https://github.com/strasdat/Sophus.git 
+  sophus
+  SYSTEM
+  GIT_REPOSITORY https://github.com/strasdat/Sophus.git
   GIT_TAG 1.22.10
   PATCH_COMMAND git apply ${CMAKE_CURRENT_LIST_DIR}/sophus.patch
   UPDATE_DISCONNECTED 1)
