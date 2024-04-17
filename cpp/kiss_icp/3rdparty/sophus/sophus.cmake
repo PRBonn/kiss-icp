@@ -25,6 +25,7 @@ set(SOPHUS_USE_BASIC_LOGGING ON CACHE BOOL "Don't use fmt for Sophus libraru")
 set(BUILD_SOPHUS_TESTS OFF CACHE BOOL "Don't build Sophus tests")
 set(BUILD_SOPHUS_EXAMPLES OFF CACHE BOOL "Don't build Sophus Examples")
 
+# TODO: Remove patch in case https://github.com/strasdat/Sophus/pull/502 gets merged
 FetchContent_Declare(
   sophus 
   SYSTEM 
