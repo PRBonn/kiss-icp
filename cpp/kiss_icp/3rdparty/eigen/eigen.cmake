@@ -32,6 +32,5 @@ set(EIGEN_BUILD_BLAS OFF CACHE BOOL "Don't build blas module")
 set(EIGEN_BUILD_LAPACK OFF CACHE BOOL "Don't build lapack module")
 
 include(FetchContent)
-FetchContent_Declare(eigen URL https://github.com/nachovizzo/eigen/archive/refs/tags/3.4.90.tar.gz EXCLUDE_FROM_ALL
-                               SYSTEM)
+FetchContent_Declare(eigen GIT_REPOSITORY https://gitlab.com/libeigen/eigen GIT_TAG 3.4 EXCLUDE_FROM_ALL SYSTEM)
 FetchContent_MakeAvailable(eigen)
