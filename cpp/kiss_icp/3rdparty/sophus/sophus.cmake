@@ -25,5 +25,5 @@ set(SOPHUS_USE_BASIC_LOGGING ON CACHE BOOL "Don't use fmt for Sophus libraru")
 set(BUILD_SOPHUS_TESTS OFF CACHE BOOL "Don't build Sophus tests")
 set(BUILD_SOPHUS_EXAMPLES OFF CACHE BOOL "Don't build Sophus Examples")
 
-FetchContent_Declare(sophus SYSTEM GIT_REPOSITORY https://github.com/strasdat/Sophus.git GIT_TAG main-1.x)
+FetchContent_Declare(sophus SYSTEM GIT_REPOSITORY https://github.com/strasdat/Sophus.git GIT_TAG v1.0.0)
 FetchContent_MakeAvailable(sophus)
