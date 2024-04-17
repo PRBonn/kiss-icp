@@ -20,8 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-add_library(core STATIC)
-add_library(kiss_icp::core ALIAS core)
-target_sources(core PRIVATE Registration.cpp Deskew.cpp VoxelHashMap.cpp Preprocessing.cpp Threshold.cpp)
-target_link_libraries(core PUBLIC Eigen3::Eigen tsl::robin_map TBB::tbb Sophus::Sophus)
-set_global_target_properties(core)
+add_library(kiss_icp_core STATIC)
+target_sources(kiss_icp_core PRIVATE Registration.cpp Deskew.cpp VoxelHashMap.cpp Preprocessing.cpp Threshold.cpp)
+target_link_libraries(kiss_icp_core PUBLIC Eigen3::Eigen tsl::robin_map TBB::tbb Sophus::Sophus)
+set_global_target_properties(kiss_icp_core)

@@ -52,7 +52,7 @@ find_package(tf2_ros REQUIRED)
 add_library(odometry_component SHARED src/OdometryServer.cpp)
 target_compile_features(odometry_component PUBLIC cxx_std_20)
 target_include_directories(odometry_component PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_link_libraries(odometry_component kiss_icp::pipeline)
+target_link_libraries(odometry_component kiss_icp_pipeline)
 ament_target_dependencies(
   odometry_component
   rcutils
