@@ -31,7 +31,7 @@ FetchContent_Declare(
   SYSTEM
   GIT_REPOSITORY https://github.com/strasdat/Sophus.git
   GIT_TAG 1.22.10
-  PATCH_COMMAND git apply ${CMAKE_CURRENT_LIST_DIR}/sophus.patch
+  PATCH_COMMAND git apply --ignore-space-change --ignore-whitespace ${CMAKE_CURRENT_LIST_DIR}/sophus.patch
   UPDATE_DISCONNECTED 1)
 
 FetchContent_MakeAvailable(sophus)
