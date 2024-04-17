@@ -25,5 +25,10 @@ set(SOPHUS_USE_BASIC_LOGGING ON CACHE BOOL "Don't use fmt for Sophus libraru")
 set(BUILD_SOPHUS_TESTS OFF CACHE BOOL "Don't build Sophus tests")
 set(BUILD_SOPHUS_EXAMPLES OFF CACHE BOOL "Don't build Sophus Examples")
 
-FetchContent_Declare(sophus SYSTEM GIT_REPOSITORY https://github.com/strasdat/Sophus.git GIT_TAG 1.22.10)
+FetchContent_Declare(sophus SYSTEM 
+  GIT_REPOSITORY https://github.com/strasdat/Sophus.git 
+  GIT_TAG 1.22.10
+  PATCH_COMMAND git apply ${CMAKE_CURRENT_LIST_DIR}/sophus.patch
+  UPDATE_DISCONNECTED 1
+  )
 FetchContent_MakeAvailable(sophus)
