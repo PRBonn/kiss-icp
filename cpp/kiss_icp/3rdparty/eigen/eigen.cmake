@@ -21,10 +21,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# TODO: Yet another manual release dne by nacho. This should be updated whenever the Eigen team
-# release a new version that is not 3.4. That version does not include this necessary changes:
-# - https://gitlab.com/libeigen/eigen/-/merge_requests/893/diffs
-
 set(EIGEN_BUILD_DOC OFF CACHE BOOL "Don't build Eigen docs")
 set(EIGEN_BUILD_TESTING OFF CACHE BOOL "Don't build Eigen tests")
 set(EIGEN_BUILD_PKGCONFIG OFF CACHE BOOL "Don't build Eigen pkg-config")
