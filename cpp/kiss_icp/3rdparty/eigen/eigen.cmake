@@ -21,10 +21,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# TODO: Yet another manual release dne by nacho. This should be updated whenever the Eigen team
-# release a new version that is not 3.4. That version does not include this necessary changes:
-# - https://gitlab.com/libeigen/eigen/-/merge_requests/893/diffs
-
 set(EIGEN_BUILD_DOC OFF CACHE BOOL "Don't build Eigen docs")
 set(EIGEN_BUILD_TESTING OFF CACHE BOOL "Don't build Eigen tests")
 set(EIGEN_BUILD_PKGCONFIG OFF CACHE BOOL "Don't build Eigen pkg-config")
@@ -32,7 +28,8 @@ set(EIGEN_BUILD_BLAS OFF CACHE BOOL "Don't build blas module")
 set(EIGEN_BUILD_LAPACK OFF CACHE BOOL "Don't build lapack module")
 
 include(FetchContent)
-FetchContent_Declare(eigen URL https://github.com/nachovizzo/eigen/archive/refs/tags/3.4.90.tar.gz)
+FetchContent_Declare(eigen URL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
+                     PATCH_COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/eigen.patch UPDATE_DISCONNECTED 1)
 FetchContent_GetProperties(eigen)
 if(NOT eigen_POPULATED)
   FetchContent_Populate(eigen)
