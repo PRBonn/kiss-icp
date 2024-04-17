@@ -8,6 +8,6 @@ index 5634d35b..56a1b590 100644
  #define SOPHUS_FMT_PRINT(description, ...) std::printf("%s\n", description)
 -#define SOPHUS_FMT_ARG(arg)
 +#define SOPHUS_FMT_ARG(arg) arg
-
+ 
  #else  // !SOPHUS_USE_BASIC_LOGGING
-
+ 
