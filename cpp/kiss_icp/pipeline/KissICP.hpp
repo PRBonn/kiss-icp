@@ -58,6 +58,7 @@ public:
     using Vector3dVectorTuple = std::tuple<Vector3dVector, Vector3dVector>;
 
 public:
+    explicit KissICP() : KissICP(KISSConfig()) {}
     explicit KissICP(const KISSConfig &config)
         : config_(config),
           registration_(
@@ -74,6 +75,7 @@ public:
     std::vector<Eigen::Vector3d> LocalMap() const { return local_map_.Pointcloud(); };
     Sophus::SE3d pose() const { return last_pose_; }
     Sophus::SE3d delta() const { return last_delta_; }
+    const KISSConfig &config() const { return config_; }
 
 private:
     Sophus::SE3d last_pose_;
