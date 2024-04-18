@@ -81,5 +81,13 @@ KissICP::Vector3dVectorTuple KissICP::Voxelize(const std::vector<Eigen::Vector3d
     const auto source = kiss_icp::VoxelDownsample(frame_downsample, voxel_size * 1.5);
     return {source, frame_downsample};
 }
+void KissICP::resetGlobalFrame(const Sophus::SE3d &global_frame_correction) {
+    last_pose_ = global_frame_correction * last_pose_;
+    KissICP::Vector3dVector map_points = local_map_.Pointcloud();
+    local_map_.Clear();
+    std::transform(map_points.cbegin(), map_points.cend(), map_points.begin(),
+                   [&](const auto &p) { return global_frame_correction * p; });
+    local_map_.AddPoints(map_points);
+}
 
 }  // namespace kiss_icp::pipeline
