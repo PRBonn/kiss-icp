@@ -75,7 +75,7 @@ public:
     Sophus::SE3d pose() const { return last_pose_; }
     Sophus::SE3d delta() const { return last_delta_; }
 
-    void resetGlobalFrame(const Sophus::SE3d &global_frame_correction);
+    void adjustGlobalFrame(const Sophus::SE3d &global_frame_correction);
 
 private:
     Sophus::SE3d last_pose_;
