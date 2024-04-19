@@ -168,12 +168,12 @@ LinearSystem BuildLinearSystem(const Correspondences &correspondences, const dou
 namespace kiss_icp {
 
 // Need to provide a definition to the static attribute
-tbb::global_control Registration::tbb_control_settings(
-    tbb::global_control::max_allowed_parallelism,
-    static_cast<size_t>(tbb::info::default_concurrency()));
 
 Registration::Registration(int max_num_iteration, double convergence_criterion, int max_num_threads)
-    : max_num_iterations_(max_num_iteration), convergence_criterion_(convergence_criterion) {
+    : max_num_iterations_(max_num_iteration),
+      convergence_criterion_(convergence_criterion),
+      tbb_control_settings(tbb::global_control::max_allowed_parallelism,
+                           static_cast<size_t>(tbb::info::default_concurrency())) {
     // Only manipulate the number of threads if the user specifies something greater than 0
     if (max_num_threads > 0) {
         tbb_control_settings = tbb::global_control(tbb::global_control::max_allowed_parallelism,

@@ -44,8 +44,8 @@ struct Registration {
 
     int max_num_iterations_;
     double convergence_criterion_;
-    // This attribute requires static to be able to manipulate the max
-    // concurrency from TBB across multiple instances of this class
-    static tbb::global_control tbb_control_settings;
+    // This attribute is needed to be able to manipulate the max
+    // concurrency from TBB this class
+    tbb::global_control tbb_control_settings;
 };
 }  // namespace kiss_icp
