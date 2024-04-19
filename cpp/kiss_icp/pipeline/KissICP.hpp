@@ -72,10 +72,15 @@ public:
     Vector3dVectorTuple Voxelize(const std::vector<Eigen::Vector3d> &frame) const;
 
     std::vector<Eigen::Vector3d> LocalMap() const { return local_map_.Pointcloud(); };
-    Sophus::SE3d pose() const { return last_pose_; }
-    Sophus::SE3d delta() const { return last_delta_; }
 
-    void adjustGlobalFrame(const Sophus::SE3d &global_frame_correction);
+    const VoxelHashMap &VoxelMap() const { return local_map_; };
+    VoxelHashMap &VoxelMap() { return local_map_; };
+
+    const Sophus::SE3d &pose() const { return last_pose_; }
+    Sophus::SE3d &pose() { return last_pose_; }
+
+    const Sophus::SE3d &delta() const { return last_delta_; }
+    Sophus::SE3d &delta() { return last_delta_; }
 
 private:
     Sophus::SE3d last_pose_;
