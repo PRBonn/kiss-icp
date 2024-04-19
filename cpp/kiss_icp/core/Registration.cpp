@@ -167,12 +167,18 @@ LinearSystem BuildLinearSystem(const Correspondences &correspondences, const dou
 
 namespace kiss_icp {
 
+// Need to provide a definition to the static attribute
+tbb::global_control Registration::tbb_control_settings(
+    tbb::global_control::max_allowed_parallelism,
+    static_cast<size_t>(tbb::info::default_concurrency()));
+
 Registration::Registration(int max_num_iteration, double convergence_criterion, int max_num_threads)
     : max_num_iterations_(max_num_iteration), convergence_criterion_(convergence_criterion) {
     // Only manipulate the number of threads if the user specifies something greater than 0
-    auto max_threads = max_num_threads > 0 ? max_num_threads : tbb::info::default_concurrency();
-    tbb_control_settings = tbb::global_control(tbb::global_control::max_allowed_parallelism,
-                                               static_cast<size_t>(max_threads));
+    if (max_num_threads > 0) {
+        tbb_control_settings = tbb::global_control(tbb::global_control::max_allowed_parallelism,
+                                                   static_cast<size_t>(max_num_threads));
+    }
 }
 
 Sophus::SE3d Registration::AlignPointsToMap(const std::vector<Eigen::Vector3d> &frame,
