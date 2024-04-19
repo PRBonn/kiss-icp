@@ -81,4 +81,5 @@ KissICP::Vector3dVectorTuple KissICP::Voxelize(const std::vector<Eigen::Vector3d
     const auto source = kiss_icp::VoxelDownsample(frame_downsample, voxel_size * 1.5);
     return {source, frame_downsample};
 }
+
 }  // namespace kiss_icp::pipeline
