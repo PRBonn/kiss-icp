@@ -22,7 +22,8 @@
 // SOFTWARE.
 #pragma once
 
-#include <oneapi/tbb/global_control.h>
+#include <tbb/global_control.h>
+#include <tbb/info.h>
 
 #include <Eigen/Core>
 #include <sophus/se3.hpp>
