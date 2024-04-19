@@ -74,7 +74,7 @@ private:
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr map_publisher_;
 
     /// KISS-ICP
-    std::unique_ptr<kiss_icp::pipeline::KissICP> kiss_icp_;
+    std::unique_ptr<kiss_icp::pipeline::KissICP> kiss_icp_ = nullptr;
 
     /// Global/map coordinate frame.
     std::string odom_frame_{"odom"};

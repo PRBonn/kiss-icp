@@ -22,6 +22,8 @@
 // SOFTWARE.
 #pragma once
 
+#include <oneapi/tbb/global_control.h>
+
 #include <Eigen/Core>
 #include <sophus/se3.hpp>
 #include <vector>
@@ -41,6 +43,8 @@ struct Registration {
 
     int max_num_iterations_;
     double convergence_criterion_;
-    int max_num_threads_;
+    // This attribute requires static to be able to manipulate the max
+    // concurrency from TBB across multiple instances of this class
+    static tbb::global_control tbb_control_settings;
 };
 }  // namespace kiss_icp
