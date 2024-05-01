@@ -23,9 +23,7 @@
 cmake_minimum_required(VERSION 3.16...3.26)
 project(kiss_icp VERSION 0.4.0 LANGUAGES CXX)
 
-set(ignore ${CATKIN_INSTALL_INTO_PREFIX_ROOT})
 set(CMAKE_BUILD_TYPE Release)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../cpp/kiss_icp/)
   add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../cpp/kiss_icp ${CMAKE_CURRENT_BINARY_DIR}/kiss_icp)
@@ -41,11 +39,13 @@ else()
 endif()
 
 find_package(ament_cmake REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
-find_package(rcutils REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
+find_package(rcutils REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 
 # ROS 2 node
@@ -55,12 +55,13 @@ target_include_directories(odometry_component PRIVATE ${CMAKE_CURRENT_SOURCE_DIR
 target_link_libraries(odometry_component kiss_icp_pipeline)
 ament_target_dependencies(
   odometry_component
-  rcutils
+  geometry_msgs
+  nav_msgs
   rclcpp
   rclcpp_components
-  nav_msgs
+  rcutils
   sensor_msgs
-  geometry_msgs
+  std_msgs
   tf2_ros)
 
 rclcpp_components_register_node(odometry_component PLUGIN "kiss_icp_ros::OdometryServer" EXECUTABLE kiss_icp_node)
