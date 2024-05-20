@@ -179,18 +179,11 @@ class OdometryPipeline:
         # Run timing metrics evaluation, always
         def _get_fps():
             total_time_s = sum(self.times) * 1e-9
-            if total_time_s == 0:
-                return 0  
-            else:
-                return float(len(self.times) / total_time_s)
+            return float(len(self.times) / total_time_s) if total_time_s > 0 else 0
 
         fps = _get_fps()
-        if fps == 0:
-            avg_fps = 0
-            avg_ms = 0
-        else:
-            avg_fps = int(np.ceil(fps))
-            avg_ms = int(np.ceil(1e3 / fps))
+        avg_fps = int(np.floor(fps))
+        avg_ms = int(np.ceil(1e3 / fps)) if fps > 0 else 0
         self.results.append(desc="Average Frequency", units="Hz", value=avg_fps, trunc=True)
         self.results.append(desc="Average Runtime", units="ms", value=avg_ms, trunc=True)
 
