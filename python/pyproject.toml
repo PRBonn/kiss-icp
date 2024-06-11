@@ -63,7 +63,7 @@ visualizer = [
 
 [project.scripts]
 kiss_icp_pipeline = "kiss_icp.tools.cmd:run"
-kiss_icp_dump_config = "kiss_icp.config.parser:write_dump_config"
+kiss_icp_dump_config = "kiss_icp.config.parser:write_config"
 
 [project.urls]
 Homepage = "https://github.com/PRBonn/kiss-icp"
