@@ -27,8 +27,8 @@
 
 #include <Eigen/Core>
 #include <algorithm>
-#include <cmath>
 #include <sophus/se3.hpp>
+#include <unordered_set>
 #include <vector>
 
 namespace {
@@ -43,20 +43,23 @@ struct VoxelHash {
 
 namespace kiss_icp {
 std::vector<Eigen::Vector3d> VoxelDownsample(const std::vector<Eigen::Vector3d> &frame,
-                                             double voxel_size) {
-    tsl::robin_map<Voxel, Eigen::Vector3d, VoxelHash> grid;
-    grid.reserve(frame.size());
-    for (const auto &point : frame) {
-        const auto voxel = Voxel((point / voxel_size).cast<int>());
-        if (grid.contains(voxel)) continue;
-        grid.insert({voxel, point});
-    }
+                                             const double voxel_size) {
+    std::unordered_set<Voxel, VoxelHash> voxels_set;
     std::vector<Eigen::Vector3d> frame_dowsampled;
-    frame_dowsampled.reserve(grid.size());
-    for (const auto &[voxel, point] : grid) {
-        (void)voxel;
-        frame_dowsampled.emplace_back(point);
-    }
+
+    voxels_set.reserve(frame.size());
+    frame_dowsampled.reserve(frame.size());
+
+    std::for_each(frame.cbegin(), frame.cend(), [&](const auto &point) {
+        const auto voxel = Voxel((point / voxel_size).template cast<int>());
+        if (voxels_set.find(voxel) == voxels_set.end()) {
+            voxels_set.insert(voxel);
+            frame_dowsampled.emplace_back(point);
+        }
+    });
+
+    frame_dowsampled.shrink_to_fit();
+
     return frame_dowsampled;
 }
 
