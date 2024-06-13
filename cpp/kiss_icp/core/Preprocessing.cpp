@@ -23,12 +23,11 @@
 #include "Preprocessing.hpp"
 
 #include <tbb/parallel_for.h>
-#include <tsl/robin_map.h>
+#include <tsl/robin_set.h>
 
 #include <Eigen/Core>
 #include <algorithm>
 #include <sophus/se3.hpp>
-#include <unordered_set>
 #include <vector>
 
 namespace {
@@ -44,16 +43,16 @@ struct VoxelHash {
 namespace kiss_icp {
 std::vector<Eigen::Vector3d> VoxelDownsample(const std::vector<Eigen::Vector3d> &frame,
                                              const double voxel_size) {
-    std::unordered_set<Voxel, VoxelHash> voxels_set;
+    tsl::robin_set<Voxel, VoxelHash> voxels;
     std::vector<Eigen::Vector3d> frame_dowsampled;
 
-    voxels_set.reserve(frame.size());
+    voxels.reserve(frame.size());
     frame_dowsampled.reserve(frame.size());
 
     std::for_each(frame.cbegin(), frame.cend(), [&](const Eigen::Vector3d &point) {
         const auto voxel = Voxel((point / voxel_size).cast<int>());
-        if (voxels_set.find(voxel) == voxels_set.end()) {
-            voxels_set.insert(voxel);
+        if (!voxels.contains(voxel)) {
+            voxels.insert(voxel);
             frame_dowsampled.emplace_back(point);
         }
     });
