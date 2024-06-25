@@ -76,7 +76,7 @@ std::tuple<Eigen::Vector3d, double> GetClosestNeighbor(const Eigen::Vector3d &po
     const auto &neighbors = voxel_map.GetPoints(query_voxels);
 
     // Find the nearest neighbor
-    Eigen::Vector3d closest_neighbor;
+    Eigen::Vector3d closest_neighbor = Eigen::Vector3d::Zero();
     double closest_distance = std::numeric_limits<double>::max();
     std::for_each(neighbors.cbegin(), neighbors.cend(), [&](const auto &neighbor) {
         double distance = (neighbor - point).norm();
