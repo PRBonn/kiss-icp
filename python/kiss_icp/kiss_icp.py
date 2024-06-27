@@ -50,7 +50,7 @@ class KissICP:
         frame = self.preprocess(frame)
 
         # Voxelize
-        source, frame_downsample = self.voxelize(frame)
+        source = voxel_down_sample(frame, self.config.mapping.voxel_size * 1.5)
 
         # Get adaptive_threshold
         sigma = self.adaptive_threshold.get_threshold()
@@ -72,14 +72,9 @@ class KissICP:
 
         # Update step: threshold, local map, delta, and the last pose
         self.adaptive_threshold.update_model_deviation(model_deviation)
-        self.local_map.update(frame_downsample, new_pose)
+        self.local_map.update(source, new_pose)
         self.last_delta = np.linalg.inv(self.last_pose) @ new_pose
         self.last_pose = new_pose
 
         # Return the (deskew) input raw scan (frame) and the points used for registration (source)
         return frame, source
-
-    def voxelize(self, iframe):
-        frame_downsample = voxel_down_sample(iframe, self.config.mapping.voxel_size * 0.5)
-        source = voxel_down_sample(frame_downsample, self.config.mapping.voxel_size * 1.5)
-        return source, frame_downsample
