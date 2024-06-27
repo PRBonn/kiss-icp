@@ -41,5 +41,5 @@ std::vector<Eigen::Vector3d> CorrectKITTIScan(const std::vector<Eigen::Vector3d>
 
 /// Voxelize point cloud keeping the original coordinates
 std::vector<Eigen::Vector3d> VoxelDownsample(const std::vector<Eigen::Vector3d> &frame,
-                                             double voxel_size);
+                                             const double voxel_size);
 }  // namespace kiss_icp

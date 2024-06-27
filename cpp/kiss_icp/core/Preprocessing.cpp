@@ -23,11 +23,10 @@
 #include "Preprocessing.hpp"
 
 #include <tbb/parallel_for.h>
-#include <tsl/robin_map.h>
+#include <tsl/robin_set.h>
 
 #include <Eigen/Core>
 #include <algorithm>
-#include <cmath>
 #include <sophus/se3.hpp>
 #include <vector>
 
@@ -43,20 +42,23 @@ struct VoxelHash {
 
 namespace kiss_icp {
 std::vector<Eigen::Vector3d> VoxelDownsample(const std::vector<Eigen::Vector3d> &frame,
-                                             double voxel_size) {
-    tsl::robin_map<Voxel, Eigen::Vector3d, VoxelHash> grid;
-    grid.reserve(frame.size());
-    for (const auto &point : frame) {
-        const auto voxel = Voxel((point / voxel_size).cast<int>());
-        if (grid.contains(voxel)) continue;
-        grid.insert({voxel, point});
-    }
+                                             const double voxel_size) {
+    tsl::robin_set<Voxel, VoxelHash> voxels;
     std::vector<Eigen::Vector3d> frame_dowsampled;
-    frame_dowsampled.reserve(grid.size());
-    for (const auto &[voxel, point] : grid) {
-        (void)voxel;
-        frame_dowsampled.emplace_back(point);
-    }
+
+    voxels.reserve(frame.size());
+    frame_dowsampled.reserve(frame.size());
+
+    std::for_each(frame.cbegin(), frame.cend(), [&](const Eigen::Vector3d &point) {
+        const auto voxel = Voxel((point / voxel_size).cast<int>());
+        if (!voxels.contains(voxel)) {
+            voxels.insert(voxel);
+            frame_dowsampled.emplace_back(point);
+        }
+    });
+
+    frame_dowsampled.shrink_to_fit();
+
     return frame_dowsampled;
 }
 
