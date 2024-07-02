@@ -28,6 +28,7 @@
 #include <Eigen/Core>
 #include <algorithm>
 #include <cmath>
+#include <numeric>
 #include <sophus/se3.hpp>
 #include <vector>
 
@@ -47,7 +48,9 @@ std::vector<Eigen::Vector3d> VoxelDownsample(const std::vector<Eigen::Vector3d> 
     tsl::robin_map<Voxel, Eigen::Vector3d, VoxelHash> grid;
     grid.reserve(frame.size());
     for (const auto &point : frame) {
-        const auto voxel = Voxel((point / voxel_size).cast<int>());
+        const auto voxel = Voxel(static_cast<int>(std::floor(point.x() / voxel_size)),
+                                 static_cast<int>(std::floor(point.y() / voxel_size)),
+                                 static_cast<int>(std::floor(point.z() / voxel_size)));
         if (grid.contains(voxel)) continue;
         grid.insert({voxel, point});
     }
