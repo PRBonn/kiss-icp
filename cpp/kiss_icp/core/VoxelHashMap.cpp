@@ -76,9 +76,7 @@ void VoxelHashMap::Update(const std::vector<Eigen::Vector3d> &points, const Soph
 
 void VoxelHashMap::AddPoints(const std::vector<Eigen::Vector3d> &points) {
     std::for_each(points.cbegin(), points.cend(), [&](const auto &point) {
-        auto voxel = Voxel(static_cast<int>(std::floor(point.x() / voxel_size_)),
-                           static_cast<int>(std::floor(point.y() / voxel_size_)),
-                           static_cast<int>(std::floor(point.z() / voxel_size_)));
+        auto voxel = PointToVoxel(point);
         auto search = map_.find(voxel);
         if (search != map_.end()) {
             auto &voxel_block = search.value();
