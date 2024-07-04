@@ -46,14 +46,18 @@ struct VoxelHashMap {
     struct VoxelHash {
         size_t operator()(const Voxel &voxel) const {
             const uint32_t *vec = reinterpret_cast<const uint32_t *>(voxel.data());
-            return ((1 << 20) - 1) & (vec[0] * 73856093 ^ vec[1] * 19349669 ^ vec[2] * 83492791);
+            return (vec[0] * 73856093 ^ vec[1] * 19349669 ^ vec[2] * 83492791);
         }
     };
 
     explicit VoxelHashMap(double voxel_size, double max_distance, int max_points_per_voxel)
         : voxel_size_(voxel_size),
           max_distance_(max_distance),
-          max_points_per_voxel_(max_points_per_voxel) {}
+          max_points_per_voxel_(max_points_per_voxel),
+          map_(1 << 16) {
+        map_.min_load_factor(0.05f);
+        map_.max_load_factor(0.75f);
+    }
 
     inline void Clear() { map_.clear(); }
     inline bool Empty() const { return map_.empty(); }
