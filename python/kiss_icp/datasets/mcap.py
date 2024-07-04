@@ -46,7 +46,8 @@ class McapDataloader:
         self.summary = self.bag.get_summary()
         self.topic = self.check_topic(topic)
         self.n_scans = self._get_n_scans()
-        self.msgs = read_ros2_messages(mcap_file, topics=topic)
+        self.msgs = read_ros2_messages(mcap_file, topics=self.topic)
+        self.timestamps = []
         self.read_point_cloud = read_point_cloud
         self.use_global_visualizer = True
 
@@ -56,6 +57,7 @@ class McapDataloader:
 
     def __getitem__(self, idx):
         msg = next(self.msgs).ros_msg
+        self.timestamps.append(self.stamp_to_sec(msg.header.stamp))
         return self.read_point_cloud(msg)
 
     def __len__(self):
@@ -67,6 +69,13 @@ class McapDataloader:
             for (id, count) in self.summary.statistics.channel_message_counts.items()
             if self.summary.channels[id].topic == self.topic
         )
+
+    @staticmethod
+    def stamp_to_sec(stamp):
+        return stamp.sec + float(stamp.nanosec) / 1e9
+
+    def get_frames_timestamps(self) -> list:
+        return self.timestamps
 
     def check_topic(self, topic: str) -> str:
         # Extract schema id from the .mcap file that encodes the PointCloud2 msg
