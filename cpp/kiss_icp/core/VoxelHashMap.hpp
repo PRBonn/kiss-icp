@@ -29,7 +29,6 @@
 #include <tsl/robin_map.h>
 
 #include <Eigen/Core>
-#include <numeric>
 #include <sophus/se3.hpp>
 #include <vector>
 
