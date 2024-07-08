@@ -48,9 +48,7 @@ std::vector<Eigen::Vector3d> VoxelDownsample(const std::vector<Eigen::Vector3d> 
     tsl::robin_map<Voxel, Eigen::Vector3d, VoxelHash> grid;
     grid.reserve(frame.size());
     for (const auto &point : frame) {
-        const auto voxel = Voxel(static_cast<int>(std::floor(point.x() / voxel_size)),
-                                 static_cast<int>(std::floor(point.y() / voxel_size)),
-                                 static_cast<int>(std::floor(point.z() / voxel_size)));
+        const Voxel voxel = (point / voxel_size).array().floor().cast<int>();
         if (grid.contains(voxel)) continue;
         grid.insert({voxel, point});
     }
