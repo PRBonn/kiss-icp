@@ -42,9 +42,9 @@ struct VoxelHash {
 };
 
 Voxel PointToVoxel(const Eigen::Vector3d &point, double voxel_size) {
-    return {static_cast<int>(std::floor(point.x() / voxel_size)),
-            static_cast<int>(std::floor(point.y() / voxel_size)),
-            static_cast<int>(std::floor(point.z() / voxel_size))};
+    return Voxel(static_cast<int>(std::floor(point.x() / voxel_size)),
+                 static_cast<int>(std::floor(point.y() / voxel_size)),
+                 static_cast<int>(std::floor(point.z() / voxel_size)));
 }
 }  // namespace
 
