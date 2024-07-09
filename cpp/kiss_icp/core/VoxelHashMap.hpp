@@ -62,7 +62,6 @@ struct VoxelHashMap {
                      static_cast<int>(std::floor(point.y() / voxel_size_)),
                      static_cast<int>(std::floor(point.z() / voxel_size_)));
     }
-
     void Update(const std::vector<Eigen::Vector3d> &points, const Eigen::Vector3d &origin);
     void Update(const std::vector<Eigen::Vector3d> &points, const Sophus::SE3d &pose);
     void AddPoints(const std::vector<Eigen::Vector3d> &points);
