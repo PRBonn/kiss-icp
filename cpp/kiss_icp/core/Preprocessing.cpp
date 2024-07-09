@@ -32,34 +32,12 @@
 #include <sophus/se3.hpp>
 #include <vector>
 
-namespace {
-using Voxel = kiss_icp::VoxelHashMap::Voxel;
-using VoxelHash = kiss_icp::VoxelHashMap::VoxelHash;
-
-Voxel PointToVoxel(const Eigen::Vector3d &point, double voxel_size) {
-    return Voxel(static_cast<int>(std::floor(point.x() / voxel_size)),
-                 static_cast<int>(std::floor(point.y() / voxel_size)),
-                 static_cast<int>(std::floor(point.z() / voxel_size)));
-}
-}  // namespace
-
 namespace kiss_icp {
 std::vector<Eigen::Vector3d> VoxelDownsample(const std::vector<Eigen::Vector3d> &frame,
                                              double voxel_size) {
-    tsl::robin_map<Voxel, Eigen::Vector3d, VoxelHash> grid;
-    grid.reserve(frame.size());
-    for (const auto &point : frame) {
-        const auto voxel = PointToVoxel(point, voxel_size);
-        if (grid.contains(voxel)) continue;
-        grid.insert({voxel, point});
-    }
-    std::vector<Eigen::Vector3d> frame_dowsampled;
-    frame_dowsampled.reserve(grid.size());
-    for (const auto &[voxel, point] : grid) {
-        (void)voxel;
-        frame_dowsampled.emplace_back(point);
-    }
-    return frame_dowsampled;
+    VoxelHashMap grid(voxel_size, 1.0, 1);
+    grid.AddPoints(frame);
+    return grid.Pointcloud();
 }
 
 std::vector<Eigen::Vector3d> Preprocess(const std::vector<Eigen::Vector3d> &frame,
