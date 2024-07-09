@@ -58,9 +58,9 @@ struct VoxelHashMap {
     inline void Clear() { map_.clear(); }
     inline bool Empty() const { return map_.empty(); }
     inline Voxel PointToVoxel(const Eigen::Vector3d &point) const {
-        return Voxel(static_cast<int>(std::floor(point.x() / voxel_size_)),
-                     static_cast<int>(std::floor(point.y() / voxel_size_)),
-                     static_cast<int>(std::floor(point.z() / voxel_size_)));
+        return Voxel(static_cast<int>(point.x() / voxel_size_),
+                     static_cast<int>(point.y() / voxel_size_),
+                     static_cast<int>(point.z() / voxel_size_));
     }
     void Update(const std::vector<Eigen::Vector3d> &points, const Eigen::Vector3d &origin);
     void Update(const std::vector<Eigen::Vector3d> &points, const Sophus::SE3d &pose);
