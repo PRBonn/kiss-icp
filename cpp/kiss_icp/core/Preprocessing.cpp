@@ -28,18 +28,13 @@
 #include <Eigen/Core>
 #include <algorithm>
 #include <cmath>
+#include <kiss_icp/core/VoxelHashMap.hpp>
 #include <sophus/se3.hpp>
 #include <vector>
 
 namespace {
-// TODO(all): Maybe try to merge these voxel uitls with VoxelHashMap implementation
-using Voxel = Eigen::Vector3i;
-struct VoxelHash {
-    size_t operator()(const Voxel &voxel) const {
-        const uint32_t *vec = reinterpret_cast<const uint32_t *>(voxel.data());
-        return ((1 << 20) - 1) & (vec[0] * 73856093 ^ vec[1] * 19349669 ^ vec[2] * 83492791);
-    }
-};
+using Voxel = kiss_icp::VoxelHashMap::Voxel;
+using VoxelHash = kiss_icp::VoxelHashMap::VoxelHash;
 
 Voxel PointToVoxel(const Eigen::Vector3d &point, double voxel_size) {
     return Voxel(static_cast<int>(std::floor(point.x() / voxel_size)),
