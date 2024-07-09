@@ -24,7 +24,6 @@
 
 #include <Eigen/Core>
 #include <algorithm>
-#include <numeric>
 #include <tuple>
 #include <utility>
 #include <vector>
