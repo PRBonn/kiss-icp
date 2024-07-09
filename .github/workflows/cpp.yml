@@ -39,6 +39,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.apt/cache
+          key: ${{ runner.os }}-apt-${{ hashFiles('**/ubuntu_dependencies.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-
       - name: Install dependencies
         run: |
           sudo apt-get update
