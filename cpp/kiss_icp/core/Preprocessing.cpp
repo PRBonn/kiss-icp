@@ -23,7 +23,7 @@
 #include "Preprocessing.hpp"
 
 #include <tbb/parallel_for.h>
-#include <tsl/robin_map.h>
+#include <tsl/robin_set.h>
 
 #include <Eigen/Core>
 #include <algorithm>
@@ -46,24 +46,37 @@ Voxel PointToVoxel(const Eigen::Vector3d &point, double voxel_size) {
                  static_cast<int>(std::floor(point.y() / voxel_size)),
                  static_cast<int>(std::floor(point.z() / voxel_size)));
 }
+
+std::vector<size_t> RandomizedIndices(const size_t num_points) {
+    std::vector<size_t> indices(num_points);
+    std::iota(indices.begin(), indices.end(), 0);
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::shuffle(indices.begin(), indices.end(), g);
+    return indices;
+}
 }  // namespace
 
 namespace kiss_icp {
 std::vector<Eigen::Vector3d> VoxelDownsample(const std::vector<Eigen::Vector3d> &frame,
-                                             double voxel_size) {
-    tsl::robin_map<Voxel, Eigen::Vector3d, VoxelHash> grid;
-    grid.reserve(frame.size());
-    for (const auto &point : frame) {
-        const auto voxel = PointToVoxel(point, voxel_size);
-        if (grid.contains(voxel)) continue;
-        grid.insert({voxel, point});
-    }
+                                             const double voxel_size) {
+    tsl::robin_set<Voxel, VoxelHash> voxels;
     std::vector<Eigen::Vector3d> frame_dowsampled;
-    frame_dowsampled.reserve(grid.size());
-    for (const auto &[voxel, point] : grid) {
-        (void)voxel;
-        frame_dowsampled.emplace_back(point);
-    }
+
+    voxels.reserve(frame.size());
+    frame_dowsampled.reserve(frame.size());
+
+    const auto indices = RandomizedIndices(frame.size());
+    std::for_each(indices.cbegin(), indices.cend(), [&](const auto &idx) {
+        const auto &point = frame.at(idx);
+        const auto voxel = PointToVoxel(point, voxel_size);
+        if (!voxels.contains(voxel)) {
+            voxels.insert(voxel);
+            frame_dowsampled.emplace_back(point);
+        }
+    });
+
+    frame_dowsampled.shrink_to_fit();
     return frame_dowsampled;
 }
 
