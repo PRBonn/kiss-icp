@@ -53,11 +53,7 @@ struct VoxelHashMap {
     explicit VoxelHashMap(double voxel_size, double max_distance, int max_points_per_voxel)
         : voxel_size_(voxel_size),
           max_distance_(max_distance),
-          max_points_per_voxel_(max_points_per_voxel),
-          map_(1 << 16) {
-        map_.min_load_factor(0.05f);
-        map_.max_load_factor(0.75f);
-    }
+          max_points_per_voxel_(max_points_per_voxel) {}
 
     inline void Clear() { map_.clear(); }
     inline bool Empty() const { return map_.empty(); }
