@@ -32,6 +32,7 @@
 #include <vector>
 
 namespace {
+// TODO(all): Maybe try to merge these voxel uitls with VoxelHashMap implementation
 using Voxel = Eigen::Vector3i;
 struct VoxelHash {
     size_t operator()(const Voxel &voxel) const {
@@ -39,6 +40,12 @@ struct VoxelHash {
         return ((1 << 20) - 1) & (vec[0] * 73856093 ^ vec[1] * 19349669 ^ vec[2] * 83492791);
     }
 };
+
+Voxel PointToVoxel(const Eigen::Vector3d &point, double voxel_size) {
+    return Voxel(static_cast<int>(std::floor(point.x() / voxel_size)),
+                 static_cast<int>(std::floor(point.y() / voxel_size)),
+                 static_cast<int>(std::floor(point.z() / voxel_size)));
+}
 }  // namespace
 
 namespace kiss_icp {
@@ -47,7 +54,7 @@ std::vector<Eigen::Vector3d> VoxelDownsample(const std::vector<Eigen::Vector3d> 
     tsl::robin_map<Voxel, Eigen::Vector3d, VoxelHash> grid;
     grid.reserve(frame.size());
     for (const auto &point : frame) {
-        const auto voxel = Voxel((point / voxel_size).cast<int>());
+        const auto voxel = PointToVoxel(point, voxel_size);
         if (grid.contains(voxel)) continue;
         grid.insert({voxel, point});
     }
