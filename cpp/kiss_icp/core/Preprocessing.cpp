@@ -28,6 +28,7 @@
 #include <Eigen/Core>
 #include <algorithm>
 #include <cmath>
+#include <numeric>
 #include <sophus/se3.hpp>
 #include <vector>
 
@@ -67,14 +68,14 @@ std::vector<Eigen::Vector3d> VoxelDownsample(const std::vector<Eigen::Vector3d> 
     frame_dowsampled.reserve(frame.size());
 
     const auto indices = RandomizedIndices(frame.size());
-    for (const auto &idx : indices) {
+    std::for_each(indices.cbegin(), indices.cend(), [&](const auto &idx) {
         const auto &point = frame.at(idx);
         const auto voxel = PointToVoxel(point, voxel_size);
         if (!voxels.contains(voxel)) {
             voxels.insert(voxel);
             frame_dowsampled.emplace_back(point);
         }
-    };
+    });
 
     frame_dowsampled.shrink_to_fit();
     return frame_dowsampled;
