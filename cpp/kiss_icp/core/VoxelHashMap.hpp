@@ -53,9 +53,7 @@ struct VoxelHashMap {
     explicit VoxelHashMap(double voxel_size, double max_distance, int max_points_per_voxel)
         : voxel_size_(voxel_size),
           max_distance_(max_distance),
-          max_points_per_voxel_(max_points_per_voxel),
-          map_(1 << 20) {}  // <- Number of initial buckets into the robin map, to avoid rehashing
-                            // (a.k.a big copy operation) in the default constructor this is zero.
+          max_points_per_voxel_(max_points_per_voxel) {}
 
     inline void Clear() { map_.clear(); }
     inline bool Empty() const { return map_.empty(); }
