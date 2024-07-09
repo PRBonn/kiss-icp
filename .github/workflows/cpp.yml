@@ -25,3 +25,25 @@ jobs:
         run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} ${{github.workspace}}/cpp/kiss_icp
       - name: Build
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+
+  # As the previous job will always install the dependencies from cmake, and this is guaranteed to
+  # work, we also want to support dev sandboxes where the main dependencies are already
+  # pre-installed in the system. For now, we only support dev machines under a GNU/Linux
+  # environmnets. If you are reading this and need the same functionallity in Windows/macOS please
+  # open a ticket.
+  cpp_api_dev:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, ubuntu-20.04]
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake git libeigen3-dev libtbb-dev
+      - name: Configure CMake
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} ${{github.workspace}}/cpp/kiss_icp
+      - name: Build
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
