@@ -23,9 +23,8 @@
 //
 #pragma once
 
-#include <bits/functional_hash.h>
-
 #include <Eigen/Core>
+#include <memory>
 
 namespace kiss_icp {
 using Voxel = Eigen::Vector3i;
