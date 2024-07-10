@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2022 Ignacio Vizzo, Tiziano Guadagnino, Benedikt Mersch, Cyrill
+// Copyright (c) 2024 Ignacio Vizzo, Tiziano Guadagnino, Benedikt Mersch, Cyrill
 // Stachniss.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,26 +20,26 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
+//
 #pragma once
 
+#include <bits/functional_hash.h>
+
 #include <Eigen/Core>
-#include <sophus/se3.hpp>
-#include <utility>
-#include <vector>
 
 namespace kiss_icp {
-/// Voxelize point cloud keeping the original coordinates
-std::vector<Eigen::Vector3d> VoxelDownsample(const std::vector<Eigen::Vector3d> &frame,
-                                             double voxel_size);
-
-/// Crop the frame with max/min ranges
-std::vector<Eigen::Vector3d> Preprocess(const std::vector<Eigen::Vector3d> &frame,
-                                        double max_range,
-                                        double min_range);
-
-/// This function only applies for the KITTI dataset, and should NOT be used by any other dataset,
-/// the original idea and part of the implementation is taking from CT-ICP(Although IMLS-SLAM
-/// Originally introduced the calibration factor)
-std::vector<Eigen::Vector3d> CorrectKITTIScan(const std::vector<Eigen::Vector3d> &frame);
-
+using Voxel = Eigen::Vector3i;
+inline Voxel PointToVoxel(const Eigen::Vector3d &point, const double voxel_size) {
+    return Voxel(static_cast<int>(std::floor(point.x() / voxel_size)),
+                 static_cast<int>(std::floor(point.y() / voxel_size)),
+                 static_cast<int>(std::floor(point.z() / voxel_size)));
+}
 }  // namespace kiss_icp
+
+template <>
+struct std::hash<kiss_icp::Voxel> {
+    std::size_t operator()(const kiss_icp::Voxel &voxel) const noexcept {
+        const uint32_t *vec = reinterpret_cast<const uint32_t *>(voxel.data());
+        return (vec[0] * 73856093 ^ vec[1] * 19349669 ^ vec[2] * 83492791);
+    }
+};

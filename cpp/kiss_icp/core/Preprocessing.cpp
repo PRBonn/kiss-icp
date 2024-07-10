@@ -28,25 +28,14 @@
 #include <Eigen/Core>
 #include <algorithm>
 #include <cmath>
-#include <kiss_icp/core/VoxelHashMap.hpp>
+#include <kiss_icp/core/VoxelUtils.hpp>
 #include <sophus/se3.hpp>
 #include <vector>
-
-namespace {
-using Voxel = kiss_icp::VoxelHashMap::Voxel;
-using VoxelHash = kiss_icp::VoxelHashMap::VoxelHash;
-
-Voxel PointToVoxel(const Eigen::Vector3d &point, double voxel_size) {
-    return Voxel(static_cast<int>(std::floor(point.x() / voxel_size)),
-                 static_cast<int>(std::floor(point.y() / voxel_size)),
-                 static_cast<int>(std::floor(point.z() / voxel_size)));
-}
-}  // namespace
 
 namespace kiss_icp {
 std::vector<Eigen::Vector3d> VoxelDownsample(const std::vector<Eigen::Vector3d> &frame,
                                              double voxel_size) {
-    tsl::robin_map<Voxel, Eigen::Vector3d, VoxelHash> grid;
+    tsl::robin_map<Voxel, Eigen::Vector3d> grid;
     grid.reserve(frame.size());
     std::for_each(frame.cbegin(), frame.cend(), [&](const auto &point) {
         const auto voxel = PointToVoxel(point, voxel_size);
@@ -54,7 +43,7 @@ std::vector<Eigen::Vector3d> VoxelDownsample(const std::vector<Eigen::Vector3d> 
     });
     std::vector<Eigen::Vector3d> frame_dowsampled(grid.size());
     std::transform(grid.begin(), grid.end(), frame_dowsampled.begin(),
-                   [](const auto &voxel_and_point) { return voxel_and_point.value(); });
+                   [](const auto &voxel_and_point) { return voxel_and_point.second; });
     return frame_dowsampled;
 }
 

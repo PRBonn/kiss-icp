@@ -53,7 +53,7 @@ void TransformPoints(const Sophus::SE3d &T, std::vector<Eigen::Vector3d> &points
                    [&](const auto &point) { return T * point; });
 }
 
-using Voxel = kiss_icp::VoxelHashMap::Voxel;
+using Voxel = kiss_icp::Voxel;
 std::vector<Voxel> GetAdjacentVoxels(const Voxel &voxel, int adjacent_voxels = 1) {
     std::vector<Voxel> voxel_neighborhood;
     for (int i = voxel.x() - adjacent_voxels; i < voxel.x() + adjacent_voxels + 1; ++i) {
@@ -69,7 +69,7 @@ std::vector<Voxel> GetAdjacentVoxels(const Voxel &voxel, int adjacent_voxels = 1
 std::tuple<Eigen::Vector3d, double> GetClosestNeighbor(const Eigen::Vector3d &point,
                                                        const kiss_icp::VoxelHashMap &voxel_map) {
     // Convert the point to voxel coordinates
-    const auto &voxel = voxel_map.PointToVoxel(point);
+    const auto &voxel = kiss_icp::PointToVoxel(point, voxel_map.voxel_size_);
     // Get nearby voxels on the map
     const auto &query_voxels = GetAdjacentVoxels(voxel);
     // Extract the points contained within the neighborhood voxels

@@ -29,12 +29,12 @@
 #include <tsl/robin_map.h>
 
 #include <Eigen/Core>
+#include <kiss_icp/core/VoxelUtils.hpp>
 #include <sophus/se3.hpp>
 #include <vector>
 
 namespace kiss_icp {
 struct VoxelHashMap {
-    using Voxel = Eigen::Vector3i;
     struct VoxelBlock {
         // buffer of points with a max limit of n_points
         std::vector<Eigen::Vector3d> points;
@@ -43,13 +43,6 @@ struct VoxelHashMap {
             if (points.size() < static_cast<size_t>(num_points_)) points.push_back(point);
         }
     };
-    struct VoxelHash {
-        size_t operator()(const Voxel &voxel) const {
-            const uint32_t *vec = reinterpret_cast<const uint32_t *>(voxel.data());
-            return (vec[0] * 73856093 ^ vec[1] * 19349669 ^ vec[2] * 83492791);
-        }
-    };
-
     explicit VoxelHashMap(double voxel_size, double max_distance, int max_points_per_voxel)
         : voxel_size_(voxel_size),
           max_distance_(max_distance),
@@ -57,11 +50,6 @@ struct VoxelHashMap {
 
     inline void Clear() { map_.clear(); }
     inline bool Empty() const { return map_.empty(); }
-    inline Voxel PointToVoxel(const Eigen::Vector3d &point) const {
-        return Voxel(static_cast<int>(std::floor(point.x() / voxel_size_)),
-                     static_cast<int>(std::floor(point.y() / voxel_size_)),
-                     static_cast<int>(std::floor(point.z() / voxel_size_)));
-    }
     void Update(const std::vector<Eigen::Vector3d> &points, const Eigen::Vector3d &origin);
     void Update(const std::vector<Eigen::Vector3d> &points, const Sophus::SE3d &pose);
     void AddPoints(const std::vector<Eigen::Vector3d> &points);
@@ -72,6 +60,6 @@ struct VoxelHashMap {
     double voxel_size_;
     double max_distance_;
     int max_points_per_voxel_;
-    tsl::robin_map<Voxel, VoxelBlock, VoxelHash> map_;
+    tsl::robin_map<Voxel, VoxelBlock> map_;
 };
 }  // namespace kiss_icp
