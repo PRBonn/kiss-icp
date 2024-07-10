@@ -181,14 +181,12 @@ class OdometryPipeline:
             total_time_s = sum(self.times) * 1e-9
             return float(len(self.times) / total_time_s) if total_time_s > 0 else 0
 
-        
         fps = _get_fps()
         avg_fps = int(np.floor(fps))
         avg_ms = int(np.ceil(1e3 / fps)) if fps > 0 else 0
         if avg_fps > 0:
             self.results.append(desc="Average Frequency", units="Hz", value=avg_fps, trunc=True)
             self.results.append(desc="Average Runtime", units="ms", value=avg_ms, trunc=True)
-
 
     def _write_log(self):
         if not self.results.empty():
