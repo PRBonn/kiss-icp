@@ -28,7 +28,6 @@
 #include <Eigen/Core>
 #include <algorithm>
 #include <cmath>
-#include <iterator>
 #include <sophus/se3.hpp>
 #include <vector>
 
