@@ -26,9 +26,9 @@
 #include <tsl/robin_map.h>
 
 #include <Eigen/Core>
+#include <Eigen/Geometry>
 #include <algorithm>
 #include <cmath>
-#include <sophus/se3.hpp>
 #include <vector>
 
 namespace {
