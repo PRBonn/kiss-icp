@@ -24,6 +24,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <cmath>
 #include <memory>
 
 namespace kiss_icp {

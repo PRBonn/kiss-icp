@@ -28,9 +28,10 @@
 #include <Eigen/Core>
 #include <algorithm>
 #include <cmath>
-#include <kiss_icp/core/VoxelUtils.hpp>
 #include <sophus/se3.hpp>
 #include <vector>
+
+#include "VoxelUtils.hpp"
 
 namespace kiss_icp {
 std::vector<Eigen::Vector3d> VoxelDownsample(const std::vector<Eigen::Vector3d> &frame,
