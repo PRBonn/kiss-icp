@@ -35,7 +35,7 @@
 
 namespace kiss_icp {
 std::vector<Eigen::Vector3d> VoxelDownsample(const std::vector<Eigen::Vector3d> &frame,
-                                             double voxel_size) {
+                                             const double voxel_size) {
     tsl::robin_map<Voxel, Eigen::Vector3d> grid;
     grid.reserve(frame.size());
     std::for_each(frame.cbegin(), frame.cend(), [&](const auto &point) {
