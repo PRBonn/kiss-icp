@@ -28,8 +28,6 @@
 #include <utility>
 #include <vector>
 
-#include "VoxelUtils.hpp"
-
 namespace kiss_icp {
 
 std::vector<Eigen::Vector3d> VoxelHashMap::GetPoints(const std::vector<Voxel> &query_voxels) const {
