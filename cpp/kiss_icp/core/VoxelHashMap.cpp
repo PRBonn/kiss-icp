@@ -38,9 +38,8 @@ std::vector<Eigen::Vector3d> VoxelHashMap::GetPoints(const std::vector<Voxel> &q
     std::for_each(query_voxels.cbegin(), query_voxels.cend(), [&](const auto &query) {
         auto search = map_.find(query);
         if (search != map_.end()) {
-            for (const auto &point : search->second.points) {
-                points.emplace_back(point);
-            }
+            const auto &voxel_points = search->second.points;
+            points.insert(points.end(), voxel_points.cbegin(), voxel_points.cend());
         }
     });
     points.shrink_to_fit();
@@ -51,11 +50,8 @@ std::vector<Eigen::Vector3d> VoxelHashMap::Pointcloud() const {
     std::vector<Eigen::Vector3d> points;
     points.reserve(map_.size() * static_cast<size_t>(max_points_per_voxel_));
     std::for_each(map_.cbegin(), map_.cend(), [&](const auto &map_element) {
-        const auto &[voxel, voxel_block] = map_element;
-        (void)voxel;
-        for (const auto &point : voxel_block.points) {
-            points.emplace_back(point);
-        }
+        const auto &voxel_points = map_element.second.points;
+        points.insert(points.end(), voxel_points.cbegin(), voxel_points.cend());
     });
     points.shrink_to_fit();
     return points;
