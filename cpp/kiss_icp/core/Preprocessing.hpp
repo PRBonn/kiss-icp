@@ -28,10 +28,6 @@
 #include <vector>
 
 namespace kiss_icp {
-/// Voxelize point cloud keeping the original coordinates
-std::vector<Eigen::Vector3d> VoxelDownsample(const std::vector<Eigen::Vector3d> &frame,
-                                             const double voxel_size);
-
 /// Crop the frame with max/min ranges
 std::vector<Eigen::Vector3d> Preprocess(const std::vector<Eigen::Vector3d> &frame,
                                         double max_range,

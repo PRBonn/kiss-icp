@@ -25,6 +25,7 @@
 
 #include <Eigen/Core>
 #include <cmath>
+#include <vector>
 
 namespace kiss_icp {
 using Voxel = Eigen::Vector3i;
@@ -33,6 +34,10 @@ inline Voxel PointToVoxel(const Eigen::Vector3d &point, const double voxel_size)
                  static_cast<int>(std::floor(point.y() / voxel_size)),
                  static_cast<int>(std::floor(point.z() / voxel_size)));
 }
+/// Voxelize a point cloud keeping the original coordinates
+std::vector<Eigen::Vector3d> VoxelDownsample(const std::vector<Eigen::Vector3d> &point_cloud,
+                                             const double voxel_size);
+
 }  // namespace kiss_icp
 
 template <>
