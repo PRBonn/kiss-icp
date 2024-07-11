@@ -44,10 +44,8 @@ std::vector<Eigen::Vector3d> VoxelDownsample(const std::vector<Eigen::Vector3d> 
         if (!grid.contains(voxel)) grid.insert({voxel, point});
     });
     std::vector<Eigen::Vector3d> frame_dowsampled(grid.size());
-    std::transform(std::make_move_iterator(grid.begin()),  //
-                   std::make_move_iterator(grid.end()),    //
-                   frame_dowsampled.begin(),
-                   [](auto &&voxel_and_point) { return voxel_and_point.second; });
+    std::transform(grid.cbegin(), grid.cend(), frame_dowsampled.begin(),
+                   [](const auto &voxel_and_point) { return voxel_and_point.second; });
     return frame_dowsampled;
 }
 
