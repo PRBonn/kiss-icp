@@ -25,7 +25,6 @@
 
 #include <Eigen/Core>
 #include <cmath>
-#include <memory>
 
 namespace kiss_icp {
 using Voxel = Eigen::Vector3i;

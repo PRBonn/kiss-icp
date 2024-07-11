@@ -44,6 +44,7 @@ struct VoxelHashMap {
             if (points.size() < static_cast<size_t>(num_points_)) points.push_back(point);
         }
     };
+
     explicit VoxelHashMap(double voxel_size, double max_distance, int max_points_per_voxel)
         : voxel_size_(voxel_size),
           max_distance_(max_distance),
