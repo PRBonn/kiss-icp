@@ -27,6 +27,8 @@
 #include <pybind11/stl_bind.h>
 
 #include <Eigen/Core>
+#include <algorithm>
+#include <cmath>
 #include <memory>
 #include <vector>
 
@@ -36,7 +38,6 @@
 #include "kiss_icp/core/Threshold.hpp"
 #include "kiss_icp/core/VoxelHashMap.hpp"
 #include "kiss_icp/metrics/Metrics.hpp"
-#include "kitti.hpp"
 #include "stl_vector_eigen.h"
 
 namespace py = pybind11;
@@ -119,7 +120,22 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
     // prerpocessing modules
     m.def("_voxel_down_sample", &VoxelDownsample, "frame"_a, "voxel_size"_a);
     m.def("_preprocess", &Preprocess, "frame"_a, "max_range"_a, "min_range"_a);
-    m.def("_correct_kitti_scan", &CorrectKITTIScan, "frame"_a);
+
+    /// This function only applies for the KITTI dataset, and should NOT be used by any other
+    /// dataset, the original idea and part of the implementation is taking from CT-ICP(Although
+    /// IMLS-SLAM Originally introduced the calibration factor)
+    m.def(
+        "_correct_kitti_scan",
+        [](const std::vector<Eigen::Vector3d> &frame) {
+            constexpr double VERTICAL_ANGLE_OFFSET = (0.205 * M_PI) / 180.0;
+            std::vector<Eigen::Vector3d> frame_ = frame;
+            std::transform(frame_.cbegin(), frame_.cend(), frame_.begin(), [&](const auto pt) {
+                const Eigen::Vector3d rotationVector = pt.cross(Eigen::Vector3d(0., 0., 1.));
+                return Eigen::AngleAxisd(VERTICAL_ANGLE_OFFSET, rotationVector.normalized()) * pt;
+            });
+            return frame_;
+        },
+        "frame"_a);
 
     // Metrics
     m.def("_kitti_seq_error", &metrics::SeqError, "gt_poses"_a, "results_poses"_a);
