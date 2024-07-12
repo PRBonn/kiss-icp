@@ -26,6 +26,30 @@ from kiss_icp.config import KISSConfig
 from kiss_icp.pybind import kiss_icp_pybind
 
 
+def get_preprocessor(config: KISSConfig):
+    return Preprocessor(config)
+
+
+class Preprocessor:
+    def __init__(self, config: KISSConfig):
+        self.config = config
+
+    def __call__(self, frame: np.ndarray):
+        return np.asarray(
+            kiss_icp_pybind._preprocess(
+                kiss_icp_pybind._Vector3dVector(frame),
+                self.config.data.max_range,
+                self.config.data.min_range,
+            )
+        )
+
+
+import numpy as np
+
+from kiss_icp.config import KISSConfig
+from kiss_icp.pybind import kiss_icp_pybind
+
+
 def get_motion_compensator(config: KISSConfig):
     return MotionCompensator() if config.data.deskew else StubCompensator()
 

@@ -23,8 +23,9 @@
 import numpy as np
 
 from kiss_icp.config.parser import KISSConfig
-from kiss_icp.mapping import VoxelHashMap
 from kiss_icp.pybind import kiss_icp_pybind
+
+from .voxel_hash_map import VoxelHashMap
 
 
 def get_registration(config: KISSConfig):

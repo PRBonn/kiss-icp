@@ -227,9 +227,9 @@ def kiss_icp_pipeline(
 
     # Lazy-loading for faster CLI
     from kiss_icp.datasets import dataset_factory
-    from kiss_icp.pipeline import OdometryPipeline
+    from kiss_icp.lidar_odometry import LidarOdometryPipeline
 
-    OdometryPipeline(
+    LidarOdometryPipeline(
         dataset=dataset_factory(
             dataloader=dataloader,
             data_dir=data,

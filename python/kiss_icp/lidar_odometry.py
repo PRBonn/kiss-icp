@@ -31,14 +31,14 @@ import numpy as np
 from pyquaternion import Quaternion
 
 from kiss_icp.config import load_config, write_config
-from kiss_icp.kiss_icp import KissICP
 from kiss_icp.metrics import absolute_trajectory_error, sequence_error
+from kiss_icp.pipeline import KissICP
 from kiss_icp.tools.pipeline_results import PipelineResults
 from kiss_icp.tools.progress_bar import get_progress_bar
 from kiss_icp.tools.visualizer import RegistrationVisualizer, StubVisualizer
 
 
-class OdometryPipeline:
+class LidarOdometryPipeline:
     def __init__(
         self,
         dataset,
@@ -206,7 +206,11 @@ class OdometryPipeline:
         results_dir = os.path.join(os.path.realpath(out_dir), get_current_timestamp())
         latest_dir = os.path.join(os.path.realpath(out_dir), "latest")
         os.makedirs(results_dir, exist_ok=True)
-        os.unlink(latest_dir) if os.path.exists(latest_dir) or os.path.islink(latest_dir) else None
+        (
+            os.unlink(latest_dir)
+            if os.path.exists(latest_dir) or os.path.islink(latest_dir)
+            else None
+        )
         os.symlink(results_dir, latest_dir)
         return results_dir
 

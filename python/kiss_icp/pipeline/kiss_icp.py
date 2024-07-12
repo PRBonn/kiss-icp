@@ -23,12 +23,11 @@
 import numpy as np
 
 from kiss_icp.config import KISSConfig
-from kiss_icp.deskew import get_motion_compensator
-from kiss_icp.mapping import get_voxel_hash_map
-from kiss_icp.preprocess import get_preprocessor
-from kiss_icp.registration import get_registration
-from kiss_icp.threshold import get_threshold_estimator
-from kiss_icp.voxelization import voxel_down_sample
+from kiss_icp.core.preprocess import get_motion_compensator, get_preprocessor
+from kiss_icp.core.registration import get_registration
+from kiss_icp.core.threshold import get_threshold_estimator
+from kiss_icp.core.voxel_hash_map import get_voxel_hash_map
+from kiss_icp.core.voxelization import voxel_down_sample
 
 
 class KissICP:
