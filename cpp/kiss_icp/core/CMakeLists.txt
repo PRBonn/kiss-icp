@@ -21,7 +21,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 add_library(kiss_icp_core STATIC)
-target_sources(kiss_icp_core PRIVATE Registration.cpp Deskew.cpp VoxelHashMap.cpp VoxelUtils.cpp Preprocessing.cpp
-                                     Threshold.cpp)
+target_sources(kiss_icp_core PRIVATE Registration.cpp VoxelHashMap.cpp VoxelUtils.cpp Preprocessing.cpp Threshold.cpp)
 target_link_libraries(kiss_icp_core PUBLIC Eigen3::Eigen tsl::robin_map TBB::tbb Sophus::Sophus)
 set_global_target_properties(kiss_icp_core)

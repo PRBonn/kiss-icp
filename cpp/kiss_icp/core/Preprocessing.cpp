@@ -22,9 +22,17 @@
 // SOFTWARE.
 #include "Preprocessing.hpp"
 
+#include <tbb/parallel_for.h>
+
 #include <Eigen/Core>
 #include <algorithm>
+#include <sophus/se3.hpp>
 #include <vector>
+
+namespace {
+/// TODO(Nacho) Explain what is the very important meaning of this param
+constexpr double mid_pose_timestamp{0.5};
+}  // namespace
 
 namespace kiss_icp {
 
@@ -39,4 +47,16 @@ std::vector<Eigen::Vector3d> Preprocess(const std::vector<Eigen::Vector3d> &fram
     return inliers;
 }
 
+std::vector<Eigen::Vector3d> DeSkewScan(const std::vector<Eigen::Vector3d> &frame,
+                                        const std::vector<double> &timestamps,
+                                        const Sophus::SE3d &delta) {
+    const auto delta_pose = delta.log();
+    std::vector<Eigen::Vector3d> corrected_frame(frame.size());
+    // TODO(All): This tbb execution is ignoring the max_n_threads config value
+    tbb::parallel_for(size_t(0), frame.size(), [&](size_t i) {
+        const auto motion = Sophus::SE3d::exp((timestamps[i] - mid_pose_timestamp) * delta_pose);
+        corrected_frame[i] = motion * frame[i];
+    });
+    return corrected_frame;
+}
 }  // namespace kiss_icp

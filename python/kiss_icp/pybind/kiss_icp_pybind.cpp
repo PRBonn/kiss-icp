@@ -32,7 +32,6 @@
 #include <memory>
 #include <vector>
 
-#include "kiss_icp/core/Deskew.hpp"
 #include "kiss_icp/core/Preprocessing.hpp"
 #include "kiss_icp/core/Registration.hpp"
 #include "kiss_icp/core/Threshold.hpp"

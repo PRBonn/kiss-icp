@@ -23,11 +23,17 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <sophus/se3.hpp>
 #include <vector>
 
 namespace kiss_icp {
 std::vector<Eigen::Vector3d> Preprocess(const std::vector<Eigen::Vector3d> &frame,
                                         double max_range,
                                         double min_range);
+
+/// Compensate the frame by interpolating the delta pose
+std::vector<Eigen::Vector3d> DeSkewScan(const std::vector<Eigen::Vector3d> &frame,
+                                        const std::vector<double> &timestamps,
+                                        const Sophus::SE3d &delta);
 
 }  // namespace kiss_icp
