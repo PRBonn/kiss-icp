@@ -30,6 +30,10 @@ def get_preprocessor(config: KISSConfig):
     return Preprocessor(config)
 
 
+def get_motion_compensator(config: KISSConfig):
+    return MotionCompensator() if config.data.deskew else StubCompensator()
+
+
 class Preprocessor:
     def __init__(self, config: KISSConfig):
         self.config = config
@@ -42,16 +46,6 @@ class Preprocessor:
                 self.config.data.min_range,
             )
         )
-
-
-import numpy as np
-
-from kiss_icp.config import KISSConfig
-from kiss_icp.pybind import kiss_icp_pybind
-
-
-def get_motion_compensator(config: KISSConfig):
-    return MotionCompensator() if config.data.deskew else StubCompensator()
 
 
 class StubCompensator:
