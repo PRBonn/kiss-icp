@@ -36,6 +36,7 @@
 #include "kiss_icp/core/Threshold.hpp"
 #include "kiss_icp/core/VoxelHashMap.hpp"
 #include "kiss_icp/metrics/Metrics.hpp"
+#include "kitti.hpp"
 #include "stl_vector_eigen.h"
 
 namespace py = pybind11;

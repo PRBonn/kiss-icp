@@ -20,7 +20,8 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-#include "Preprocessing.hpp"
+
+#include <tbb/parallel_for.h>
 
 #include <Eigen/Core>
 #include <algorithm>
@@ -28,15 +29,19 @@
 
 namespace kiss_icp {
 
-std::vector<Eigen::Vector3d> Preprocess(const std::vector<Eigen::Vector3d> &frame,
-                                        double max_range,
-                                        double min_range) {
-    std::vector<Eigen::Vector3d> inliers;
-    std::copy_if(frame.cbegin(), frame.cend(), std::back_inserter(inliers), [&](const auto &pt) {
-        const double norm = pt.norm();
-        return norm < max_range && norm > min_range;
+/// This function only applies for the KITTI dataset, and should NOT be used by any other dataset,
+/// the original idea and part of the implementation is taking from CT-ICP(Although IMLS-SLAM
+/// Originally introduced the calibration factor)
+std::vector<Eigen::Vector3d> CorrectKITTIScan(const std::vector<Eigen::Vector3d> &frame);
+std::vector<Eigen::Vector3d> CorrectKITTIScan(const std::vector<Eigen::Vector3d> &frame) {
+    constexpr double VERTICAL_ANGLE_OFFSET = (0.205 * M_PI) / 180.0;
+    std::vector<Eigen::Vector3d> corrected_frame(frame.size());
+    tbb::parallel_for(size_t(0), frame.size(), [&](size_t i) {
+        const auto &pt = frame[i];
+        const Eigen::Vector3d rotationVector = pt.cross(Eigen::Vector3d(0., 0., 1.));
+        corrected_frame[i] =
+            Eigen::AngleAxisd(VERTICAL_ANGLE_OFFSET, rotationVector.normalized()) * pt;
     });
-    return inliers;
+    return corrected_frame;
 }
-
 }  // namespace kiss_icp
