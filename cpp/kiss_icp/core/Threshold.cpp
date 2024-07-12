@@ -22,8 +22,9 @@
 // SOFTWARE.
 #include "Threshold.hpp"
 
-#include <Eigen/Core>
+#include <Eigen/Geometry>
 #include <cmath>
+#include <sophus/se3.hpp>
 
 namespace kiss_icp {
 AdaptiveThreshold::AdaptiveThreshold(double initial_threshold,

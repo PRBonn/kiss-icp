@@ -23,8 +23,6 @@
 #pragma once
 
 #include <Eigen/Core>
-#include <sophus/se3.hpp>
-#include <utility>
 #include <vector>
 
 namespace kiss_icp {
