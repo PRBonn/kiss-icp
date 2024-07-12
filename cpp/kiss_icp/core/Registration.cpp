@@ -36,7 +36,7 @@
 #include <tuple>
 
 #include "VoxelHashMap.hpp"
-#include "VoxelUtils.hpp"
+#include "Voxelization.hpp"
 
 namespace Eigen {
 using Matrix6d = Eigen::Matrix<double, 6, 6>;

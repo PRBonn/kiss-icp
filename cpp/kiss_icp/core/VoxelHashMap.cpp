@@ -28,7 +28,7 @@
 #include <utility>
 #include <vector>
 
-#include "VoxelUtils.hpp"
+#include "Voxelization.hpp"
 
 namespace kiss_icp {
 
