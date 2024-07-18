@@ -34,7 +34,6 @@
 #include "VoxelUtils.hpp"
 
 namespace kiss_icp {
-
 std::vector<Eigen::Vector3d> Preprocess(const std::vector<Eigen::Vector3d> &frame,
                                         double max_range,
                                         double min_range) {
