@@ -24,8 +24,7 @@
 
 #include <Eigen/Core>
 #include <algorithm>
-#include <tuple>
-#include <utility>
+#include <sophus/se3.hpp>
 #include <vector>
 
 #include "VoxelUtils.hpp"
