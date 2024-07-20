@@ -4,11 +4,11 @@
 
 namespace kiss_icp {
 
-std::vector<Eigen::Vector3d> VoxelDownsample(const std::vector<Eigen::Vector3d> &point_cloud,
+std::vector<Eigen::Vector3d> VoxelDownsample(const std::vector<Eigen::Vector3d> &frame,
                                              const double voxel_size) {
     tsl::robin_map<Voxel, Eigen::Vector3d> grid;
-    grid.reserve(point_cloud.size());
-    std::for_each(point_cloud.cbegin(), point_cloud.cend(), [&](const auto &point) {
+    grid.reserve(frame.size());
+    std::for_each(frame.cbegin(), frame.cend(), [&](const auto &point) {
         const auto voxel = PointToVoxel(point, voxel_size);
         if (!grid.contains(voxel)) grid.insert({voxel, point});
     });
