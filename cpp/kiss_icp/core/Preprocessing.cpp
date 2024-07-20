@@ -31,22 +31,7 @@
 #include <cmath>
 #include <vector>
 
-namespace {
-// TODO(all): Maybe try to merge these voxel uitls with VoxelHashMap implementation
-using Voxel = Eigen::Vector3i;
-struct VoxelHash {
-    size_t operator()(const Voxel &voxel) const {
-        const uint32_t *vec = reinterpret_cast<const uint32_t *>(voxel.data());
-        return ((1 << 20) - 1) & (vec[0] * 73856093 ^ vec[1] * 19349669 ^ vec[2] * 83492791);
-    }
-};
-
-Voxel PointToVoxel(const Eigen::Vector3d &point, double voxel_size) {
-    return Voxel(static_cast<int>(std::floor(point.x() / voxel_size)),
-                 static_cast<int>(std::floor(point.y() / voxel_size)),
-                 static_cast<int>(std::floor(point.z() / voxel_size)));
-}
-}  // namespace
+#include "VoxelUtils.hpp"
 
 namespace kiss_icp {
 std::vector<Eigen::Vector3d> VoxelDownsample(const std::vector<Eigen::Vector3d> &frame,
