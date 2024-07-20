@@ -42,7 +42,7 @@ std::vector<Eigen::Vector3d> VoxelDownsample(const std::vector<Eigen::Vector3d> 
 
 template <>
 struct std::hash<kiss_icp::Voxel> {
-    std::size_t operator()(const kiss_icp::Voxel &voxel) const noexcept {
+    std::size_t operator()(const kiss_icp::Voxel &voxel) const {
         const uint32_t *vec = reinterpret_cast<const uint32_t *>(voxel.data());
         return (vec[0] * 73856093 ^ vec[1] * 19349669 ^ vec[2] * 83492791);
     }
