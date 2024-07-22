@@ -25,21 +25,27 @@
 
 #include <Eigen/Core>
 #include <cmath>
+#include <vector>
 
 namespace kiss_icp {
 
 using Voxel = Eigen::Vector3i;
-
 inline Voxel PointToVoxel(const Eigen::Vector3d &point, const double voxel_size) {
     return Voxel(static_cast<int>(std::floor(point.x() / voxel_size)),
                  static_cast<int>(std::floor(point.y() / voxel_size)),
                  static_cast<int>(std::floor(point.z() / voxel_size)));
 }
 
-struct VoxelHash {
-    size_t operator()(const Voxel &voxel) const {
+/// Voxelize a point cloud keeping the original coordinates
+std::vector<Eigen::Vector3d> VoxelDownsample(const std::vector<Eigen::Vector3d> &frame,
+                                             const double voxel_size);
+
+}  // namespace kiss_icp
+
+template <>
+struct std::hash<kiss_icp::Voxel> {
+    std::size_t operator()(const kiss_icp::Voxel &voxel) const {
         const uint32_t *vec = reinterpret_cast<const uint32_t *>(voxel.data());
         return (vec[0] * 73856093 ^ vec[1] * 19349669 ^ vec[2] * 83492791);
     }
 };
-}  // namespace kiss_icp

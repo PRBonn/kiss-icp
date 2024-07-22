@@ -62,6 +62,6 @@ struct VoxelHashMap {
     double voxel_size_;
     double max_distance_;
     int max_points_per_voxel_;
-    tsl::robin_map<Voxel, VoxelBlock, VoxelHash> map_;
+    tsl::robin_map<Voxel, VoxelBlock> map_;
 };
 }  // namespace kiss_icp
