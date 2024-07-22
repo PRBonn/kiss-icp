@@ -34,24 +34,6 @@
 #include "VoxelUtils.hpp"
 
 namespace kiss_icp {
-std::vector<Eigen::Vector3d> VoxelDownsample(const std::vector<Eigen::Vector3d> &frame,
-                                             double voxel_size) {
-    tsl::robin_map<Voxel, Eigen::Vector3d, VoxelHash> grid;
-    grid.reserve(frame.size());
-    for (const auto &point : frame) {
-        const auto voxel = PointToVoxel(point, voxel_size);
-        if (grid.contains(voxel)) continue;
-        grid.insert({voxel, point});
-    }
-    std::vector<Eigen::Vector3d> frame_dowsampled;
-    frame_dowsampled.reserve(grid.size());
-    for (const auto &[voxel, point] : grid) {
-        (void)voxel;
-        frame_dowsampled.emplace_back(point);
-    }
-    return frame_dowsampled;
-}
-
 std::vector<Eigen::Vector3d> Preprocess(const std::vector<Eigen::Vector3d> &frame,
                                         double max_range,
                                         double min_range) {
