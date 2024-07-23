@@ -62,17 +62,18 @@ class config:
 def generate_launch_description():
     use_sim_time = LaunchConfiguration("use_sim_time", default="true")
 
-    # tf tree configuration, these are the likely 3 parameters to change and nothing else
-    base_frame = LaunchConfiguration("base_frame", default="")
-    odom_frame = LaunchConfiguration("odom_frame", default="odom")
-    publish_odom_tf = LaunchConfiguration("publish_odom_tf", default=True)
-
     # ROS configuration
     pointcloud_topic = LaunchConfiguration("topic")
     visualize = LaunchConfiguration("visualize", default="true")
 
     # Optional ros bag play
     bagfile = LaunchConfiguration("bagfile", default="")
+
+    # tf tree configuration, these are the likely parameters to change and nothing else
+    base_frame = LaunchConfiguration("base_frame", default="") # (base_link/base_footprint)
+    lidar_odom_frame = LaunchConfiguration("lidar_odom_frame", default="odom_lidar")
+    publish_odom_tf = LaunchConfiguration("publish_odom_tf", default=True)
+    invert_odom_tf = LaunchConfiguration("invert_odom_tf", default=True)
 
     # KISS-ICP node
     kiss_icp_node = Node(
@@ -87,8 +88,9 @@ def generate_launch_description():
             {
                 # ROS node configuration
                 "base_frame": base_frame,
-                "odom_frame": odom_frame,
+                "lidar_odom_frame": lidar_odom_frame,
                 "publish_odom_tf": publish_odom_tf,
+                "invert_odom_tf": invert_odom_tf,
                 # KISS-ICP configuration
                 "max_range": config.max_range,
                 "min_range": config.min_range,
@@ -123,10 +125,11 @@ def generate_launch_description():
     )
 
     bagfile_play = ExecuteProcess(
-        cmd=["ros2", "bag", "play", bagfile],
+        cmd=["ros2", "bag", "play", "--rate", "1", bagfile, "--clock", "1000.0"],
         output="screen",
         condition=IfCondition(PythonExpression(["'", bagfile, "' != ''"])),
     )
+
     return LaunchDescription(
         [
             kiss_icp_node,

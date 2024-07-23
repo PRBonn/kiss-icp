@@ -61,6 +61,7 @@ private:
     std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
     std::unique_ptr<tf2_ros::Buffer> tf2_buffer_;
     std::unique_ptr<tf2_ros::TransformListener> tf2_listener_;
+    bool invert_odom_tf_;
     bool publish_odom_tf_;
     bool publish_debug_clouds_;
 
@@ -77,7 +78,7 @@ private:
     std::unique_ptr<kiss_icp::pipeline::KissICP> kiss_icp_;
 
     /// Global/map coordinate frame.
-    std::string odom_frame_{"odom"};
+    std::string lidar_odom_frame_{"odom_lidar"};
     std::string base_frame_{};
 
     /// Covariance diagonal
