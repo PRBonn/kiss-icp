@@ -220,6 +220,16 @@ inline std::unique_ptr<PointCloud2> EigenToPointCloud2(const std::vector<Eigen::
 }
 
 inline std::unique_ptr<PointCloud2> EigenToPointCloud2(const std::vector<Eigen::Vector3d> &points,
+                                                       const Sophus::SE3d &T,
+                                                       const Header &header) {
+    std::vector<Eigen::Vector3d> points_t;
+    points_t.resize(points.size());
+    std::transform(points.cbegin(), points.cend(), points_t.begin(),
+                   [&](const auto &point) { return T * point; });
+    return EigenToPointCloud2(points_t, header);
+}
+
+inline std::unique_ptr<PointCloud2> EigenToPointCloud2(const std::vector<Eigen::Vector3d> &points,
                                                        const std::vector<double> &timestamps,
                                                        const Header &header) {
     auto msg = CreatePointCloud2Msg(points.size(), header, true);

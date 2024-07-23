@@ -194,15 +194,13 @@ void OdometryServer::PublishOdometry(const Sophus::SE3d &kiss_pose,
 
 void OdometryServer::PublishClouds(const std::vector<Eigen::Vector3d> frame,
                                    const std::vector<Eigen::Vector3d> keypoints,
-                                   const std_msgs::msg::Header &lidar_header) {
-    // The internal map representation is in the lidar_odom_frame_
-    std_msgs::msg::Header map_header;
-    map_header.frame_id = lidar_odom_frame_;
-    map_header.stamp = lidar_header.stamp;
+                                   const std_msgs::msg::Header &header) {
+    const auto kiss_map = kiss_icp_->LocalMap();
+    const auto kiss_pose = kiss_icp_->pose().inverse();
 
-    frame_publisher_->publish(std::move(EigenToPointCloud2(frame, lidar_header)));
-    kpoints_publisher_->publish(std::move(EigenToPointCloud2(keypoints, lidar_header)));
-    map_publisher_->publish(std::move(EigenToPointCloud2(kiss_icp_->LocalMap(), map_header)));
+    frame_publisher_->publish(std::move(EigenToPointCloud2(frame, header)));
+    kpoints_publisher_->publish(std::move(EigenToPointCloud2(keypoints, header)));
+    map_publisher_->publish(std::move(EigenToPointCloud2(kiss_map, kiss_pose, header)));
 }
 }  // namespace kiss_icp_ros
 
