@@ -74,8 +74,9 @@ using utils::PointCloud2ToEigen;
 OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
     : rclcpp::Node("kiss_icp_node", options) {
     base_frame_ = declare_parameter<std::string>("base_frame", base_frame_);
-    odom_frame_ = declare_parameter<std::string>("odom_frame", odom_frame_);
+    lidar_odom_frame_ = declare_parameter<std::string>("lidar_odom_frame", lidar_odom_frame_);
     publish_odom_tf_ = declare_parameter<bool>("publish_odom_tf", publish_odom_tf_);
+    invert_odom_tf_ = declare_parameter<bool>("invert_odom_tf", invert_odom_tf_);
     publish_debug_clouds_ = declare_parameter<bool>("publish_debug_clouds", publish_debug_clouds_);
     position_covariance_ = declare_parameter<double>("position_covariance", 0.1);
     orientation_covariance_ = declare_parameter<double>("orientation_covariance", 0.1);
@@ -152,6 +153,7 @@ void OdometryServer::PublishOdometry(const Sophus::SE3d &kiss_pose,
     // If necessary, transform the ego-centric pose to the specified base_link/base_footprint frame
     const auto cloud_frame_id = header.frame_id;
     const auto egocentric_estimation = (base_frame_.empty() || base_frame_ == cloud_frame_id);
+    const auto moving_frame = egocentric_estimation ? cloud_frame_id : base_frame_;
     const auto pose = [&]() -> Sophus::SE3d {
         if (egocentric_estimation) return kiss_pose;
         const Sophus::SE3d cloud2base = LookupTransform(base_frame_, cloud_frame_id, tf2_buffer_);
@@ -162,16 +164,23 @@ void OdometryServer::PublishOdometry(const Sophus::SE3d &kiss_pose,
     if (publish_odom_tf_) {
         geometry_msgs::msg::TransformStamped transform_msg;
         transform_msg.header.stamp = header.stamp;
-        transform_msg.header.frame_id = odom_frame_;
-        transform_msg.child_frame_id = egocentric_estimation ? cloud_frame_id : base_frame_;
-        transform_msg.transform = tf2::sophusToTransform(pose);
+        if (invert_odom_tf_) {
+            transform_msg.header.frame_id = moving_frame;
+            transform_msg.child_frame_id = lidar_odom_frame_;
+            transform_msg.transform = tf2::sophusToTransform(pose.inverse());
+        } else {
+            transform_msg.header.frame_id = lidar_odom_frame_;
+            transform_msg.child_frame_id = moving_frame;
+            transform_msg.transform = tf2::sophusToTransform(pose);
+        }
         tf_broadcaster_->sendTransform(transform_msg);
     }
 
     // publish odometry msg
     nav_msgs::msg::Odometry odom_msg;
     odom_msg.header.stamp = header.stamp;
-    odom_msg.header.frame_id = odom_frame_;
+    odom_msg.header.frame_id = lidar_odom_frame_;
+    odom_msg.child_frame_id = moving_frame;
     odom_msg.pose.pose = tf2::sophusToPose(pose);
     odom_msg.pose.covariance.fill(0.0);
     odom_msg.pose.covariance[0] = position_covariance_;
