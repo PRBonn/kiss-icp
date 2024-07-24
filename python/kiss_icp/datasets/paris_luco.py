@@ -64,5 +64,5 @@ class ParisLucoDataset:
     def apply_calibration(self, poses):
         """ParisLucoDataset only has a x, y, z trajectory, so we must will em all"""
         new_poses = poses.copy()
-        poses[:, :3, :3] = np.eye(3)
+        new_poses[:, :3, :3] = np.eye(3)
         return new_poses
