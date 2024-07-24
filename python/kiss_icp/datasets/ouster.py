@@ -77,9 +77,7 @@ class OusterDataloader:
         pcap_file = data_dir
 
         print("Indexing Ouster pcap to count the scans number ...")
-        source = open_source(str(pcap_file),
-                             meta=[meta] if meta else [],
-                             index=True)
+        source = open_source(str(pcap_file), meta=[meta] if meta else [], index=True)
 
         # since we import ouster-sdk's client module locally, we keep reference
         # to it locally as well
@@ -96,11 +94,7 @@ class OusterDataloader:
         print(f"Ouster pcap total scans number:  {self._scans_num}")
 
         # frame timestamps array
-        self._timestamps = np.linspace(
-            0,
-            self._scans_num,
-            self._scans_num,
-            endpoint=False)
+        self._timestamps = np.linspace(0, self._scans_num, self._scans_num, endpoint=False)
 
         self._source = source
 
@@ -109,8 +103,7 @@ class OusterDataloader:
 
         self._timestamps[idx] = 1e-9 * scan.timestamp[0]
 
-        timestamps = np.tile(np.linspace(0, 1.0, scan.w, endpoint=False),
-                             (scan.h, 1))
+        timestamps = np.tile(np.linspace(0, 1.0, scan.w, endpoint=False), (scan.h, 1))
 
         # filtering our zero returns makes it substantially faster for kiss-icp
         sel_flag = scan.field(self._client.ChanField.RANGE) != 0
