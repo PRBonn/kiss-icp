@@ -65,8 +65,7 @@ class OusterDataloader:
         """
 
         try:
-            from ouster.sdk import open_source
-            from ouster.sdk import client
+            from ouster.sdk import client, open_source
         except ImportError:
             print(f'ouster-sdk is not installed on your system, run "pip install ouster-sdk"')
             exit(1)
