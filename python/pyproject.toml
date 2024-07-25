@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "kiss-icp"
-version = "0.4.0"
+version = "0.5.0"
 description = "Simple yet effective 3D LiDAR-Odometry registration pipeline"
 readme = "README.md"
 authors = [
