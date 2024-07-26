@@ -116,6 +116,11 @@ class RegistrationVisualizer2(StubVisualizer):
             if polyscope_gui.Button("NEXT FRAME"):
                 polyscope._block_execution = not polyscope._block_execution
 
+        # CENTER VIEWPOINT
+        polyscope_gui.SameLine()
+        if polyscope_gui.Button("CENTER VIEWPOINT"):
+            polyscope.reset_camera_to_home_view()
+
         # TOGGLE BUTTONS
         changed, polyscope._toggle_frame = polyscope_gui.Checkbox(
             "Frame Cloud", polyscope._toggle_frame
