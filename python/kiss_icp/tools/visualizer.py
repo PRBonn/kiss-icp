@@ -41,6 +41,7 @@ SPHERE_SIZE = 0.20
 BLACK_COLOR = [0.0, 0.0, 0.0]
 WHITE_COLOR = [1.0, 1.0, 1.0]
 CYAN_COLOR = [0.24, 0.898, 1.0]
+GRAY_COLOR = [0.4, 0.4, 0.4]
 
 
 class StubVisualizer(ABC):
@@ -59,27 +60,42 @@ class RegistrationVisualizer2(StubVisualizer):
         self._initialize_visualizer()
 
         # Initialize GUI controls
+        polyscope._background_color = BLACK_COLOR
         polyscope._block_execution = True
         polyscope._play_mode = False
+        polyscope._toggle_frame = True
+        polyscope._toggle_keypoints = True
+        polyscope._toggle_map = True
 
     def update(self, source, keypoints, target_map, pose):
-        polyscope.register_point_cloud(
+        frame_cloud = polyscope.register_point_cloud(
             "current_frame", source, color=CYAN_COLOR, radius=0.001, point_render_mode="quad"
         )
-        polyscope.register_point_cloud(
+        frame_cloud.set_enabled(polyscope._toggle_frame)
+        keypoints_cloud = polyscope.register_point_cloud(
             "keypoints", keypoints, color=CYAN_COLOR, radius=0.001, point_render_mode="quad"
         )
+        keypoints_cloud.set_enabled(polyscope._toggle_keypoints)
+        map_cloud = polyscope.register_point_cloud(
+            "local_map",
+            target_map.point_cloud(),
+            color=GRAY_COLOR,
+            radius=0.0005,
+            point_render_mode="quad",
+        )
+        map_cloud.set_transform(np.linalg.inv(pose))
+        map_cloud.set_enabled(polyscope._toggle_map)
 
         # Visualization loop
         self._update_visualizer()
 
-        pass
-
     # Private Interface ---------------------------------------------------------------------------
     def _initialize_visualizer(self):
+        polyscope.set_program_name("KissICP Visualizer")
         polyscope.set_ground_plane_mode("none")
         polyscope.set_background_color(BLACK_COLOR)
         polyscope.set_user_callback(RegistrationVisualizer2.gui_callback)
+        polyscope.set_build_gui(True)
 
     def _update_visualizer(self):
         while polyscope._block_execution:
@@ -96,8 +112,31 @@ class RegistrationVisualizer2(StubVisualizer):
 
         # NEXT FRAME
         if not polyscope._play_mode:
+            polyscope_gui.SameLine()
             if polyscope_gui.Button("NEXT FRAME"):
                 polyscope._block_execution = not polyscope._block_execution
+
+        # TOGGLE BUTTONS
+        changed, polyscope._toggle_frame = polyscope_gui.Checkbox(
+            "Frame Cloud", polyscope._toggle_frame
+        )
+        if changed:
+            polyscope.get_point_cloud("current_frame").set_enabled(polyscope._toggle_frame)
+        changed, polyscope._toggle_keypoints = polyscope_gui.Checkbox(
+            "Keypoints", polyscope._toggle_keypoints
+        )
+        if changed:
+            polyscope.get_point_cloud("keypoints").set_enabled(polyscope._toggle_keypoints)
+        changed, polyscope._toggle_map = polyscope_gui.Checkbox("Local Map", polyscope._toggle_map)
+        if changed:
+            polyscope.get_point_cloud("local_map").set_enabled(polyscope._toggle_map)
+
+        # BACKGROUND COLOR
+        changed, polyscope._background_color = polyscope_gui.ColorEdit3(
+            "Background Color", polyscope._background_color
+        )
+        if changed:
+            polyscope.set_background_color(polyscope._background_color)
 
         # QUIT
         if polyscope_gui.Button("QUIT"):
