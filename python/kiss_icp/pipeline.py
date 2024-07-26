@@ -35,7 +35,7 @@ from kiss_icp.kiss_icp import KissICP
 from kiss_icp.metrics import absolute_trajectory_error, sequence_error
 from kiss_icp.tools.pipeline_results import PipelineResults
 from kiss_icp.tools.progress_bar import get_progress_bar
-from kiss_icp.tools.visualizer import RegistrationVisualizer2, StubVisualizer
+from kiss_icp.tools.visualizer import Kissualizer, StubVisualizer
 
 
 class OdometryPipeline:
@@ -76,7 +76,7 @@ class OdometryPipeline:
         )
 
         # Visualizer
-        self.visualizer = RegistrationVisualizer2() if visualize else StubVisualizer()
+        self.visualizer = Kissualizer() if visualize else StubVisualizer()
         if hasattr(self._dataset, "use_global_visualizer"):
             self.visualizer.global_view = self._dataset.use_global_visualizer
 

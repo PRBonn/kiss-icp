@@ -26,8 +26,6 @@ import os
 from abc import ABC
 from functools import partial
 from typing import Callable, List
-import polyscope
-import polyscope.imgui as polyscope_gui
 
 import numpy as np
 
@@ -52,31 +50,39 @@ class StubVisualizer(ABC):
         pass
 
 
-class RegistrationVisualizer2(StubVisualizer):
+class Kissualizer(StubVisualizer):
+    # Static Parameters
+    polyscope = None
+    background_color = BLACK_COLOR
+    block_execution = True
+    play_mode = False
+    toggle_frame = True
+    toggle_keypoints = True
+    toggle_map = True
+
     # Public Interface ----------------------------------------------------------------------------
     def __init__(self):
+        try:
+            Kissualizer.polyscope = importlib.import_module("polyscope")
+        except ModuleNotFoundError as err:
+            print(f'polyscope is not installed on your system, run "pip install polyscope"')
+            exit(1)
+
         # Initialize Visualizer
-        polyscope.init()
+        Kissualizer.polyscope.set_program_name("KissICP Visualizer")
+        Kissualizer.polyscope.init()
         self._initialize_visualizer()
 
-        # Initialize GUI controls
-        polyscope._background_color = BLACK_COLOR
-        polyscope._block_execution = True
-        polyscope._play_mode = False
-        polyscope._toggle_frame = True
-        polyscope._toggle_keypoints = True
-        polyscope._toggle_map = True
-
     def update(self, source, keypoints, target_map, pose):
-        frame_cloud = polyscope.register_point_cloud(
+        frame_cloud = Kissualizer.polyscope.register_point_cloud(
             "current_frame", source, color=CYAN_COLOR, radius=0.001, point_render_mode="quad"
         )
-        frame_cloud.set_enabled(polyscope._toggle_frame)
-        keypoints_cloud = polyscope.register_point_cloud(
+        frame_cloud.set_enabled(Kissualizer.toggle_frame)
+        keypoints_cloud = Kissualizer.polyscope.register_point_cloud(
             "keypoints", keypoints, color=CYAN_COLOR, radius=0.001, point_render_mode="quad"
         )
-        keypoints_cloud.set_enabled(polyscope._toggle_keypoints)
-        map_cloud = polyscope.register_point_cloud(
+        keypoints_cloud.set_enabled(Kissualizer.toggle_keypoints)
+        map_cloud = Kissualizer.polyscope.register_point_cloud(
             "local_map",
             target_map.point_cloud(),
             color=GRAY_COLOR,
@@ -84,69 +90,74 @@ class RegistrationVisualizer2(StubVisualizer):
             point_render_mode="quad",
         )
         map_cloud.set_transform(np.linalg.inv(pose))
-        map_cloud.set_enabled(polyscope._toggle_map)
+        map_cloud.set_enabled(Kissualizer.toggle_map)
 
         # Visualization loop
         self._update_visualizer()
 
     # Private Interface ---------------------------------------------------------------------------
     def _initialize_visualizer(self):
-        polyscope.set_program_name("KissICP Visualizer")
-        polyscope.set_ground_plane_mode("none")
-        polyscope.set_background_color(BLACK_COLOR)
-        polyscope.set_user_callback(RegistrationVisualizer2.gui_callback)
-        polyscope.set_build_gui(True)
+        Kissualizer.polyscope.set_ground_plane_mode("none")
+        Kissualizer.polyscope.set_background_color(BLACK_COLOR)
+        Kissualizer.polyscope.set_user_callback(Kissualizer.gui_callback)
+        Kissualizer.polyscope.set_build_gui(False)
 
     def _update_visualizer(self):
-        while polyscope._block_execution:
-            polyscope.frame_tick()
-            if polyscope._play_mode:
+        while Kissualizer.block_execution:
+            Kissualizer.polyscope.frame_tick()
+            if Kissualizer.play_mode:
                 break
-        polyscope._block_execution = not polyscope._block_execution
+        Kissualizer.block_execution = not Kissualizer.block_execution
 
     @staticmethod
     def gui_callback():
         # PROVA
-        if polyscope_gui.Button("START/PAUSE"):
-            polyscope._play_mode = not polyscope._play_mode
+        if Kissualizer.polyscope.imgui.Button("START/PAUSE"):
+            Kissualizer.play_mode = not Kissualizer.play_mode
 
         # NEXT FRAME
-        if not polyscope._play_mode:
-            polyscope_gui.SameLine()
-            if polyscope_gui.Button("NEXT FRAME"):
-                polyscope._block_execution = not polyscope._block_execution
+        if not Kissualizer.play_mode:
+            Kissualizer.polyscope.imgui.SameLine()
+            if Kissualizer.polyscope.imgui.Button("NEXT FRAME"):
+                Kissualizer.block_execution = not Kissualizer.block_execution
 
         # CENTER VIEWPOINT
-        polyscope_gui.SameLine()
-        if polyscope_gui.Button("CENTER VIEWPOINT"):
-            polyscope.reset_camera_to_home_view()
+        Kissualizer.polyscope.imgui.SameLine()
+        if Kissualizer.polyscope.imgui.Button("CENTER VIEWPOINT"):
+            Kissualizer.polyscope.reset_camera_to_home_view()
 
         # TOGGLE BUTTONS
-        changed, polyscope._toggle_frame = polyscope_gui.Checkbox(
-            "Frame Cloud", polyscope._toggle_frame
+        changed, Kissualizer.toggle_frame = Kissualizer.polyscope.imgui.Checkbox(
+            "Frame Cloud", Kissualizer.toggle_frame
         )
         if changed:
-            polyscope.get_point_cloud("current_frame").set_enabled(polyscope._toggle_frame)
-        changed, polyscope._toggle_keypoints = polyscope_gui.Checkbox(
-            "Keypoints", polyscope._toggle_keypoints
+            Kissualizer.polyscope.get_point_cloud("current_frame").set_enabled(
+                Kissualizer.toggle_frame
+            )
+        changed, Kissualizer.toggle_keypoints = Kissualizer.polyscope.imgui.Checkbox(
+            "Keypoints", Kissualizer.toggle_keypoints
         )
         if changed:
-            polyscope.get_point_cloud("keypoints").set_enabled(polyscope._toggle_keypoints)
-        changed, polyscope._toggle_map = polyscope_gui.Checkbox("Local Map", polyscope._toggle_map)
+            Kissualizer.polyscope.get_point_cloud("keypoints").set_enabled(
+                Kissualizer.toggle_keypoints
+            )
+        changed, Kissualizer.toggle_map = Kissualizer.polyscope.imgui.Checkbox(
+            "Local Map", Kissualizer.toggle_map
+        )
         if changed:
-            polyscope.get_point_cloud("local_map").set_enabled(polyscope._toggle_map)
+            Kissualizer.polyscope.get_point_cloud("local_map").set_enabled(Kissualizer.toggle_map)
 
         # BACKGROUND COLOR
-        changed, polyscope._background_color = polyscope_gui.ColorEdit3(
-            "Background Color", polyscope._background_color
+        changed, Kissualizer.background_color = Kissualizer.polyscope.imgui.ColorEdit3(
+            "Background Color", Kissualizer.background_color
         )
         if changed:
-            polyscope.set_background_color(polyscope._background_color)
+            Kissualizer.polyscope.set_background_color(Kissualizer.background_color)
 
         # QUIT
-        if polyscope_gui.Button("QUIT"):
+        if Kissualizer.polyscope.imgui.Button("QUIT"):
             print("Destroying Visualizer")
-            polyscope.unshow()
+            Kissualizer.polyscope.unshow()
             os._exit(0)
 
 
