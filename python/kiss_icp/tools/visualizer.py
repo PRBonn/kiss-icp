@@ -62,7 +62,6 @@ class Kissualizer(StubVisualizer):
     toggle_map = True
     global_view = False
     trajectory = []
-    trajectory_vectors = []
     last_pose = np.eye(4)
 
     # Public Interface ----------------------------------------------------------------------------
@@ -114,25 +113,21 @@ class Kissualizer(StubVisualizer):
         map_cloud.set_enabled(Kissualizer.toggle_map)
 
         Kissualizer.trajectory.append(pose[:3, 3])
-        direction_vector = pose[:3, :3] @ pose[:3, 3]
-        Kissualizer.trajectory_vectors.append(direction_vector / np.linalg.norm(direction_vector))
-        trajectory_cloud = Kissualizer.polyscope.register_point_cloud(
-            "trajectory",
-            np.asarray(Kissualizer.trajectory),
-            color=TRAJECTORY_COLOR,
-            radius=0.0005,
-            point_render_mode="sphere",
-        )
-        trajectory_cloud.add_vector_quantity(
-            "trajectory_vectors",
-            np.asarray(Kissualizer.trajectory_vectors),
-            vectortype="ambient",
-            length=0.0005,
-            radius=0.0005,
-            enabled=True,
-            color=TRAJECTORY_COLOR,
-        )
-        trajectory_cloud.set_enabled(Kissualizer.global_view)
+        if Kissualizer.global_view:
+            trajectory_cloud = Kissualizer.polyscope.register_point_cloud(
+                "trajectory",
+                np.asarray(Kissualizer.trajectory),
+                color=TRAJECTORY_COLOR,
+                point_render_mode="sphere",
+            )
+        else:
+            trajectory_cloud = Kissualizer.polyscope.register_point_cloud(
+                "trajectory",
+                np.asarray([[0, 0, 0]]),
+                color=TRAJECTORY_COLOR,
+                point_render_mode="sphere",
+            )
+        trajectory_cloud.set_radius(0.5, relative=False)
 
         Kissualizer.last_pose = pose
 
