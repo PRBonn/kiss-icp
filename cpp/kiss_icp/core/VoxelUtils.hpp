@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2022 Ignacio Vizzo, Tiziano Guadagnino, Benedikt Mersch, Cyrill
+// Copyright (c) 2024 Ignacio Vizzo, Tiziano Guadagnino, Benedikt Mersch, Cyrill
 // Stachniss.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,32 +20,32 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-#include "Threshold.hpp"
+//
+#pragma once
 
-#include <Eigen/Geometry>
+#include <Eigen/Core>
 #include <cmath>
-#include <sophus/se3.hpp>
+#include <vector>
 
 namespace kiss_icp {
-AdaptiveThreshold::AdaptiveThreshold(double initial_threshold,
-                                     double min_motion_threshold,
-                                     double max_range)
-    : min_motion_threshold_(min_motion_threshold),
-      max_range_(max_range),
-      model_sse_(initial_threshold * initial_threshold),
-      num_samples_(1) {}
 
-void AdaptiveThreshold::UpdateModelDeviation(const Sophus::SE3d &current_deviation) {
-    const double model_error = [&]() {
-        const double theta = Eigen::AngleAxisd(current_deviation.rotationMatrix()).angle();
-        const double delta_rot = 2.0 * max_range_ * std::sin(theta / 2.0);
-        const double delta_trans = current_deviation.translation().norm();
-        return delta_trans + delta_rot;
-    }();
-    if (model_error > min_motion_threshold_) {
-        model_sse_ += model_error * model_error;
-        num_samples_++;
-    }
+using Voxel = Eigen::Vector3i;
+inline Voxel PointToVoxel(const Eigen::Vector3d &point, const double voxel_size) {
+    return Voxel(static_cast<int>(std::floor(point.x() / voxel_size)),
+                 static_cast<int>(std::floor(point.y() / voxel_size)),
+                 static_cast<int>(std::floor(point.z() / voxel_size)));
 }
 
+/// Voxelize a point cloud keeping the original coordinates
+std::vector<Eigen::Vector3d> VoxelDownsample(const std::vector<Eigen::Vector3d> &frame,
+                                             const double voxel_size);
+
 }  // namespace kiss_icp
+
+template <>
+struct std::hash<kiss_icp::Voxel> {
+    std::size_t operator()(const kiss_icp::Voxel &voxel) const {
+        const uint32_t *vec = reinterpret_cast<const uint32_t *>(voxel.data());
+        return (vec[0] * 73856093 ^ vec[1] * 19349669 ^ vec[2] * 83492791);
+    }
+};

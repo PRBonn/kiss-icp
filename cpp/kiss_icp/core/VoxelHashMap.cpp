@@ -24,9 +24,10 @@
 
 #include <Eigen/Core>
 #include <algorithm>
-#include <tuple>
-#include <utility>
+#include <sophus/se3.hpp>
 #include <vector>
+
+#include "VoxelUtils.hpp"
 
 namespace kiss_icp {
 
@@ -36,9 +37,8 @@ std::vector<Eigen::Vector3d> VoxelHashMap::GetPoints(const std::vector<Voxel> &q
     std::for_each(query_voxels.cbegin(), query_voxels.cend(), [&](const auto &query) {
         auto search = map_.find(query);
         if (search != map_.end()) {
-            for (const auto &point : search->second.points) {
-                points.emplace_back(point);
-            }
+            const auto &voxel_points = search->second.points;
+            points.insert(points.end(), voxel_points.cbegin(), voxel_points.cend());
         }
     });
     points.shrink_to_fit();
@@ -49,11 +49,8 @@ std::vector<Eigen::Vector3d> VoxelHashMap::Pointcloud() const {
     std::vector<Eigen::Vector3d> points;
     points.reserve(map_.size() * static_cast<size_t>(max_points_per_voxel_));
     std::for_each(map_.cbegin(), map_.cend(), [&](const auto &map_element) {
-        const auto &[voxel, voxel_block] = map_element;
-        (void)voxel;
-        for (const auto &point : voxel_block.points) {
-            points.emplace_back(point);
-        }
+        const auto &voxel_points = map_element.second.points;
+        points.insert(points.end(), voxel_points.cbegin(), voxel_points.cend());
     });
     points.shrink_to_fit();
     return points;
@@ -75,7 +72,7 @@ void VoxelHashMap::Update(const std::vector<Eigen::Vector3d> &points, const Soph
 
 void VoxelHashMap::AddPoints(const std::vector<Eigen::Vector3d> &points) {
     std::for_each(points.cbegin(), points.cend(), [&](const auto &point) {
-        auto voxel = Voxel((point / voxel_size_).template cast<int>());
+        auto voxel = PointToVoxel(point, voxel_size_);
         auto search = map_.find(voxel);
         if (search != map_.end()) {
             auto &voxel_block = search.value();
