@@ -36,6 +36,10 @@ BLUE = np.array([0.4, 0.5, 0.9])
 GRAY = np.array([0.4, 0.4, 0.4])
 SPHERE_SIZE = 0.20
 
+BLACK_COLOR = [0.0, 0.0, 0.0]
+WHITE_COLOR = [1.0, 1.0, 1.0]
+CYAN_COLOR = [0.24, 0.898, 1.0]
+
 
 class StubVisualizer(ABC):
     def __init__(self):
@@ -45,8 +49,40 @@ class StubVisualizer(ABC):
         pass
 
 
+class RegistrationVisualizer2(StubVisualizer):
+    # Public Interface ----------------------------------------------------------------------------
+    def __init__(self):
+        try:
+            self.polyscope = importlib.import_module("polyscope")
+        except ModuleNotFoundError as err:
+            print(f'polyscope is not installed on your system, run "pip install polyscope"')
+            exit(1)
+
+        # Initialize Visualizer
+        self.polyscope.init()
+        self._initialize_visualizer()
+
+    def update(self, source, keypoints, target_map, pose):
+        self.polyscope.register_point_cloud(
+            "current_frame", source, color=CYAN_COLOR, radius=0.001, point_render_mode="quad"
+        )
+
+        # Visualization loop
+        self._update_visualizer()
+
+        pass
+
+    def _initialize_visualizer(self):
+        self.polyscope.set_ground_plane_mode("none")
+        self.polyscope.set_background_color(BLACK_COLOR)
+        # self.polyscope.set_user_callback()
+
+    def _update_visualizer(self):
+        self.polyscope.frame_tick()
+
+
 class RegistrationVisualizer(StubVisualizer):
-    # Public Interaface ----------------------------------------------------------------------------
+    # Public Interface ----------------------------------------------------------------------------
     def __init__(self):
         try:
             self.o3d = importlib.import_module("open3d")
