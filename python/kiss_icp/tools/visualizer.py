@@ -83,17 +83,18 @@ class Kissualizer(StubVisualizer):
             "current_frame",
             source,
             color=FRAME_COLOR,
-            radius=0.001,
             point_render_mode="quad",
         )
+        frame_cloud.set_radius(0.2, relative=False)
         if Kissualizer.global_view:
             frame_cloud.set_transform(pose)
         else:
             frame_cloud.set_transform(np.eye(4))
         frame_cloud.set_enabled(Kissualizer.toggle_frame)
         keypoints_cloud = Kissualizer.polyscope.register_point_cloud(
-            "keypoints", keypoints, color=KEYPOINTS_COLOR, radius=0.001, point_render_mode="quad"
+            "keypoints", keypoints, color=KEYPOINTS_COLOR, point_render_mode="quad"
         )
+        keypoints_cloud.set_radius(0.3, relative=False)
         if Kissualizer.global_view:
             keypoints_cloud.set_transform(pose)
         else:
@@ -103,9 +104,9 @@ class Kissualizer(StubVisualizer):
             "local_map",
             target_map.point_cloud(),
             color=LOCAL_MAP_COLOR,
-            radius=0.0005,
             point_render_mode="quad",
         )
+        map_cloud.set_radius(0.1, relative=False)
         if Kissualizer.global_view:
             map_cloud.set_transform(np.eye(4))
         else:
