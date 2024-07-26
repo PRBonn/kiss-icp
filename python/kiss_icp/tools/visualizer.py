@@ -119,7 +119,7 @@ class Kissualizer(StubVisualizer):
             "trajectory",
             np.asarray(Kissualizer.trajectory),
             color=TRAJECTORY_COLOR,
-            radius=0.00001,
+            radius=0.0005,
             point_render_mode="sphere",
         )
         trajectory_cloud.add_vector_quantity(
@@ -127,6 +127,7 @@ class Kissualizer(StubVisualizer):
             np.asarray(Kissualizer.trajectory_vectors),
             vectortype="ambient",
             length=0.0005,
+            radius=0.0005,
             enabled=True,
             color=TRAJECTORY_COLOR,
         )
