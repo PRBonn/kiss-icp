@@ -36,10 +36,11 @@ BLUE = np.array([0.4, 0.5, 0.9])
 GRAY = np.array([0.4, 0.4, 0.4])
 SPHERE_SIZE = 0.20
 
-BLACK_COLOR = [0.0, 0.0, 0.0]
-WHITE_COLOR = [1.0, 1.0, 1.0]
-CYAN_COLOR = [0.24, 0.898, 1.0]
-GRAY_COLOR = [0.4, 0.4, 0.4]
+BACKGROUND_COLOR = [0.0, 0.0, 0.0]
+FRAME_COLOR = [0.1412, 0.4823, 0.6274]
+KEYPOINTS_COLOR = [0.8470, 0.0667, 0.3490]
+LOCAL_MAP_COLOR = [0.7647, 0.6981, 0.6000]
+TRAJECTORY_COLOR = [0.9647, 0.9372, 0.6509]
 
 
 class StubVisualizer(ABC):
@@ -51,14 +52,16 @@ class StubVisualizer(ABC):
 
 
 class Kissualizer(StubVisualizer):
-    # Static Parameters
+    # Static GUI Parameters
     polyscope = None
-    background_color = BLACK_COLOR
+    background_color = BACKGROUND_COLOR
     block_execution = True
     play_mode = False
     toggle_frame = True
     toggle_keypoints = True
     toggle_map = True
+    global_view = False
+    trajectory = []
 
     # Public Interface ----------------------------------------------------------------------------
     def __init__(self):
@@ -75,22 +78,47 @@ class Kissualizer(StubVisualizer):
 
     def update(self, source, keypoints, target_map, pose):
         frame_cloud = Kissualizer.polyscope.register_point_cloud(
-            "current_frame", source, color=CYAN_COLOR, radius=0.001, point_render_mode="quad"
+            "current_frame",
+            source,
+            color=FRAME_COLOR,
+            radius=0.001,
+            point_render_mode="quad",
         )
+        if Kissualizer.global_view:
+            frame_cloud.set_transform(pose)
+        else:
+            frame_cloud.set_transform(np.eye(4))
         frame_cloud.set_enabled(Kissualizer.toggle_frame)
         keypoints_cloud = Kissualizer.polyscope.register_point_cloud(
-            "keypoints", keypoints, color=CYAN_COLOR, radius=0.001, point_render_mode="quad"
+            "keypoints", keypoints, color=KEYPOINTS_COLOR, radius=0.001, point_render_mode="quad"
         )
+        if Kissualizer.global_view:
+            keypoints_cloud.set_transform(pose)
+        else:
+            keypoints_cloud.set_transform(np.eye(4))
         keypoints_cloud.set_enabled(Kissualizer.toggle_keypoints)
         map_cloud = Kissualizer.polyscope.register_point_cloud(
             "local_map",
             target_map.point_cloud(),
-            color=GRAY_COLOR,
+            color=LOCAL_MAP_COLOR,
             radius=0.0005,
             point_render_mode="quad",
         )
-        map_cloud.set_transform(np.linalg.inv(pose))
+        if Kissualizer.global_view:
+            map_cloud.set_transform(np.eye(4))
+        else:
+            map_cloud.set_transform(np.linalg.inv(pose))
         map_cloud.set_enabled(Kissualizer.toggle_map)
+
+        Kissualizer.trajectory.append(pose[:3, 3])
+        trajectory_cloud = Kissualizer.polyscope.register_point_cloud(
+            "trajectory",
+            np.asarray(Kissualizer.trajectory),
+            color=TRAJECTORY_COLOR,
+            radius=0.004,
+            point_render_mode="sphere",
+        )
+        trajectory_cloud.set_enabled(Kissualizer.global_view)
 
         # Visualization loop
         self._update_visualizer()
@@ -98,8 +126,8 @@ class Kissualizer(StubVisualizer):
     # Private Interface ---------------------------------------------------------------------------
     def _initialize_visualizer(self):
         Kissualizer.polyscope.set_ground_plane_mode("none")
-        Kissualizer.polyscope.set_background_color(BLACK_COLOR)
-        Kissualizer.polyscope.set_user_callback(Kissualizer.gui_callback)
+        Kissualizer.polyscope.set_background_color(BACKGROUND_COLOR)
+        Kissualizer.polyscope.set_user_callback(Kissualizer._gui_callback)
         Kissualizer.polyscope.set_build_gui(False)
 
     def _update_visualizer(self):
@@ -110,8 +138,8 @@ class Kissualizer(StubVisualizer):
         Kissualizer.block_execution = not Kissualizer.block_execution
 
     @staticmethod
-    def gui_callback():
-        # PROVA
+    def _gui_callback():
+        # START/PAUSE
         if Kissualizer.polyscope.imgui.Button("START/PAUSE"):
             Kissualizer.play_mode = not Kissualizer.play_mode
 
@@ -153,6 +181,14 @@ class Kissualizer(StubVisualizer):
         )
         if changed:
             Kissualizer.polyscope.set_background_color(Kissualizer.background_color)
+
+        # GLOBAL_VIEW
+        if Kissualizer.polyscope.imgui.Button("GLOBAL VIEW"):
+            Kissualizer.global_view = not Kissualizer.global_view
+            if Kissualizer.global_view:
+                Kissualizer.polyscope.reset_camera_to_home_view()
+            else:
+                Kissualizer.polyscope.look_at((0.0, 0.0, 300.0), (1.0, 1.0, 1.0))
 
         # QUIT
         if Kissualizer.polyscope.imgui.Button("QUIT"):
