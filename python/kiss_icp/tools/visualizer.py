@@ -36,6 +36,7 @@ BLUE = np.array([0.4, 0.5, 0.9])
 GRAY = np.array([0.4, 0.4, 0.4])
 SPHERE_SIZE = 0.20
 
+# TODO: change color palette
 BACKGROUND_COLOR = [0.0, 0.0, 0.0]
 FRAME_COLOR = [0.1412, 0.4823, 0.6274]
 KEYPOINTS_COLOR = [0.8470, 0.0667, 0.3490]
@@ -51,6 +52,7 @@ class StubVisualizer(ABC):
         pass
 
 
+# TODO: make this class more readable
 class Kissualizer(StubVisualizer):
     # Static GUI Parameters
     polyscope = None
@@ -206,6 +208,7 @@ class Kissualizer(StubVisualizer):
                 )
                 Kissualizer.polyscope.get_point_cloud("local_map").set_transform(np.eye(4))
                 Kissualizer.polyscope.reset_camera_to_home_view()
+                # TODO: re-trigger pose spawn
             else:
                 Kissualizer.polyscope.get_point_cloud("current_frame").set_transform(np.eye(4))
                 Kissualizer.polyscope.get_point_cloud("keypoints").set_transform(np.eye(4))
@@ -214,6 +217,7 @@ class Kissualizer(StubVisualizer):
                 )
 
                 Kissualizer.polyscope.look_at((0.0, 0.0, 300.0), (1.0, 1.0, 1.0))
+                # TODO: re-trigger pose spawn
 
         # QUIT
         if Kissualizer.polyscope.imgui.Button("QUIT"):
