@@ -62,6 +62,7 @@ class Kissualizer(StubVisualizer):
     toggle_map = True
     global_view = False
     trajectory = []
+    last_pose = np.eye(4)
 
     # Public Interface ----------------------------------------------------------------------------
     def __init__(self):
@@ -119,6 +120,8 @@ class Kissualizer(StubVisualizer):
             point_render_mode="sphere",
         )
         trajectory_cloud.set_enabled(Kissualizer.global_view)
+
+        Kissualizer.last_pose = pose
 
         # Visualization loop
         self._update_visualizer()
@@ -185,9 +188,23 @@ class Kissualizer(StubVisualizer):
         # GLOBAL_VIEW
         if Kissualizer.polyscope.imgui.Button("GLOBAL VIEW"):
             Kissualizer.global_view = not Kissualizer.global_view
+            Kissualizer.polyscope.get_point_cloud("trajectory").set_enabled(Kissualizer.global_view)
             if Kissualizer.global_view:
+                Kissualizer.polyscope.get_point_cloud("current_frame").set_transform(
+                    Kissualizer.last_pose
+                )
+                Kissualizer.polyscope.get_point_cloud("keypoints").set_transform(
+                    Kissualizer.last_pose
+                )
+                Kissualizer.polyscope.get_point_cloud("local_map").set_transform(np.eye(4))
                 Kissualizer.polyscope.reset_camera_to_home_view()
             else:
+                Kissualizer.polyscope.get_point_cloud("current_frame").set_transform(np.eye(4))
+                Kissualizer.polyscope.get_point_cloud("keypoints").set_transform(np.eye(4))
+                Kissualizer.polyscope.get_point_cloud("local_map").set_transform(
+                    np.linalg.inv(Kissualizer.last_pose)
+                )
+
                 Kissualizer.polyscope.look_at((0.0, 0.0, 300.0), (1.0, 1.0, 1.0))
 
         # QUIT
