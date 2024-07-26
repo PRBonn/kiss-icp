@@ -26,6 +26,8 @@ import os
 from abc import ABC
 from functools import partial
 from typing import Callable, List
+import polyscope
+import polyscope.imgui as polyscope_gui
 
 import numpy as np
 
@@ -52,19 +54,20 @@ class StubVisualizer(ABC):
 class RegistrationVisualizer2(StubVisualizer):
     # Public Interface ----------------------------------------------------------------------------
     def __init__(self):
-        try:
-            self.polyscope = importlib.import_module("polyscope")
-        except ModuleNotFoundError as err:
-            print(f'polyscope is not installed on your system, run "pip install polyscope"')
-            exit(1)
-
         # Initialize Visualizer
-        self.polyscope.init()
+        polyscope.init()
         self._initialize_visualizer()
 
+        # Initialize GUI controls
+        polyscope._block_execution = True
+        polyscope._play_mode = False
+
     def update(self, source, keypoints, target_map, pose):
-        self.polyscope.register_point_cloud(
+        polyscope.register_point_cloud(
             "current_frame", source, color=CYAN_COLOR, radius=0.001, point_render_mode="quad"
+        )
+        polyscope.register_point_cloud(
+            "keypoints", keypoints, color=CYAN_COLOR, radius=0.001, point_render_mode="quad"
         )
 
         # Visualization loop
@@ -72,13 +75,35 @@ class RegistrationVisualizer2(StubVisualizer):
 
         pass
 
+    # Private Interface ---------------------------------------------------------------------------
     def _initialize_visualizer(self):
-        self.polyscope.set_ground_plane_mode("none")
-        self.polyscope.set_background_color(BLACK_COLOR)
-        # self.polyscope.set_user_callback()
+        polyscope.set_ground_plane_mode("none")
+        polyscope.set_background_color(BLACK_COLOR)
+        polyscope.set_user_callback(RegistrationVisualizer2.gui_callback)
 
     def _update_visualizer(self):
-        self.polyscope.frame_tick()
+        while polyscope._block_execution:
+            polyscope.frame_tick()
+            if polyscope._play_mode:
+                break
+        polyscope._block_execution = not polyscope._block_execution
+
+    @staticmethod
+    def gui_callback():
+        # PROVA
+        if polyscope_gui.Button("START/PAUSE"):
+            polyscope._play_mode = not polyscope._play_mode
+
+        # NEXT FRAME
+        if not polyscope._play_mode:
+            if polyscope_gui.Button("NEXT FRAME"):
+                polyscope._block_execution = not polyscope._block_execution
+
+        # QUIT
+        if polyscope_gui.Button("QUIT"):
+            print("Destroying Visualizer")
+            polyscope.unshow()
+            os._exit(0)
 
 
 class RegistrationVisualizer(StubVisualizer):
@@ -129,7 +154,7 @@ class RegistrationVisualizer(StubVisualizer):
                 break
         self.block_vis = not self.block_vis
 
-    # Private Interaface ---------------------------------------------------------------------------
+    # Private Interface ---------------------------------------------------------------------------
     def _initialize_visualizer(self):
         w_name = self.__class__.__name__
         self.vis.create_window(window_name=w_name, width=1920, height=1080)
