@@ -53,9 +53,16 @@ def next_frame_callback():
         Kissualizer.block_execution = not Kissualizer.block_execution
 
 
+def center_viewpoint():
+    if Kissualizer.global_view:
+        Kissualizer.polyscope.reset_camera_to_home_view()
+    else:
+        Kissualizer.polyscope.look_at((0.0, 0.0, 200.0), (0.0, 0.0, 0.0))
+
+
 def center_viewpoint_callback():
     if Kissualizer.polyscope.imgui.Button("CENTER VIEWPOINT"):
-        Kissualizer.polyscope.reset_camera_to_home_view()
+        center_viewpoint()
 
 
 def toggle_buttons_andslides_callback():
@@ -133,7 +140,7 @@ def global_view_callback():
                 np.linalg.inv(Kissualizer.last_pose)
             )
             Kissualizer.polyscope.get_point_cloud("trajectory").set_enabled(False)
-        Kissualizer.polyscope.reset_camera_to_home_view()
+        center_viewpoint()
 
 
 def quit_callback():
@@ -158,6 +165,9 @@ def main_gui_callback():
     quit_callback()
 
 
+# TODO: add screenshot
+# New colorscheme
+#
 class Kissualizer(StubVisualizer):
     # Static parameters
     polyscope = None
@@ -200,8 +210,11 @@ class Kissualizer(StubVisualizer):
     def _initialize_visualizer(self):
         Kissualizer.polyscope.set_ground_plane_mode("none")
         Kissualizer.polyscope.set_background_color(BACKGROUND_COLOR)
-        Kissualizer.polyscope.set_user_callback(main_gui_callback)
+        Kissualizer.polyscope.set_verbosity(0)
         Kissualizer.polyscope.set_build_gui(False)
+        Kissualizer.polyscope.set_open_imgui_window_for_user_callback(True)
+        Kissualizer.polyscope.set_autoscale_structures(False)
+        Kissualizer.polyscope.set_user_callback(main_gui_callback)
 
     def _update_geometries(self, source, keypoints, target_map, pose):
         # CURRENT FRAME
