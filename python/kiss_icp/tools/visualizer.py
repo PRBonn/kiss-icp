@@ -1,6 +1,6 @@
 # MIT License
 #
-# Copyright (c) 2022 Ignacio Vizzo, Tiziano Guadagnino, Benedikt Mersch, Cyrill
+# Copyright (c) 2022 Ignacio Vizzo, Luca Lobefaro, Tiziano Guadagnino, Benedikt Mersch, Cyrill
 # Stachniss.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -120,9 +120,11 @@ def main_gui_callback():
         next_frame_callback()
     Kissualizer.polyscope.imgui.SameLine()
     center_viewpoint_callback()
+    Kissualizer.polyscope.imgui.Separator()
     toggle_buttons_callback()
     background_color_callback()
     global_view_callback()
+    Kissualizer.polyscope.imgui.Separator()
     quit_callback()
 
 
