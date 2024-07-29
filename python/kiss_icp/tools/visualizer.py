@@ -43,7 +43,8 @@ class StubVisualizer(ABC):
 
 
 def start_pause_callback():
-    if Kissualizer.polyscope.imgui.Button("START/PAUSE"):
+    button_name = "PAUSE" if Kissualizer.play_mode else "START"
+    if Kissualizer.polyscope.imgui.Button(button_name):
         Kissualizer.play_mode = not Kissualizer.play_mode
 
 
@@ -57,17 +58,46 @@ def center_viewpoint_callback():
         Kissualizer.polyscope.reset_camera_to_home_view()
 
 
-def toggle_buttons_callback():
+def toggle_buttons_andslides_callback():
+    # FRAME
+    changed, Kissualizer.frame_size = Kissualizer.polyscope.imgui.SliderFloat(
+        "##frame_size", Kissualizer.frame_size, v_min=0.01, v_max=0.6
+    )
+    if changed:
+        Kissualizer.polyscope.get_point_cloud("current_frame").set_radius(
+            Kissualizer.frame_size, relative=False
+        )
+    Kissualizer.polyscope.imgui.SameLine()
     changed, Kissualizer.toggle_frame = Kissualizer.polyscope.imgui.Checkbox(
         "Frame Cloud", Kissualizer.toggle_frame
     )
     if changed:
         Kissualizer.polyscope.get_point_cloud("current_frame").set_enabled(Kissualizer.toggle_frame)
+
+    # KEYPOINTS
+    changed, Kissualizer.keypoints_size = Kissualizer.polyscope.imgui.SliderFloat(
+        "##keypoints_size", Kissualizer.keypoints_size, v_min=0.01, v_max=0.6
+    )
+    if changed:
+        Kissualizer.polyscope.get_point_cloud("keypoints").set_radius(
+            Kissualizer.keypoints_size, relative=False
+        )
+    Kissualizer.polyscope.imgui.SameLine()
     changed, Kissualizer.toggle_keypoints = Kissualizer.polyscope.imgui.Checkbox(
         "Keypoints", Kissualizer.toggle_keypoints
     )
     if changed:
         Kissualizer.polyscope.get_point_cloud("keypoints").set_enabled(Kissualizer.toggle_keypoints)
+
+    # LOCAL MAP
+    changed, Kissualizer.map_size = Kissualizer.polyscope.imgui.SliderFloat(
+        "##map_size", Kissualizer.map_size, v_min=0.01, v_max=0.6
+    )
+    if changed:
+        Kissualizer.polyscope.get_point_cloud("local_map").set_radius(
+            Kissualizer.map_size, relative=False
+        )
+    Kissualizer.polyscope.imgui.SameLine()
     changed, Kissualizer.toggle_map = Kissualizer.polyscope.imgui.Checkbox(
         "Local Map", Kissualizer.toggle_map
     )
@@ -121,7 +151,7 @@ def main_gui_callback():
     Kissualizer.polyscope.imgui.SameLine()
     center_viewpoint_callback()
     Kissualizer.polyscope.imgui.Separator()
-    toggle_buttons_callback()
+    toggle_buttons_andslides_callback()
     background_color_callback()
     global_view_callback()
     Kissualizer.polyscope.imgui.Separator()
@@ -134,8 +164,11 @@ class Kissualizer(StubVisualizer):
     background_color = BACKGROUND_COLOR
     block_execution = True
     play_mode = False
+    frame_size = 0.2
     toggle_frame = True
+    keypoints_size = 0.3
     toggle_keypoints = True
+    map_size = 0.1
     toggle_map = True
     global_view = False
     trajectory = []
@@ -178,7 +211,7 @@ class Kissualizer(StubVisualizer):
             color=FRAME_COLOR,
             point_render_mode="quad",
         )
-        frame_cloud.set_radius(0.2, relative=False)
+        frame_cloud.set_radius(Kissualizer.frame_size, relative=False)
         if Kissualizer.global_view:
             frame_cloud.set_transform(pose)
         else:
@@ -189,7 +222,7 @@ class Kissualizer(StubVisualizer):
         keypoints_cloud = Kissualizer.polyscope.register_point_cloud(
             "keypoints", keypoints, color=KEYPOINTS_COLOR, point_render_mode="quad"
         )
-        keypoints_cloud.set_radius(0.3, relative=False)
+        keypoints_cloud.set_radius(Kissualizer.keypoints_size, relative=False)
         if Kissualizer.global_view:
             keypoints_cloud.set_transform(pose)
         else:
@@ -203,7 +236,7 @@ class Kissualizer(StubVisualizer):
             color=LOCAL_MAP_COLOR,
             point_render_mode="quad",
         )
-        map_cloud.set_radius(0.1, relative=False)
+        map_cloud.set_radius(Kissualizer.map_size, relative=False)
         if Kissualizer.global_view:
             map_cloud.set_transform(np.eye(4))
         else:
