@@ -225,10 +225,8 @@ class Kissualizer(StubVisualizer):
         Kissualizer.polyscope.set_ground_plane_mode("none")
         Kissualizer.polyscope.set_background_color(BACKGROUND_COLOR)
         Kissualizer.polyscope.set_verbosity(0)
-        Kissualizer.polyscope.set_build_gui(False)
-        Kissualizer.polyscope.set_open_imgui_window_for_user_callback(True)
-        Kissualizer.polyscope.set_autoscale_structures(True)
         Kissualizer.polyscope.set_user_callback(main_gui_callback)
+        Kissualizer.polyscope.set_build_default_gui_panels(False)
 
     def _update_geometries(self, source, keypoints, target_map, pose):
         # CURRENT FRAME
