@@ -43,12 +43,16 @@ class StubVisualizer(ABC):
 
 def start_pause_callback():
     button_name = "PAUSE" if Kissualizer.play_mode else "START"
-    if Kissualizer.polyscope.imgui.Button(button_name):
+    if Kissualizer.polyscope.imgui.Button(button_name) or Kissualizer.polyscope.imgui.IsKeyPressed(
+        Kissualizer.polyscope.imgui.ImGuiKey_Space
+    ):
         Kissualizer.play_mode = not Kissualizer.play_mode
 
 
 def next_frame_callback():
-    if Kissualizer.polyscope.imgui.Button("NEXT FRAME"):
+    if Kissualizer.polyscope.imgui.Button("NEXT FRAME") or Kissualizer.polyscope.imgui.IsKeyPressed(
+        Kissualizer.polyscope.imgui.ImGuiKey_N
+    ):
         Kissualizer.block_execution = not Kissualizer.block_execution
 
 
@@ -151,7 +155,11 @@ def global_view_callback():
 
 
 def quit_callback():
-    if Kissualizer.polyscope.imgui.Button("QUIT"):
+    if (
+        Kissualizer.polyscope.imgui.Button("QUIT")
+        or Kissualizer.polyscope.imgui.IsKeyPressed(Kissualizer.polyscope.imgui.ImGuiKey_Escape)
+        or Kissualizer.polyscope.imgui.IsKeyPressed(Kissualizer.polyscope.imgui.ImGuiKey_Q)
+    ):
         print("Destroying Visualizer")
         Kissualizer.polyscope.unshow()
         os._exit(0)
@@ -174,8 +182,6 @@ def main_gui_callback():
     quit_callback()
 
 
-# TODO: add screenshot
-# New colorscheme
 class Kissualizer(StubVisualizer):
     # Static parameters
     polyscope = None
@@ -221,7 +227,7 @@ class Kissualizer(StubVisualizer):
         Kissualizer.polyscope.set_verbosity(0)
         Kissualizer.polyscope.set_build_gui(False)
         Kissualizer.polyscope.set_open_imgui_window_for_user_callback(True)
-        Kissualizer.polyscope.set_autoscale_structures(False)
+        Kissualizer.polyscope.set_autoscale_structures(True)
         Kissualizer.polyscope.set_user_callback(main_gui_callback)
 
     def _update_geometries(self, source, keypoints, target_map, pose):
