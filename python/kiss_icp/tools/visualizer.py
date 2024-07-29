@@ -20,7 +20,6 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import copy
 import importlib
 import os
 from abc import ABC
@@ -58,6 +57,14 @@ def center_viewpoint():
         Kissualizer.polyscope.reset_camera_to_home_view()
     else:
         Kissualizer.polyscope.look_at((0.0, 0.0, 200.0), (0.0, 0.0, 0.0))
+
+
+def screenshot_callback():
+    # TODO: this is just for demo, set a more valid path
+    if Kissualizer.polyscope.imgui.Button("SCREENSHOT"):
+        image_filename = "screenshot.jpg"
+        Kissualizer.polyscope.screenshot(image_filename)
+        Kissualizer.polyscope.info(f"Screenshot save at: {image_filename}")
 
 
 def center_viewpoint_callback():
@@ -156,18 +163,19 @@ def main_gui_callback():
         Kissualizer.polyscope.imgui.SameLine()
         next_frame_callback()
     Kissualizer.polyscope.imgui.SameLine()
-    center_viewpoint_callback()
+    screenshot_callback()
     Kissualizer.polyscope.imgui.Separator()
     toggle_buttons_andslides_callback()
     background_color_callback()
     global_view_callback()
+    Kissualizer.polyscope.imgui.SameLine()
+    center_viewpoint_callback()
     Kissualizer.polyscope.imgui.Separator()
     quit_callback()
 
 
 # TODO: add screenshot
 # New colorscheme
-#
 class Kissualizer(StubVisualizer):
     # Static parameters
     polyscope = None
