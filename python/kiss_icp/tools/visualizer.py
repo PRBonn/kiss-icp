@@ -58,13 +58,6 @@ def next_frame_callback():
         Kissualizer.block_execution = not Kissualizer.block_execution
 
 
-def center_viewpoint():
-    if Kissualizer.global_view:
-        Kissualizer.polyscope.reset_camera_to_home_view()
-    else:
-        Kissualizer.polyscope.look_at((0.0, 0.0, 200.0), (0.0, 0.0, 1.0))
-
-
 def screenshot_callback():
     # TODO: this is just for demo, set a more valid path
     if Kissualizer.polyscope.imgui.Button("SCREENSHOT"):
@@ -82,7 +75,7 @@ def fps_callback():
 
 def center_viewpoint_callback():
     if Kissualizer.polyscope.imgui.Button("CENTER VIEWPOINT"):
-        center_viewpoint()
+        Kissualizer.polyscope.reset_camera_to_home_view()
 
 
 def toggle_buttons_andslides_callback():
@@ -141,26 +134,39 @@ def background_color_callback():
         Kissualizer.polyscope.set_background_color(Kissualizer.background_color)
 
 
+def register_trajectory():
+    trajectory_curve = Kissualizer.polyscope.register_curve_network(
+        "trajectory",
+        np.asarray(Kissualizer.trajectory),
+        np.asarray(Kissualizer.trajectory_edges),
+        color=TRAJECTORY_COLOR,
+    )
+    trajectory_curve.set_radius(0.3, relative=False)
+
+
+def unregister_trajectory():
+    Kissualizer.polyscope.remove_curve_network("trajectory")
+
+
 def global_view_callback():
     button_name = "LOCAL VIEW" if Kissualizer.global_view else "GLOBAL VIEW"
     if Kissualizer.polyscope.imgui.Button(button_name):
         Kissualizer.global_view = not Kissualizer.global_view
-        Kissualizer.polyscope.get_point_cloud("trajectory").set_enabled(Kissualizer.global_view)
         if Kissualizer.global_view:
             Kissualizer.polyscope.get_point_cloud("current_frame").set_transform(
                 Kissualizer.last_pose
             )
             Kissualizer.polyscope.get_point_cloud("keypoints").set_transform(Kissualizer.last_pose)
             Kissualizer.polyscope.get_point_cloud("local_map").set_transform(np.eye(4))
-            Kissualizer.polyscope.get_point_cloud("trajectory").set_enabled(True)
+            register_trajectory()
         else:
             Kissualizer.polyscope.get_point_cloud("current_frame").set_transform(np.eye(4))
             Kissualizer.polyscope.get_point_cloud("keypoints").set_transform(np.eye(4))
             Kissualizer.polyscope.get_point_cloud("local_map").set_transform(
                 np.linalg.inv(Kissualizer.last_pose)
             )
-            Kissualizer.polyscope.get_point_cloud("trajectory").set_enabled(False)
-        center_viewpoint()
+            unregister_trajectory()
+        Kissualizer.polyscope.reset_camera_to_home_view()
 
 
 def configuration_callback():
@@ -222,6 +228,7 @@ class Kissualizer(StubVisualizer):
     toggle_map = True
     global_view = False
     trajectory = []
+    trajectory_edges = []
     times = []
     last_pose = np.eye(4)
 
@@ -301,11 +308,10 @@ class Kissualizer(StubVisualizer):
 
         # TRAJECTORY (only visible in global view)
         Kissualizer.trajectory.append(pose[:3, 3])
-        trajectory_cloud = Kissualizer.polyscope.register_point_cloud(
-            "trajectory",
-            np.asarray(Kissualizer.trajectory),
-            color=TRAJECTORY_COLOR,
-            point_render_mode="sphere",
-        )
-        trajectory_cloud.set_radius(0.5, relative=False)
-        trajectory_cloud.set_enabled(Kissualizer.global_view)
+        n_poses = len(Kissualizer.trajectory)
+        if n_poses > 1:
+            Kissualizer.trajectory_edges.append([n_poses - 2, n_poses - 1])
+        else:
+            Kissualizer.trajectory_edges.append([0, 0])
+        if Kissualizer.global_view:
+            register_trajectory()
