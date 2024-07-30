@@ -28,11 +28,14 @@ import numpy as np
 
 from kiss_icp.config.parser import KISSConfig
 
-BACKGROUND_COLOR = [0.8666, 0.8823, 0.8941]
-FRAME_COLOR = [0.1451, 0.5568, 0.6509]
+BACKGROUND_COLOR = [0.8470, 0.8588, 0.8863]
+FRAME_COLOR = [0.2156, 0.2471, 0.3176]
 KEYPOINTS_COLOR = [0.8588, 0.3294, 0.3803]
-LOCAL_MAP_COLOR = [0.9961, 0.8431, 0.4000]
-TRAJECTORY_COLOR = [0.2078, 0.2078, 0.2078]
+LOCAL_MAP_COLOR = [0.3451, 0.6431, 0.6902]
+TRAJECTORY_COLOR = [0.1058, 0.1059, 0.1176]
+FRAME_PTS_SIZE = 0.2
+KEYPOINTS_PTS_SIZE = 0.3
+MAP_PTS_SIZE = 0.1
 
 
 class StubVisualizer(ABC):
@@ -220,11 +223,11 @@ class Kissualizer(StubVisualizer):
     background_color = BACKGROUND_COLOR
     block_execution = True
     play_mode = False
-    frame_size = 0.2
+    frame_size = FRAME_PTS_SIZE
     toggle_frame = True
-    keypoints_size = 0.3
+    keypoints_size = KEYPOINTS_PTS_SIZE
     toggle_keypoints = True
-    map_size = 0.1
+    map_size = MAP_PTS_SIZE
     toggle_map = True
     global_view = False
     trajectory = []
