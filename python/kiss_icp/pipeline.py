@@ -76,7 +76,7 @@ class OdometryPipeline:
         )
 
         # Visualizer
-        self.visualizer = Kissualizer() if visualize else StubVisualizer()
+        self.visualizer = Kissualizer(self.config) if visualize else StubVisualizer(self.config)
         if hasattr(self._dataset, "use_global_visualizer"):
             self.visualizer.global_view = self._dataset.use_global_visualizer
 
@@ -100,7 +100,11 @@ class OdometryPipeline:
             self.poses[idx - self._first] = self.odometry.last_pose
             self.times[idx - self._first] = time.perf_counter_ns() - start_time
             self.visualizer.update(
-                source, keypoints, self.odometry.local_map, self.odometry.last_pose
+                source,
+                keypoints,
+                self.odometry.local_map,
+                self.odometry.last_pose,
+                self.times[idx - self._first],
             )
 
     def _next(self, idx):

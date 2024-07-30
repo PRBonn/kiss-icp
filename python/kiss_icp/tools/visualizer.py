@@ -26,6 +26,8 @@ from abc import ABC
 
 import numpy as np
 
+from kiss_icp.config.parser import KISSConfig
+
 BACKGROUND_COLOR = [0.8666, 0.8823, 0.8941]
 FRAME_COLOR = [0.1451, 0.5568, 0.6509]
 KEYPOINTS_COLOR = [0.8588, 0.3294, 0.3803]
@@ -34,10 +36,10 @@ TRAJECTORY_COLOR = [0.2078, 0.2078, 0.2078]
 
 
 class StubVisualizer(ABC):
-    def __init__(self):
+    def __init__(self, config: KISSConfig):
         pass
 
-    def update(self, source, keypoints, target_map, pose):
+    def update(self, source, keypoints, target_map, pose, lest_time):
         pass
 
 
@@ -69,6 +71,13 @@ def screenshot_callback():
         image_filename = "screenshot.jpg"
         Kissualizer.polyscope.screenshot(image_filename)
         Kissualizer.polyscope.info(f"Screenshot save at: {image_filename}")
+
+
+def fps_callback():
+    if Kissualizer.play_mode:
+        total_time_s = np.sum(Kissualizer.times) * 1e-9
+        current_fps = float(len(Kissualizer.times) / total_time_s) if total_time_s > 0 else 0
+        Kissualizer.polyscope.imgui.TextUnformatted(f"FPS: {int(np.floor(current_fps))}")
 
 
 def center_viewpoint_callback():
@@ -154,6 +163,18 @@ def global_view_callback():
         center_viewpoint()
 
 
+def configuration_callback():
+    if Kissualizer.polyscope.imgui.TreeNode("Parameters"):
+        config = Kissualizer.config
+        Kissualizer.polyscope.imgui.TextUnformatted(f"Voxel size: {config.mapping.voxel_size}")
+        Kissualizer.polyscope.imgui.TextUnformatted(
+            f"# Points per voxel: {config.mapping.max_points_per_voxel}"
+        )
+        Kissualizer.polyscope.imgui.TextUnformatted(f"Max range: {config.data.max_range}")
+        Kissualizer.polyscope.imgui.TextUnformatted(f"Min range: {config.data.min_range}")
+        Kissualizer.polyscope.imgui.TreePop()
+
+
 def quit_callback():
     if (
         Kissualizer.polyscope.imgui.Button("QUIT")
@@ -172,6 +193,10 @@ def main_gui_callback():
         next_frame_callback()
     Kissualizer.polyscope.imgui.SameLine()
     screenshot_callback()
+    Kissualizer.polyscope.imgui.SameLine()
+    fps_callback()
+    Kissualizer.polyscope.imgui.Separator()
+    configuration_callback()
     Kissualizer.polyscope.imgui.Separator()
     toggle_buttons_andslides_callback()
     background_color_callback()
@@ -185,6 +210,7 @@ def main_gui_callback():
 class Kissualizer(StubVisualizer):
     # Static parameters
     polyscope = None
+    config = None
     background_color = BACKGROUND_COLOR
     block_execution = True
     play_mode = False
@@ -196,10 +222,11 @@ class Kissualizer(StubVisualizer):
     toggle_map = True
     global_view = False
     trajectory = []
+    times = []
     last_pose = np.eye(4)
 
     # Public Interface ----------------------------------------------------------------------------
-    def __init__(self):
+    def __init__(self, config: KISSConfig):
         try:
             Kissualizer.polyscope = importlib.import_module("polyscope")
         except ModuleNotFoundError as err:
@@ -211,7 +238,11 @@ class Kissualizer(StubVisualizer):
         Kissualizer.polyscope.init()
         self._initialize_visualizer()
 
-    def update(self, source, keypoints, target_map, pose):
+        # Initialize parameters
+        Kissualizer.config = config
+
+    def update(self, source, keypoints, target_map, pose, last_time):
+        Kissualizer.times.append(last_time)
         self._update_geometries(source, keypoints, target_map, pose)
         Kissualizer.last_pose = pose
         while Kissualizer.block_execution:
