@@ -62,7 +62,7 @@ def center_viewpoint():
     if Kissualizer.global_view:
         Kissualizer.polyscope.reset_camera_to_home_view()
     else:
-        Kissualizer.polyscope.look_at((0.0, 0.0, 200.0), (0.0, 0.0, 0.0))
+        Kissualizer.polyscope.look_at((0.0, 0.0, 200.0), (0.0, 0.0, 1.0))
 
 
 def screenshot_callback():
