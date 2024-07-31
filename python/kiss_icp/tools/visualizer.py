@@ -39,15 +39,15 @@ CENTER_VIEWPOINT_BUTTON = "CENTER VIEWPOINT\n               [C]"
 QUIT_BUTTON = "QUIT\n  [Q]"
 
 # Colors
-BACKGROUND_COLOR = [0.8470, 0.8588, 0.8863]
-FRAME_COLOR = [0.2156, 0.2471, 0.3176]
-KEYPOINTS_COLOR = [0.8588, 0.3294, 0.3803]
-LOCAL_MAP_COLOR = [0.3451, 0.6431, 0.6902]
-TRAJECTORY_COLOR = [0.1058, 0.1059, 0.1176]
+BACKGROUND_COLOR = [0.0, 0.0, 0.0]
+FRAME_COLOR = [0.4, 0.5, 0.9]
+KEYPOINTS_COLOR = [0.24, 0.898, 1]
+LOCAL_MAP_COLOR = [0.4, 0.4, 0.4]
+TRAJECTORY_COLOR = [0.1, 0.1, 0.1]
 
 # Size constants
-FRAME_PTS_SIZE = 0.2
-KEYPOINTS_PTS_SIZE = 0.3
+FRAME_PTS_SIZE = 0.1
+KEYPOINTS_PTS_SIZE = 0.1
 MAP_PTS_SIZE = 0.1
 
 
@@ -55,7 +55,7 @@ class StubVisualizer(ABC):
     def __init__(self, config: KISSConfig):
         pass
 
-    def update(self, source, keypoints, target_map, pose, lest_time):
+    def update(self, source, keypoints, target_map, pose, last_time):
         pass
 
 
