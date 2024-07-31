@@ -28,11 +28,24 @@ import numpy as np
 
 from kiss_icp.config.parser import KISSConfig
 
+# Button names
+START_BUTTON = " START\n[SPACE]"
+PAUSE_BUTTON = " PAUSE\n[SPACE]"
+NEXT_FRAME_BUTTON = "NEXT FRAME\n         [N]"
+SCREENSHOT_BUTTON = "SCREENSHOT\n          [S]"
+LOCAL_VIEW_BUTTON = "LOCAL VIEW\n         [G]"
+GLOBAL_VIEW_BUTTON = "GLOBAL VIEW\n          [G]"
+CENTER_VIEWPOINT_BUTTON = "CENTER VIEWPOINT\n               [C]"
+QUIT_BUTTON = "QUIT\n  [Q]"
+
+# Colors
 BACKGROUND_COLOR = [0.8470, 0.8588, 0.8863]
 FRAME_COLOR = [0.2156, 0.2471, 0.3176]
 KEYPOINTS_COLOR = [0.8588, 0.3294, 0.3803]
 LOCAL_MAP_COLOR = [0.3451, 0.6431, 0.6902]
 TRAJECTORY_COLOR = [0.1058, 0.1059, 0.1176]
+
+# Size constants
 FRAME_PTS_SIZE = 0.2
 KEYPOINTS_PTS_SIZE = 0.3
 MAP_PTS_SIZE = 0.1
@@ -47,7 +60,7 @@ class StubVisualizer(ABC):
 
 
 def start_pause_callback():
-    button_name = "PAUSE" if Kissualizer.play_mode else "START"
+    button_name = PAUSE_BUTTON if Kissualizer.play_mode else START_BUTTON
     if Kissualizer.polyscope.imgui.Button(button_name) or Kissualizer.polyscope.imgui.IsKeyPressed(
         Kissualizer.polyscope.imgui.ImGuiKey_Space
     ):
@@ -55,15 +68,17 @@ def start_pause_callback():
 
 
 def next_frame_callback():
-    if Kissualizer.polyscope.imgui.Button("NEXT FRAME") or Kissualizer.polyscope.imgui.IsKeyPressed(
-        Kissualizer.polyscope.imgui.ImGuiKey_N
-    ):
+    if Kissualizer.polyscope.imgui.Button(
+        NEXT_FRAME_BUTTON
+    ) or Kissualizer.polyscope.imgui.IsKeyPressed(Kissualizer.polyscope.imgui.ImGuiKey_N):
         Kissualizer.block_execution = not Kissualizer.block_execution
 
 
 def screenshot_callback():
     # TODO: this is just for demo, set a more valid path
-    if Kissualizer.polyscope.imgui.Button("SCREENSHOT"):
+    if Kissualizer.polyscope.imgui.Button(
+        SCREENSHOT_BUTTON
+    ) or Kissualizer.polyscope.imgui.IsKeyPressed(Kissualizer.polyscope.imgui.ImGuiKey_S):
         image_filename = "screenshot.jpg"
         Kissualizer.polyscope.screenshot(image_filename)
         Kissualizer.polyscope.info(f"Screenshot save at: {image_filename}")
@@ -77,7 +92,9 @@ def fps_callback():
 
 
 def center_viewpoint_callback():
-    if Kissualizer.polyscope.imgui.Button("CENTER VIEWPOINT"):
+    if Kissualizer.polyscope.imgui.Button(
+        CENTER_VIEWPOINT_BUTTON
+    ) or Kissualizer.polyscope.imgui.IsKeyPressed(Kissualizer.polyscope.imgui.ImGuiKey_C):
         Kissualizer.polyscope.reset_camera_to_home_view()
 
 
@@ -152,8 +169,10 @@ def unregister_trajectory():
 
 
 def global_view_callback():
-    button_name = "LOCAL VIEW" if Kissualizer.global_view else "GLOBAL VIEW"
-    if Kissualizer.polyscope.imgui.Button(button_name):
+    button_name = LOCAL_VIEW_BUTTON if Kissualizer.global_view else GLOBAL_VIEW_BUTTON
+    if Kissualizer.polyscope.imgui.Button(button_name) or Kissualizer.polyscope.imgui.IsKeyPressed(
+        Kissualizer.polyscope.imgui.ImGuiKey_G
+    ):
         Kissualizer.global_view = not Kissualizer.global_view
         if Kissualizer.global_view:
             Kissualizer.polyscope.get_point_cloud("current_frame").set_transform(
@@ -186,7 +205,7 @@ def configuration_callback():
 
 def quit_callback():
     if (
-        Kissualizer.polyscope.imgui.Button("QUIT")
+        Kissualizer.polyscope.imgui.Button(QUIT_BUTTON)
         or Kissualizer.polyscope.imgui.IsKeyPressed(Kissualizer.polyscope.imgui.ImGuiKey_Escape)
         or Kissualizer.polyscope.imgui.IsKeyPressed(Kissualizer.polyscope.imgui.ImGuiKey_Q)
     ):
