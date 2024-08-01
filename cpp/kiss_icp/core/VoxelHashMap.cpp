@@ -80,15 +80,12 @@ void VoxelHashMap::AddPoints(const std::vector<Eigen::Vector3d> &points) {
             if (voxel_points.size() == max_points_per_voxel_) {
                 return;
             }
-            auto closest_point_it = std::min_element(
-                voxel_points.cbegin(), voxel_points.cend(), [&](const auto &lhs, const auto &rhs) {
-                    return (lhs - point).norm() < (rhs - point).norm();
+            const bool new_point_is_too_close = std::any_of(
+                voxel_points.cbegin(), voxel_points.cend(), [&](const auto &voxel_point) {
+                    return (voxel_point - point).norm() < map_resolution;
                 });
-            if (closest_point_it != voxel_points.end()) {
-                const double distance = (*closest_point_it - point).norm();
-                if (distance < map_resolution) {
-                    return;
-                }
+            if (new_point_is_too_close) {
+                return;
             }
             voxel_points.emplace_back(point);
         } else {
