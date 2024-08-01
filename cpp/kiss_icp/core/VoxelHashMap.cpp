@@ -77,11 +77,11 @@ void VoxelHashMap::AddPoints(const std::vector<Eigen::Vector3d> &points) {
         auto search = map_.find(voxel);
         if (search != map_.end()) {
             auto &voxel_points = search.value();
-            if ((voxel_points.size() == max_points_per_voxel_) or
-                (std::any_of(voxel_points.cbegin(), voxel_points.cend(),
-                             [&](const auto &voxel_point) {
-                                 return (voxel_point - point).norm() < map_resolution;
-                             }))) {
+            if (voxel_points.size() == max_points_per_voxel_ ||
+                std::any_of(voxel_points.cbegin(), voxel_points.cend(),
+                            [&](const auto &voxel_point) {
+                                return (voxel_point - point).norm() < map_resolution;
+                            })) {
                 return;
             }
             voxel_points.emplace_back(point);
