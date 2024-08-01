@@ -71,20 +71,14 @@ void VoxelHashMap::Update(const std::vector<Eigen::Vector3d> &points, const Soph
 }
 
 void VoxelHashMap::AddPoints(const std::vector<Eigen::Vector3d> &points) {
-    const double map_resolution = std::sqrt(voxel_size_ * voxel_size_ / max_points_per_voxel_);
     std::for_each(points.cbegin(), points.cend(), [&](const auto &point) {
         auto voxel = PointToVoxel(point, voxel_size_);
         auto search = map_.find(voxel);
         if (search != map_.end()) {
             auto &voxel_points = search.value();
-            if (voxel_points.size() == max_points_per_voxel_ ||
-                std::any_of(voxel_points.cbegin(), voxel_points.cend(),
-                            [&](const auto &voxel_point) {
-                                return (voxel_point - point).norm() < map_resolution;
-                            })) {
-                return;
+            if (voxel_points.size() < max_points_per_voxel_) {
+                voxel_points.emplace_back(point);
             }
-            voxel_points.emplace_back(point);
         } else {
             std::vector<Eigen::Vector3d> voxel_points;
             voxel_points.reserve(max_points_per_voxel_);
