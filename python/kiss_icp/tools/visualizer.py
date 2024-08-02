@@ -254,6 +254,9 @@ class Kissualizer(StubVisualizer):
             self._ps.reset_camera_to_home_view()
 
     def _quit_callback(self):
+        self._gui.SetCursorPosX(
+            self._gui.GetCursorPosX() + self._gui.GetContentRegionAvail()[0] - 50
+        )
         if (
             self._gui.Button(QUIT_BUTTON)
             or self._gui.IsKeyPressed(self._gui.ImGuiKey_Escape)
