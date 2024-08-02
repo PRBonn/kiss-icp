@@ -266,7 +266,19 @@ class Kissualizer(StubVisualizer):
             self._ps.unshow()
             os._exit(0)
 
+    def _trajectory_pick_callback(self):
+        if self._gui.GetIO().MouseClicked[0]:
+            name, idx = self._ps.get_selection()
+            if name == "trajectory" and self._ps.has_point_cloud(name):
+                pose = self._trajectory[idx]
+                self._vis_infos["selected_pose"] = (
+                    f"<{pose[0]:7.3f}, {pose[1]:7.3f}, {pose[2]:7.3f}>"
+                )
+            elif "selected_pose" in self._vis_infos:
+                self._vis_infos.pop("selected_pose")
+
     def _main_gui_callback(self):
+        # GUI callbacks
         self._start_pause_callback()
         if not self._play_mode:
             self._gui.SameLine()
@@ -283,3 +295,6 @@ class Kissualizer(StubVisualizer):
         self._center_viewpoint_callback()
         self._gui.Separator()
         self._quit_callback()
+
+        # Mouse callbacks
+        self._trajectory_pick_callback()
