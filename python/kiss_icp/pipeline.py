@@ -76,9 +76,10 @@ class OdometryPipeline:
         )
 
         # Visualizer
-        self.visualizer = Kissualizer(self.config) if visualize else StubVisualizer(self.config)
+        self.visualizer = Kissualizer() if visualize else StubVisualizer()
+        self._vis_infos = dict()
         if hasattr(self._dataset, "use_global_visualizer"):
-            self.visualizer.global_view = self._dataset.use_global_visualizer
+            self.visualizer._global_view = self._dataset.use_global_visualizer
 
     # Public interface  ------
     def run(self):
@@ -105,6 +106,7 @@ class OdometryPipeline:
                 self.odometry.local_map,
                 self.odometry.last_pose,
                 self.times[idx - self._first],
+                self._vis_infos,
             )
 
     def _next(self, idx):

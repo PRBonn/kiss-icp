@@ -26,7 +26,6 @@ from abc import ABC
 
 import numpy as np
 
-from kiss_icp.config.parser import KISSConfig
 
 # Button names
 START_BUTTON = " START\n[SPACE]"
@@ -52,16 +51,16 @@ MAP_PTS_SIZE = 0.08
 
 
 class StubVisualizer(ABC):
-    def __init__(self, config: KISSConfig):
+    def __init__(self):
         pass
 
-    def update(self, source, keypoints, target_map, pose, last_time):
+    def update(self, source, keypoints, target_map, pose, last_time, vis_infos):
         pass
 
 
 class Kissualizer(StubVisualizer):
     # Public Interface ----------------------------------------------------------------------------
-    def __init__(self, config: KISSConfig):
+    def __init__(self):
         try:
             self._ps = importlib.import_module("polyscope")
             self._gui = self._ps.imgui
@@ -85,14 +84,13 @@ class Kissualizer(StubVisualizer):
         self._trajectory = []
         self._times = []
         self._last_pose = np.eye(4)
+        self._vis_infos = dict()
 
         # Initialize Visualizer
         self._initialize_visualizer()
 
-        # Initialize parameters
-        self._config = config
-
-    def update(self, source, keypoints, target_map, pose, last_time):
+    def update(self, source, keypoints, target_map, pose, last_time, vis_infos: dict):
+        self._vis_infos = vis_infos
         self._times.append(last_time)
         self._update_geometries(source, keypoints, target_map, pose)
         self._last_pose = pose
@@ -255,15 +253,12 @@ class Kissualizer(StubVisualizer):
                 self._unregister_trajectory()
             self._ps.reset_camera_to_home_view()
 
-    def _configuration_callback(self):
-        if self._gui.TreeNode("Parameters"):
-            self._gui.TextUnformatted(f"Voxel size: {self._config.mapping.voxel_size}")
-            self._gui.TextUnformatted(
-                f"# Points per voxel: {self._config.mapping.max_points_per_voxel}"
-            )
-            self._gui.TextUnformatted(f"Max range: {self._config.data.max_range}")
-            self._gui.TextUnformatted(f"Min range: {self._config.data.min_range}")
-            self._gui.TreePop()
+    def _vis_infos_callback(self):
+        if len(self._vis_infos) > 0:
+            if self._gui.TreeNode("Odometry Information"):
+                for key in self._vis_infos:
+                    self._gui.TextUnformatted(f"{key}\t\t{self._vis_infos[key]}")
+                self._gui.TreePop()
 
     def _quit_callback(self):
         if (
@@ -285,7 +280,7 @@ class Kissualizer(StubVisualizer):
         self._gui.SameLine()
         self._fps_callback()
         self._gui.Separator()
-        self._configuration_callback()
+        self._vis_infos_callback()
         self._gui.Separator()
         self._toggle_buttons_andslides_callback()
         self._background_color_callback()
