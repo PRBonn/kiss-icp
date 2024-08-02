@@ -83,6 +83,7 @@ class Kissualizer(StubVisualizer):
         self._trajectory = []
         self._last_pose = np.eye(4)
         self._vis_infos = dict()
+        self._selected_pose = ""
 
         # Initialize Visualizer
         self._initialize_visualizer()
@@ -181,13 +182,12 @@ class Kissualizer(StubVisualizer):
             self._ps.screenshot(image_filename)
 
     def _vis_infos_callback(self):
-        if len(self._vis_infos) > 0:
-            if self._gui.TreeNodeEx(
-                "Odometry Information", self._gui.ImGuiTreeNodeFlags_DefaultOpen
-            ):
-                for key in self._vis_infos:
-                    self._gui.TextUnformatted(f"{key}: {self._vis_infos[key]}")
-                self._gui.TreePop()
+        if self._gui.TreeNodeEx("Odometry Information", self._gui.ImGuiTreeNodeFlags_DefaultOpen):
+            for key in self._vis_infos:
+                self._gui.TextUnformatted(f"{key}: {self._vis_infos[key]}")
+            if not self._play_mode and self._global_view:
+                self._gui.TextUnformatted(f"Selected Pose: {self._selected_pose}")
+            self._gui.TreePop()
 
     def _center_viewpoint_callback(self):
         if self._gui.Button(CENTER_VIEWPOINT_BUTTON) or self._gui.IsKeyPressed(
@@ -271,11 +271,9 @@ class Kissualizer(StubVisualizer):
             name, idx = self._ps.get_selection()
             if name == "trajectory" and self._ps.has_point_cloud(name):
                 pose = self._trajectory[idx]
-                self._vis_infos["selected_pose"] = (
-                    f"<{pose[0]:7.3f}, {pose[1]:7.3f}, {pose[2]:7.3f}>"
-                )
-            elif "selected_pose" in self._vis_infos:
-                self._vis_infos.pop("selected_pose")
+                self._selected_pose = f"x: {pose[0]:7.3f}, y: {pose[1]:7.3f}, z: {pose[2]:7.3f}>"
+            else:
+                self._selected_pose = ""
 
     def _main_gui_callback(self):
         # GUI callbacks
