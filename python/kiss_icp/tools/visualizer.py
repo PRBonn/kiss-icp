@@ -70,19 +70,18 @@ class Kissualizer(StubVisualizer):
 
         # Initialize GUI controls
         self._background_color = BACKGROUND_COLOR
+        self._frame_size = FRAME_PTS_SIZE
+        self._keypoints_size = KEYPOINTS_PTS_SIZE
+        self._map_size = MAP_PTS_SIZE
         self._block_execution = True
         self._play_mode = False
-        self._frame_size = FRAME_PTS_SIZE
         self._toggle_frame = True
-        self._keypoints_size = KEYPOINTS_PTS_SIZE
         self._toggle_keypoints = True
-        self._map_size = MAP_PTS_SIZE
         self._toggle_map = True
         self._global_view = False
 
         # Create data
         self._trajectory = []
-        self._trajectory_edges = []
         self._times = []
         self._last_pose = np.eye(4)
 
@@ -154,13 +153,19 @@ class Kissualizer(StubVisualizer):
 
         # TRAJECTORY (only visible in global view)
         self._trajectory.append(pose[:3, 3])
-        n_poses = len(self._trajectory)
-        if n_poses > 1:
-            self._trajectory_edges.append([n_poses - 2, n_poses - 1])
-        else:
-            self._trajectory_edges.append([0, 0])
         if self._global_view:
             self._register_trajectory()
+
+    def _register_trajectory(self):
+        trajectory_cloud = self._ps.register_point_cloud(
+            "trajectory",
+            np.asarray(self._trajectory),
+            color=TRAJECTORY_COLOR,
+        )
+        trajectory_cloud.set_radius(0.3, relative=False)
+
+    def _unregister_trajectory(self):
+        self._ps.remove_point_cloud("trajectory")
 
     # GUI Callbacks ---------------------------------------------------------------------------
     def _start_pause_callback(self):
@@ -232,18 +237,6 @@ class Kissualizer(StubVisualizer):
         )
         if changed:
             self._ps.set_background_color(self._background_color)
-
-    def _register_trajectory(self):
-        trajectory_curve = self._ps.register_curve_network(
-            "trajectory",
-            np.asarray(self._trajectory),
-            np.asarray(self._trajectory_edges),
-            color=TRAJECTORY_COLOR,
-        )
-        trajectory_curve.set_radius(0.3, relative=False)
-
-    def _unregister_trajectory(self):
-        self._ps.remove_curve_network("trajectory")
 
     def _global_view_callback(self):
         button_name = LOCAL_VIEW_BUTTON if self._global_view else GLOBAL_VIEW_BUTTON
