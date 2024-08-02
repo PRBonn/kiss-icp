@@ -26,7 +26,6 @@ from abc import ABC
 
 import numpy as np
 
-
 # Button names
 START_BUTTON = " START\n[SPACE]"
 PAUSE_BUTTON = " PAUSE\n[SPACE]"
