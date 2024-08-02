@@ -88,7 +88,7 @@ class Kissualizer(StubVisualizer):
         self._initialize_visualizer()
 
     def update(self, source, keypoints, target_map, pose, vis_infos: dict):
-        self._vis_infos = vis_infos
+        self._vis_infos = dict(sorted(vis_infos.items(), key=lambda item: len(item[0])))
         self._update_geometries(source, keypoints, target_map, pose)
         self._last_pose = pose
         while self._block_execution:
@@ -180,6 +180,15 @@ class Kissualizer(StubVisualizer):
             )
             self._ps.screenshot(image_filename)
 
+    def _vis_infos_callback(self):
+        if len(self._vis_infos) > 0:
+            if self._gui.TreeNodeEx(
+                "Odometry Information", self._gui.ImGuiTreeNodeFlags_DefaultOpen
+            ):
+                for key in self._vis_infos:
+                    self._gui.TextUnformatted(f"{key}: {self._vis_infos[key]}")
+                self._gui.TreePop()
+
     def _center_viewpoint_callback(self):
         if self._gui.Button(CENTER_VIEWPOINT_BUTTON) or self._gui.IsKeyPressed(
             self._gui.ImGuiKey_C
@@ -243,13 +252,6 @@ class Kissualizer(StubVisualizer):
                 self._ps.get_point_cloud("local_map").set_transform(np.linalg.inv(self._last_pose))
                 self._unregister_trajectory()
             self._ps.reset_camera_to_home_view()
-
-    def _vis_infos_callback(self):
-        if len(self._vis_infos) > 0:
-            if self._gui.TreeNode("Odometry Information"):
-                for key in self._vis_infos:
-                    self._gui.TextUnformatted(f"{key}:\t\t{self._vis_infos[key]}")
-                self._gui.TreePop()
 
     def _quit_callback(self):
         if (
