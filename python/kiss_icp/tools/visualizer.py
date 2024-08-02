@@ -20,6 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import importlib
+import datetime
 import os
 from abc import ABC
 
@@ -178,11 +179,11 @@ class Kissualizer(StubVisualizer):
             self._block_execution = not self._block_execution
 
     def _screenshot_callback(self):
-        # TODO: this is just for demo, set a more valid path
         if self._gui.Button(SCREENSHOT_BUTTON) or self._gui.IsKeyPressed(self._gui.ImGuiKey_S):
-            image_filename = "screenshot.jpg"
+            image_filename = "kisshot_" + (
+                datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".jpg"
+            )
             self._ps.screenshot(image_filename)
-            self._ps.info(f"Screenshot save at: {image_filename}")
 
     def _fps_callback(self):
         if self._play_mode:
