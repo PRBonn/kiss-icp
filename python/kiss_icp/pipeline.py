@@ -77,7 +77,10 @@ class OdometryPipeline:
 
         # Visualizer
         self.visualizer = Kissualizer() if visualize else StubVisualizer()
-        self._vis_infos = dict()
+        self._vis_infos = {
+            "max_range": self.config.data.max_range,
+            "min_range": self.config.data.min_range,
+        }
         if hasattr(self._dataset, "use_global_visualizer"):
             self.visualizer._global_view = self._dataset.use_global_visualizer
 
@@ -100,12 +103,14 @@ class OdometryPipeline:
             source, keypoints = self.odometry.register_frame(raw_frame, timestamps)
             self.poses[idx - self._first] = self.odometry.last_pose
             self.times[idx - self._first] = time.perf_counter_ns() - start_time
+
+            # Udate visualizer
+            self._vis_infos["FPS"] = int(np.floor(self._get_fps()))
             self.visualizer.update(
                 source,
                 keypoints,
                 self.odometry.local_map,
                 self.odometry.last_pose,
-                self.times[idx - self._first],
                 self._vis_infos,
             )
 
@@ -175,6 +180,11 @@ class OdometryPipeline:
             timestamps=self._get_frames_timestamps(),
         )
 
+    def _get_fps(self):
+        times_nozero = self.times[self.times != 0]
+        total_time_s = np.sum(times_nozero) * 1e-9
+        return float(times_nozero.shape[0] / total_time_s) if total_time_s > 0 else 0
+
     def _run_evaluation(self):
         # Run estimation metrics evaluation, only when GT data was provided
         if self.has_gt:
@@ -186,11 +196,7 @@ class OdometryPipeline:
             self.results.append(desc="Absolute Rotational Error (ARE)", units="rad", value=ate_rot)
 
         # Run timing metrics evaluation, always
-        def _get_fps():
-            total_time_s = np.sum(self.times) * 1e-9
-            return float(self._n_scans / total_time_s) if total_time_s > 0 else 0
-
-        fps = _get_fps()
+        fps = self._get_fps()
         avg_fps = int(np.floor(fps))
         avg_ms = int(np.ceil(1e3 / fps)) if fps > 0 else 0
         if avg_fps > 0:

@@ -54,7 +54,7 @@ class StubVisualizer(ABC):
     def __init__(self):
         pass
 
-    def update(self, source, keypoints, target_map, pose, last_time, vis_infos):
+    def update(self, source, keypoints, target_map, pose, vis_infos):
         pass
 
 
@@ -82,16 +82,14 @@ class Kissualizer(StubVisualizer):
 
         # Create data
         self._trajectory = []
-        self._times = []
         self._last_pose = np.eye(4)
         self._vis_infos = dict()
 
         # Initialize Visualizer
         self._initialize_visualizer()
 
-    def update(self, source, keypoints, target_map, pose, last_time, vis_infos: dict):
+    def update(self, source, keypoints, target_map, pose, vis_infos: dict):
         self._vis_infos = vis_infos
-        self._times.append(last_time)
         self._update_geometries(source, keypoints, target_map, pose)
         self._last_pose = pose
         while self._block_execution:
@@ -183,12 +181,6 @@ class Kissualizer(StubVisualizer):
             )
             self._ps.screenshot(image_filename)
 
-    def _fps_callback(self):
-        if self._play_mode:
-            total_time_s = np.sum(self._times) * 1e-9
-            current_fps = float(len(self._times) / total_time_s) if total_time_s > 0 else 0
-            self._gui.TextUnformatted(f"FPS: {int(np.floor(current_fps))}")
-
     def _center_viewpoint_callback(self):
         if self._gui.Button(CENTER_VIEWPOINT_BUTTON) or self._gui.IsKeyPressed(
             self._gui.ImGuiKey_C
@@ -257,7 +249,7 @@ class Kissualizer(StubVisualizer):
         if len(self._vis_infos) > 0:
             if self._gui.TreeNode("Odometry Information"):
                 for key in self._vis_infos:
-                    self._gui.TextUnformatted(f"{key}\t\t{self._vis_infos[key]}")
+                    self._gui.TextUnformatted(f"{key}:\t\t{self._vis_infos[key]}")
                 self._gui.TreePop()
 
     def _quit_callback(self):
@@ -277,8 +269,6 @@ class Kissualizer(StubVisualizer):
             self._next_frame_callback()
         self._gui.SameLine()
         self._screenshot_callback()
-        self._gui.SameLine()
-        self._fps_callback()
         self._gui.Separator()
         self._vis_infos_callback()
         self._gui.Separator()
