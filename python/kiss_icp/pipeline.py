@@ -77,6 +77,7 @@ class OdometryPipeline:
 
         # Visualizer
         self.visualizer = RegistrationVisualizer() if visualize else StubVisualizer()
+        self.visualizer.voxel_size = self.config.mapping.voxel_size
         if hasattr(self._dataset, "use_global_visualizer"):
             self.visualizer.global_view = self._dataset.use_global_visualizer
 

@@ -40,6 +40,7 @@ SPHERE_SIZE = 0.20
 
 class StubVisualizer(ABC):
     def __init__(self):
+        self.voxel_size = 1.0
         pass
 
     def update(self, source, keypoints, target_map, pose):
@@ -65,7 +66,8 @@ class RegistrationVisualizer(StubVisualizer):
         self.keypoints = self.o3d.geometry.PointCloud()
         self.target = self.o3d.geometry.PointCloud()
         self.voxel_map = self.o3d.geometry.VoxelGrid()
-        self.voxel_map.voxel_size = 1.0
+        self.voxel_size = 1.0
+        self.voxel_map.voxel_size = self.voxel_size
         self.frames = []
 
         # Initialize visualizer
@@ -238,11 +240,14 @@ class RegistrationVisualizer(StubVisualizer):
         # VoxelHashMap
         if self.render_voxel_grid:
             self.voxel_map.clear()
-            self.voxel_map.voxel_size = 1.0
+            self.voxel_map.voxel_size = self.voxel_size
             inv_pose = np.linalg.inv(pose)
             for voxel in target_map.get_voxels():
                 if not self.global_view:
-                    voxel = np.dot(inv_pose, np.append(voxel, 1))[:3].astype(np.int32)
+                    voxel = (
+                        np.dot(inv_pose, np.append(voxel * self.voxel_size, 1))[:3]
+                        / self.voxel_size
+                    ).astype(np.int32)
                 self.voxel_map.add_voxel(self.o3d.geometry.Voxel(voxel, LIGHT_GRAY))
         else:
             self.voxel_map.clear()
