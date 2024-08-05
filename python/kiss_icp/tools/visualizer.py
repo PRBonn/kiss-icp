@@ -34,6 +34,7 @@ RED = np.array([128, 0, 0]) / 255.0
 BLACK = np.array([0, 0, 0]) / 255.0
 BLUE = np.array([0.4, 0.5, 0.9])
 GRAY = np.array([0.4, 0.4, 0.4])
+LIGHT_GRAY = np.array([0.9, 0.9, 0.9])
 SPHERE_SIZE = 0.20
 
 
@@ -63,6 +64,8 @@ class RegistrationVisualizer(StubVisualizer):
         self.source = self.o3d.geometry.PointCloud()
         self.keypoints = self.o3d.geometry.PointCloud()
         self.target = self.o3d.geometry.PointCloud()
+        self.voxel_map = self.o3d.geometry.VoxelGrid()
+        self.voxel_map.voxel_size = 1.0
         self.frames = []
 
         # Initialize visualizer
@@ -74,6 +77,7 @@ class RegistrationVisualizer(StubVisualizer):
         self.render_map = True
         self.render_source = True
         self.render_keypoints = False
+        self.render_voxel_grid = True
         self.global_view = False
         self.render_trajectory = True
         # Cache the state of the visualizer
@@ -81,11 +85,11 @@ class RegistrationVisualizer(StubVisualizer):
             self.render_map,
             self.render_keypoints,
             self.render_source,
+            self.render_voxel_grid,
         )
 
     def update(self, source, keypoints, target_map, pose):
-        target = target_map.point_cloud()
-        self._update_geometries(source, keypoints, target, pose)
+        self._update_geometries(source, keypoints, target_map, pose)
         while self.block_vis:
             self.vis.poll_events()
             self.vis.update_renderer()
@@ -100,8 +104,10 @@ class RegistrationVisualizer(StubVisualizer):
         self.vis.add_geometry(self.source)
         self.vis.add_geometry(self.keypoints)
         self.vis.add_geometry(self.target)
+        self.vis.add_geometry(self.voxel_map)
         self._set_black_background(self.vis)
         self.vis.get_render_option().point_size = 1
+        self.vis.get_render_option().mesh_show_wireframe = True
         print(
             f"{w_name} initialized. Press:\n"
             "\t[SPACE] to pause/start\n"
@@ -130,6 +136,7 @@ class RegistrationVisualizer(StubVisualizer):
         self._register_key_callback(["F"], self._toggle_source)
         self._register_key_callback(["K"], self._toggle_keypoints)
         self._register_key_callback(["M"], self._toggle_map)
+        self._register_key_callback(["G"], self._toggle_voxel_grid)
         self._register_key_callback(["T"], self._toggle_trajectory)
         self._register_key_callback(["B"], self._set_black_background)
         self._register_key_callback(["W"], self._set_white_background)
@@ -172,6 +179,10 @@ class RegistrationVisualizer(StubVisualizer):
         self.render_map = not self.render_map
         return False
 
+    def _toggle_voxel_grid(self, vis):
+        self.render_voxel_grid = not self.render_voxel_grid
+        return False
+
     def _toggle_view(self, vis):
         self.global_view = not self.global_view
         self._trajectory_handle()
@@ -194,7 +205,7 @@ class RegistrationVisualizer(StubVisualizer):
             for frame in self.frames:
                 self.vis.remove_geometry(frame, reset_bounding_box=False)
 
-    def _update_geometries(self, source, keypoints, target, pose):
+    def _update_geometries(self, source, keypoints, target_map, pose):
         # Source hot frame
         if self.render_source:
             self.source.points = self.o3d.utility.Vector3dVector(source)
@@ -215,7 +226,7 @@ class RegistrationVisualizer(StubVisualizer):
 
         # Target Map
         if self.render_map:
-            target = copy.deepcopy(target)
+            target = target_map.point_cloud()
             self.target.points = self.o3d.utility.Vector3dVector(target)
             if self.global_view:
                 self.target.paint_uniform_color(GRAY)
@@ -223,6 +234,18 @@ class RegistrationVisualizer(StubVisualizer):
                 self.target.transform(np.linalg.inv(pose))
         else:
             self.target.points = self.o3d.utility.Vector3dVector()
+
+        # VoxelHashMap
+        if self.render_voxel_grid:
+            self.voxel_map.clear()
+            self.voxel_map.voxel_size = 1.0
+            inv_pose = np.linalg.inv(pose)
+            for voxel in target_map.get_voxels():
+                if not self.global_view:
+                    voxel = np.dot(inv_pose, np.append(voxel, 1))[:3].astype(np.int32)
+                self.voxel_map.add_voxel(self.o3d.geometry.Voxel(voxel, LIGHT_GRAY))
+        else:
+            self.voxel_map.clear()
 
         # Update always a list with all the trajectories
         new_frame = self.o3d.geometry.TriangleMesh.create_sphere(SPHERE_SIZE)
@@ -237,6 +260,7 @@ class RegistrationVisualizer(StubVisualizer):
         self.vis.update_geometry(self.keypoints)
         self.vis.update_geometry(self.source)
         self.vis.update_geometry(self.target)
+        self.vis.update_geometry(self.voxel_map)
         if self.reset_bounding_box:
             self.vis.reset_view_point(True)
             self.reset_bounding_box = False

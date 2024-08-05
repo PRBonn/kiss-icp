@@ -56,6 +56,17 @@ std::vector<Eigen::Vector3d> VoxelHashMap::Pointcloud() const {
     return points;
 }
 
+// Get the indices of the occupided voxels as points, mainly used for visualization
+std::vector<Voxel> VoxelHashMap::GetVoxels() const {
+    std::vector<Voxel> voxels;
+    voxels.reserve(map_.size());
+    for (const auto &[voxel, voxel_block] : map_) {
+        (void)voxel_block;
+        voxels.emplace_back(voxel);
+    }
+    return voxels;
+}
+
 void VoxelHashMap::Update(const std::vector<Eigen::Vector3d> &points,
                           const Eigen::Vector3d &origin) {
     AddPoints(points);
