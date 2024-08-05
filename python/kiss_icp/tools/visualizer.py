@@ -79,7 +79,7 @@ class RegistrationVisualizer(StubVisualizer):
         self.render_map = True
         self.render_source = True
         self.render_keypoints = False
-        self.render_voxel_grid = True
+        self.render_voxel_grid = False
         self.global_view = False
         self.render_trajectory = True
         # Cache the state of the visualizer
@@ -182,6 +182,12 @@ class RegistrationVisualizer(StubVisualizer):
         return False
 
     def _toggle_voxel_grid(self, vis):
+        if not self.global_view and not self.render_voxel_grid:
+            print(
+                "[WARNING] Can't render voxel grid in local view. "
+                "Open3D does not support VoxelGrid rotation"
+            )
+            return
         self.render_voxel_grid = not self.render_voxel_grid
         return False
 
@@ -231,23 +237,19 @@ class RegistrationVisualizer(StubVisualizer):
             target = target_map.point_cloud()
             self.target.points = self.o3d.utility.Vector3dVector(target)
             if self.global_view:
-                self.target.paint_uniform_color(GRAY)
+                #  self.target.paint_uniform_color(GRAY)
+                pass
             else:
                 self.target.transform(np.linalg.inv(pose))
         else:
             self.target.points = self.o3d.utility.Vector3dVector()
 
         # VoxelHashMap
-        if self.render_voxel_grid:
+        if self.render_voxel_grid and self.global_view:
             self.voxel_map.clear()
             self.voxel_map.voxel_size = self.voxel_size
-            inv_pose = np.linalg.inv(pose)
-            for voxel in target_map.get_voxels():
-                if not self.global_view:
-                    voxel = (
-                        np.dot(inv_pose, np.append(voxel * self.voxel_size, 1))[:3]
-                        / self.voxel_size
-                    ).astype(np.int32)
+            voxels = target_map.get_voxels()
+            for voxel in voxels:
                 self.voxel_map.add_voxel(self.o3d.geometry.Voxel(voxel, LIGHT_GRAY))
         else:
             self.voxel_map.clear()
