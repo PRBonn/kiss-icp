@@ -72,7 +72,8 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
             "points"_a, "pose"_a)
         .def("_add_points", &VoxelHashMap::AddPoints, "points"_a)
         .def("_remove_far_away_points", &VoxelHashMap::RemovePointsFarFromLocation, "origin"_a)
-        .def("_point_cloud", &VoxelHashMap::Pointcloud);
+        .def("_point_cloud", &VoxelHashMap::Pointcloud)
+        .def("_get_voxels", &VoxelHashMap::GetVoxels);
 
     // Point Cloud registration
     py::class_<Registration> internal_registration(m, "_Registration", "Don't use this");
