@@ -269,6 +269,7 @@ class Kissualizer(StubVisualizer):
         ):
             self._ps.reset_camera_to_home_view()
 
+    # TODO: add keyboard bindings to toggle keypoints/map/frame
     def _toggle_buttons_andslides_callback(self):
         # FRAME
         changed, self._frame_size = self._gui.SliderFloat(
