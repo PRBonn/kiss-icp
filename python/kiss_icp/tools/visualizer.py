@@ -304,6 +304,7 @@ class Kissualizer(StubVisualizer):
         if changed:
             self._ps.get_point_cloud("local_map").set_enabled(self._toggle_map)
 
+        # TODO: make it a button and avoid play mode while it is showed
         # VOXEL GRID
         changed, self._toggle_voxel_grid = self._gui.Checkbox("Voxel Grid", self._toggle_voxel_grid)
         if changed:
