@@ -1,7 +1,6 @@
 # MIT License
 #
-# Copyright (c) 2022 Ignacio Vizzo, Tiziano Guadagnino, Benedikt Mersch, Cyrill
-# Stachniss.
+# Copyright (c) 2024 Luca Lobefaro, Ignazio Vizzo, Tiziano Guadagnino, Benedikt Mersch,
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,223 +19,280 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import copy
+import datetime
 import importlib
 import os
 from abc import ABC
-from functools import partial
-from typing import Callable, List
 
 import numpy as np
 
-CYAN = np.array([0.24, 0.898, 1])
-RED = np.array([128, 0, 0]) / 255.0
-BLACK = np.array([0, 0, 0]) / 255.0
-BLUE = np.array([0.4, 0.5, 0.9])
-GRAY = np.array([0.4, 0.4, 0.4])
-SPHERE_SIZE = 0.20
+# Button names
+START_BUTTON = " START\n[SPACE]"
+PAUSE_BUTTON = " PAUSE\n[SPACE]"
+NEXT_FRAME_BUTTON = "NEXT FRAME\n\t\t [N]"
+SCREENSHOT_BUTTON = "SCREENSHOT\n\t\t  [S]"
+LOCAL_VIEW_BUTTON = "LOCAL VIEW\n\t\t [G]"
+GLOBAL_VIEW_BUTTON = "GLOBAL VIEW\n\t\t  [G]"
+CENTER_VIEWPOINT_BUTTON = "CENTER VIEWPOINT\n\t\t\t\t[C]"
+QUIT_BUTTON = "QUIT\n  [Q]"
+
+# Colors
+BACKGROUND_COLOR = [0.0, 0.0, 0.0]
+FRAME_COLOR = [0.8470, 0.1058, 0.3764]
+KEYPOINTS_COLOR = [1, 0.7568, 0.0274]
+LOCAL_MAP_COLOR = [0.0, 0.3019, 0.2509]
+TRAJECTORY_COLOR = [0.1176, 0.5333, 0.8980]
+
+# Size constants
+FRAME_PTS_SIZE = 0.06
+KEYPOINTS_PTS_SIZE = 0.2
+MAP_PTS_SIZE = 0.08
 
 
 class StubVisualizer(ABC):
     def __init__(self):
         pass
 
-    def update(self, source, keypoints, target_map, pose):
+    def update(self, source, keypoints, target_map, pose, vis_infos):
         pass
 
 
-class RegistrationVisualizer(StubVisualizer):
-    # Public Interaface ----------------------------------------------------------------------------
+class Kissualizer(StubVisualizer):
+    # Public Interface ----------------------------------------------------------------------------
     def __init__(self):
         try:
-            self.o3d = importlib.import_module("open3d")
+            self._ps = importlib.import_module("polyscope")
+            self._gui = self._ps.imgui
         except ModuleNotFoundError as err:
-            print(f'open3d is not installed on your system, run "pip install open3d"')
+            print(f'polyscope is not installed on your system, run "pip install polyscope"')
             exit(1)
 
         # Initialize GUI controls
-        self.block_vis = True
-        self.play_crun = False
-        self.reset_bounding_box = True
+        self._background_color = BACKGROUND_COLOR
+        self._frame_size = FRAME_PTS_SIZE
+        self._keypoints_size = KEYPOINTS_PTS_SIZE
+        self._map_size = MAP_PTS_SIZE
+        self._block_execution = True
+        self._play_mode = False
+        self._toggle_frame = True
+        self._toggle_keypoints = True
+        self._toggle_map = True
+        self._global_view = False
 
         # Create data
-        self.source = self.o3d.geometry.PointCloud()
-        self.keypoints = self.o3d.geometry.PointCloud()
-        self.target = self.o3d.geometry.PointCloud()
-        self.frames = []
+        self._trajectory = []
+        self._last_pose = np.eye(4)
+        self._vis_infos = dict()
+        self._selected_pose = ""
 
-        # Initialize visualizer
-        self.vis = self.o3d.visualization.VisualizerWithKeyCallback()
-        self._register_key_callbacks()
+        # Initialize Visualizer
         self._initialize_visualizer()
 
-        # Visualization options
-        self.render_map = True
-        self.render_source = True
-        self.render_keypoints = False
-        self.global_view = False
-        self.render_trajectory = True
-        # Cache the state of the visualizer
-        self.state = (
-            self.render_map,
-            self.render_keypoints,
-            self.render_source,
-        )
-
-    def update(self, source, keypoints, target_map, pose):
-        target = target_map.point_cloud()
-        self._update_geometries(source, keypoints, target, pose)
-        while self.block_vis:
-            self.vis.poll_events()
-            self.vis.update_renderer()
-            if self.play_crun:
+    def update(self, source, keypoints, target_map, pose, vis_infos: dict):
+        self._vis_infos = dict(sorted(vis_infos.items(), key=lambda item: len(item[0])))
+        self._update_geometries(source, keypoints, target_map, pose)
+        self._last_pose = pose
+        while self._block_execution:
+            self._ps.frame_tick()
+            if self._play_mode:
                 break
-        self.block_vis = not self.block_vis
+        self._block_execution = not self._block_execution
 
-    # Private Interaface ---------------------------------------------------------------------------
+    # Private Interface ---------------------------------------------------------------------------
     def _initialize_visualizer(self):
-        w_name = self.__class__.__name__
-        self.vis.create_window(window_name=w_name, width=1920, height=1080)
-        self.vis.add_geometry(self.source)
-        self.vis.add_geometry(self.keypoints)
-        self.vis.add_geometry(self.target)
-        self._set_black_background(self.vis)
-        self.vis.get_render_option().point_size = 1
-        print(
-            f"{w_name} initialized. Press:\n"
-            "\t[SPACE] to pause/start\n"
-            "\t  [ESC] to exit\n"
-            "\t    [N] to step\n"
-            "\t    [F] to toggle on/off the input cloud to the pipeline\n"
-            "\t    [K] to toggle on/off the subsbampled frame\n"
-            "\t    [M] to toggle on/off the local map\n"
-            "\t    [V] to toggle ego/global viewpoint\n"
-            "\t    [T] to toggle the trajectory view(only available in global view)\n"
-            "\t    [C] to center the viewpoint\n"
-            "\t    [W] to toggle a white background\n"
-            "\t    [B] to toggle a black background\n"
+        self._ps.set_program_name("KissICP Visualizer")
+        self._ps.init()
+        self._ps.set_ground_plane_mode("none")
+        self._ps.set_background_color(BACKGROUND_COLOR)
+        self._ps.set_verbosity(0)
+        self._ps.set_user_callback(self._main_gui_callback)
+        self._ps.set_build_default_gui_panels(False)
+
+    def _update_geometries(self, source, keypoints, target_map, pose):
+        # CURRENT FRAME
+        frame_cloud = self._ps.register_point_cloud(
+            "current_frame",
+            source,
+            color=FRAME_COLOR,
+            point_render_mode="quad",
         )
-
-    def _register_key_callback(self, keys: List, callback: Callable):
-        for key in keys:
-            self.vis.register_key_callback(ord(str(key)), partial(callback))
-
-    def _register_key_callbacks(self):
-        self._register_key_callback(["Ā", "Q", "\x1b"], self._quit)
-        self._register_key_callback([" "], self._start_stop)
-        self._register_key_callback(["N"], self._next_frame)
-        self._register_key_callback(["V"], self._toggle_view)
-        self._register_key_callback(["C"], self._center_viewpoint)
-        self._register_key_callback(["F"], self._toggle_source)
-        self._register_key_callback(["K"], self._toggle_keypoints)
-        self._register_key_callback(["M"], self._toggle_map)
-        self._register_key_callback(["T"], self._toggle_trajectory)
-        self._register_key_callback(["B"], self._set_black_background)
-        self._register_key_callback(["W"], self._set_white_background)
-
-    def _set_black_background(self, vis):
-        vis.get_render_option().background_color = [0.0, 0.0, 0.0]
-
-    def _set_white_background(self, vis):
-        vis.get_render_option().background_color = [1.0, 1.0, 1.0]
-
-    def _quit(self, vis):
-        print("Destroying Visualizer")
-        vis.destroy_window()
-        os._exit(0)
-
-    def _next_frame(self, vis):
-        self.block_vis = not self.block_vis
-
-    def _start_stop(self, vis):
-        self.play_crun = not self.play_crun
-
-    def _toggle_source(self, vis):
-        if self.render_keypoints:
-            self.render_keypoints = False
-            self.render_source = True
+        frame_cloud.set_radius(self._frame_size, relative=False)
+        if self._global_view:
+            frame_cloud.set_transform(pose)
         else:
-            self.render_source = not self.render_source
-        return False
+            frame_cloud.set_transform(np.eye(4))
+        frame_cloud.set_enabled(self._toggle_frame)
 
-    def _toggle_keypoints(self, vis):
-        if self.render_source:
-            self.render_source = False
-            self.render_keypoints = True
+        # KEYPOINTS
+        keypoints_cloud = self._ps.register_point_cloud(
+            "keypoints", keypoints, color=KEYPOINTS_COLOR, point_render_mode="quad"
+        )
+        keypoints_cloud.set_radius(self._keypoints_size, relative=False)
+        if self._global_view:
+            keypoints_cloud.set_transform(pose)
         else:
-            self.render_keypoints = not self.render_keypoints
+            keypoints_cloud.set_transform(np.eye(4))
+        keypoints_cloud.set_enabled(self._toggle_keypoints)
 
-        return False
-
-    def _toggle_map(self, vis):
-        self.render_map = not self.render_map
-        return False
-
-    def _toggle_view(self, vis):
-        self.global_view = not self.global_view
-        self._trajectory_handle()
-
-    def _center_viewpoint(self, vis):
-        vis.reset_view_point(True)
-
-    def _toggle_trajectory(self, vis):
-        if not self.global_view:
-            return False
-        self.render_trajectory = not self.render_trajectory
-        self._trajectory_handle()
-        return False
-
-    def _trajectory_handle(self):
-        if self.render_trajectory and self.global_view:
-            for frame in self.frames:
-                self.vis.add_geometry(frame, reset_bounding_box=False)
+        # LOCAL MAP
+        map_cloud = self._ps.register_point_cloud(
+            "local_map",
+            target_map.point_cloud(),
+            color=LOCAL_MAP_COLOR,
+            point_render_mode="quad",
+        )
+        map_cloud.set_radius(self._map_size, relative=False)
+        if self._global_view:
+            map_cloud.set_transform(np.eye(4))
         else:
-            for frame in self.frames:
-                self.vis.remove_geometry(frame, reset_bounding_box=False)
+            map_cloud.set_transform(np.linalg.inv(pose))
+        map_cloud.set_enabled(self._toggle_map)
 
-    def _update_geometries(self, source, keypoints, target, pose):
-        # Source hot frame
-        if self.render_source:
-            self.source.points = self.o3d.utility.Vector3dVector(source)
-            self.source.paint_uniform_color(CYAN)
-            if self.global_view:
-                self.source.transform(pose)
-        else:
-            self.source.points = self.o3d.utility.Vector3dVector()
+        # TRAJECTORY (only visible in global view)
+        self._trajectory.append(pose[:3, 3])
+        if self._global_view:
+            self._register_trajectory()
 
-        # Keypoints
-        if self.render_keypoints:
-            self.keypoints.points = self.o3d.utility.Vector3dVector(keypoints)
-            self.keypoints.paint_uniform_color(CYAN)
-            if self.global_view:
-                self.keypoints.transform(pose)
-        else:
-            self.keypoints.points = self.o3d.utility.Vector3dVector()
+    def _register_trajectory(self):
+        trajectory_cloud = self._ps.register_point_cloud(
+            "trajectory",
+            np.asarray(self._trajectory),
+            color=TRAJECTORY_COLOR,
+        )
+        trajectory_cloud.set_radius(0.3, relative=False)
 
-        # Target Map
-        if self.render_map:
-            target = copy.deepcopy(target)
-            self.target.points = self.o3d.utility.Vector3dVector(target)
-            if self.global_view:
-                self.target.paint_uniform_color(GRAY)
+    def _unregister_trajectory(self):
+        self._ps.remove_point_cloud("trajectory")
+
+    # GUI Callbacks ---------------------------------------------------------------------------
+    def _start_pause_callback(self):
+        button_name = PAUSE_BUTTON if self._play_mode else START_BUTTON
+        if self._gui.Button(button_name) or self._gui.IsKeyPressed(self._gui.ImGuiKey_Space):
+            self._play_mode = not self._play_mode
+
+    def _next_frame_callback(self):
+        if self._gui.Button(NEXT_FRAME_BUTTON) or self._gui.IsKeyPressed(self._gui.ImGuiKey_N):
+            self._block_execution = not self._block_execution
+
+    def _screenshot_callback(self):
+        if self._gui.Button(SCREENSHOT_BUTTON) or self._gui.IsKeyPressed(self._gui.ImGuiKey_S):
+            image_filename = "kisshot_" + (
+                datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".jpg"
+            )
+            self._ps.screenshot(image_filename)
+
+    def _vis_infos_callback(self):
+        if self._gui.TreeNodeEx("Odometry Information", self._gui.ImGuiTreeNodeFlags_DefaultOpen):
+            for key in self._vis_infos:
+                self._gui.TextUnformatted(f"{key}: {self._vis_infos[key]}")
+            if not self._play_mode and self._global_view:
+                self._gui.TextUnformatted(f"Selected Pose: {self._selected_pose}")
+            self._gui.TreePop()
+
+    def _center_viewpoint_callback(self):
+        if self._gui.Button(CENTER_VIEWPOINT_BUTTON) or self._gui.IsKeyPressed(
+            self._gui.ImGuiKey_C
+        ):
+            self._ps.reset_camera_to_home_view()
+
+    def _toggle_buttons_andslides_callback(self):
+        # FRAME
+        changed, self._frame_size = self._gui.SliderFloat(
+            "##frame_size", self._frame_size, v_min=0.01, v_max=0.6
+        )
+        if changed:
+            self._ps.get_point_cloud("current_frame").set_radius(self._frame_size, relative=False)
+        self._gui.SameLine()
+        changed, self._toggle_frame = self._gui.Checkbox("Frame Cloud", self._toggle_frame)
+        if changed:
+            self._ps.get_point_cloud("current_frame").set_enabled(self._toggle_frame)
+
+        # KEYPOINTS
+        changed, self._keypoints_size = self._gui.SliderFloat(
+            "##keypoints_size", self._keypoints_size, v_min=0.01, v_max=0.6
+        )
+        if changed:
+            self._ps.get_point_cloud("keypoints").set_radius(self._keypoints_size, relative=False)
+        self._gui.SameLine()
+        changed, self._toggle_keypoints = self._gui.Checkbox("Keypoints", self._toggle_keypoints)
+        if changed:
+            self._ps.get_point_cloud("keypoints").set_enabled(self._toggle_keypoints)
+
+        # LOCAL MAP
+        changed, self._map_size = self._gui.SliderFloat(
+            "##map_size", self._map_size, v_min=0.01, v_max=0.6
+        )
+        if changed:
+            self._ps.get_point_cloud("local_map").set_radius(self._map_size, relative=False)
+        self._gui.SameLine()
+        changed, self._toggle_map = self._gui.Checkbox("Local Map", self._toggle_map)
+        if changed:
+            self._ps.get_point_cloud("local_map").set_enabled(self._toggle_map)
+
+    def _background_color_callback(self):
+        changed, self._background_color = self._gui.ColorEdit3(
+            "Background Color",
+            self._background_color,
+        )
+        if changed:
+            self._ps.set_background_color(self._background_color)
+
+    def _global_view_callback(self):
+        button_name = LOCAL_VIEW_BUTTON if self._global_view else GLOBAL_VIEW_BUTTON
+        if self._gui.Button(button_name) or self._gui.IsKeyPressed(self._gui.ImGuiKey_G):
+            self._global_view = not self._global_view
+            if self._global_view:
+                self._ps.get_point_cloud("current_frame").set_transform(self._last_pose)
+                self._ps.get_point_cloud("keypoints").set_transform(self._last_pose)
+                self._ps.get_point_cloud("local_map").set_transform(np.eye(4))
+                self._register_trajectory()
             else:
-                self.target.transform(np.linalg.inv(pose))
-        else:
-            self.target.points = self.o3d.utility.Vector3dVector()
+                self._ps.get_point_cloud("current_frame").set_transform(np.eye(4))
+                self._ps.get_point_cloud("keypoints").set_transform(np.eye(4))
+                self._ps.get_point_cloud("local_map").set_transform(np.linalg.inv(self._last_pose))
+                self._unregister_trajectory()
+            self._ps.reset_camera_to_home_view()
 
-        # Update always a list with all the trajectories
-        new_frame = self.o3d.geometry.TriangleMesh.create_sphere(SPHERE_SIZE)
-        new_frame.paint_uniform_color(BLUE)
-        new_frame.compute_vertex_normals()
-        new_frame.transform(pose)
-        self.frames.append(new_frame)
-        # Render trajectory, only if it make sense (global view)
-        if self.render_trajectory and self.global_view:
-            self.vis.add_geometry(self.frames[-1], reset_bounding_box=False)
+    def _quit_callback(self):
+        self._gui.SetCursorPosX(
+            self._gui.GetCursorPosX() + self._gui.GetContentRegionAvail()[0] - 50
+        )
+        if (
+            self._gui.Button(QUIT_BUTTON)
+            or self._gui.IsKeyPressed(self._gui.ImGuiKey_Escape)
+            or self._gui.IsKeyPressed(self._gui.ImGuiKey_Q)
+        ):
+            print("Destroying Visualizer")
+            self._ps.unshow()
+            os._exit(0)
 
-        self.vis.update_geometry(self.keypoints)
-        self.vis.update_geometry(self.source)
-        self.vis.update_geometry(self.target)
-        if self.reset_bounding_box:
-            self.vis.reset_view_point(True)
-            self.reset_bounding_box = False
+    def _trajectory_pick_callback(self):
+        if self._gui.GetIO().MouseClicked[0]:
+            name, idx = self._ps.get_selection()
+            if name == "trajectory" and self._ps.has_point_cloud(name):
+                pose = self._trajectory[idx]
+                self._selected_pose = f"x: {pose[0]:7.3f}, y: {pose[1]:7.3f}, z: {pose[2]:7.3f}>"
+            else:
+                self._selected_pose = ""
+
+    def _main_gui_callback(self):
+        # GUI callbacks
+        self._start_pause_callback()
+        if not self._play_mode:
+            self._gui.SameLine()
+            self._next_frame_callback()
+        self._gui.SameLine()
+        self._screenshot_callback()
+        self._gui.Separator()
+        self._vis_infos_callback()
+        self._gui.Separator()
+        self._toggle_buttons_andslides_callback()
+        self._background_color_callback()
+        self._global_view_callback()
+        self._gui.SameLine()
+        self._center_viewpoint_callback()
+        self._gui.Separator()
+        self._quit_callback()
+
+        # Mouse callbacks
+        self._trajectory_pick_callback()
