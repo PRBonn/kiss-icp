@@ -81,6 +81,7 @@ class OdometryPipeline:
             "max_range": self.config.data.max_range,
             "min_range": self.config.data.min_range,
         }
+        self.visualizer.set_voxel_size(self.config.mapping.voxel_size)
         if hasattr(self._dataset, "use_global_visualizer"):
             self.visualizer._global_view = self._dataset.use_global_visualizer
 

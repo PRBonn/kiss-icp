@@ -42,6 +42,7 @@ FRAME_COLOR = [0.8470, 0.1058, 0.3764]
 KEYPOINTS_COLOR = [1, 0.7568, 0.0274]
 LOCAL_MAP_COLOR = [0.0, 0.3019, 0.2509]
 TRAJECTORY_COLOR = [0.1176, 0.5333, 0.8980]
+VOXEL_GRID_COLOR = [0.9, 0.9, 0.9]
 
 # Size constants
 FRAME_PTS_SIZE = 0.06
@@ -54,6 +55,9 @@ class StubVisualizer(ABC):
         pass
 
     def update(self, source, keypoints, target_map, pose, vis_infos):
+        pass
+
+    def set_voxel_size(self, voxel_size):
         pass
 
 
@@ -77,6 +81,7 @@ class Kissualizer(StubVisualizer):
         self._toggle_frame = True
         self._toggle_keypoints = True
         self._toggle_map = True
+        self._toggle_voxel_grid = False
         self._global_view = False
 
         # Create data
@@ -84,19 +89,26 @@ class Kissualizer(StubVisualizer):
         self._last_pose = np.eye(4)
         self._vis_infos = dict()
         self._selected_pose = ""
+        self._voxel_grid_nodes = np.array([])
+        self._voxel_grid_edges = np.array([])
+        self._last_local_map = None
+        self._voxel_size = 1.0
 
         # Initialize Visualizer
         self._initialize_visualizer()
 
     def update(self, source, keypoints, target_map, pose, vis_infos: dict):
         self._vis_infos = dict(sorted(vis_infos.items(), key=lambda item: len(item[0])))
-        self._update_geometries(source, keypoints, target_map, pose)
         self._last_pose = pose
+        self._update_geometries(source, keypoints, target_map, pose)
         while self._block_execution:
             self._ps.frame_tick()
             if self._play_mode:
                 break
         self._block_execution = not self._block_execution
+
+    def set_voxel_size(self, voxel_size):
+        self._voxel_size = voxel_size
 
     # Private Interface ---------------------------------------------------------------------------
     def _initialize_visualizer(self):
@@ -108,6 +120,7 @@ class Kissualizer(StubVisualizer):
         self._ps.set_user_callback(self._main_gui_callback)
         self._ps.set_build_default_gui_panels(False)
 
+    # TODO: target_map -> local_map renaming
     def _update_geometries(self, source, keypoints, target_map, pose):
         # CURRENT FRAME
         frame_cloud = self._ps.register_point_cloud(
@@ -148,6 +161,11 @@ class Kissualizer(StubVisualizer):
             map_cloud.set_transform(np.linalg.inv(pose))
         map_cloud.set_enabled(self._toggle_map)
 
+        # VOXEL GRID (only if toggled)
+        self._last_local_map = target_map
+        if self._toggle_voxel_grid:
+            self._register_voxel_grid()
+
         # TRAJECTORY (only visible in global view)
         self._trajectory.append(pose[:3, 3])
         if self._global_view:
@@ -163,6 +181,62 @@ class Kissualizer(StubVisualizer):
 
     def _unregister_trajectory(self):
         self._ps.remove_point_cloud("trajectory")
+
+    def _register_voxel_grid(self):
+        voxels = self._last_local_map.get_voxels()
+        self._voxel_grid_nodes = np.zeros((voxels.shape[0] * 8, 3), dtype=np.float64)
+        self._voxel_grid_edges = np.zeros((voxels.shape[0] * 12, 2), dtype=np.int64)
+
+        for idx, voxel in enumerate(voxels):
+            self._generate_new_voxel(voxel, idx)
+
+        voxel_grid = self._ps.register_curve_network(
+            "voxel_grid", self._voxel_grid_nodes, self._voxel_grid_edges, color=VOXEL_GRID_COLOR
+        )
+        voxel_grid.set_radius(0.01, relative=False)
+        if self._global_view:
+            voxel_grid.set_transform(np.eye(4))
+        else:
+            voxel_grid.set_transform(np.linalg.inv(self._last_pose))
+
+    def _unregister_voxel_grid(self):
+        self._ps.remove_curve_network("voxel_grid")
+
+    def _generate_new_voxel(self, voxel: np.ndarray, idx: int):
+        verts = np.array(
+            [
+                [0, 0, 0],
+                [1, 0, 0],
+                [1, 1, 0],
+                [0, 1, 0],
+                [0, 0, 1],
+                [1, 0, 1],
+                [1, 1, 1],
+                [0, 1, 1],
+            ]
+        ).astype(np.float64)
+        edges = np.array(
+            [
+                [0, 1],
+                [1, 2],
+                [2, 3],
+                [0, 3],
+                [0, 4],
+                [5, 4],
+                [1, 5],
+                [5, 6],
+                [2, 6],
+                [6, 7],
+                [3, 7],
+                [4, 7],
+            ]
+        ).astype(np.int64)
+        verts -= self._voxel_size / 2.0
+        verts *= self._voxel_size
+        verts += voxel
+        edges += idx * 8
+        self._voxel_grid_nodes[idx * 8 : idx * 8 + 8] = verts
+        self._voxel_grid_edges[idx * 12 : idx * 12 + 12] = edges
 
     # GUI Callbacks ---------------------------------------------------------------------------
     def _start_pause_callback(self):
@@ -228,6 +302,14 @@ class Kissualizer(StubVisualizer):
         changed, self._toggle_map = self._gui.Checkbox("Local Map", self._toggle_map)
         if changed:
             self._ps.get_point_cloud("local_map").set_enabled(self._toggle_map)
+
+        # VOXEL GRID
+        changed, self._toggle_voxel_grid = self._gui.Checkbox("Voxel Grid", self._toggle_voxel_grid)
+        if changed:
+            if self._toggle_voxel_grid:
+                self._register_voxel_grid()
+            else:
+                self._unregister_voxel_grid()
 
     def _background_color_callback(self):
         changed, self._background_color = self._gui.ColorEdit3(
