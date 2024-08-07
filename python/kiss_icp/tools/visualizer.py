@@ -34,6 +34,8 @@ SCREENSHOT_BUTTON = "SCREENSHOT\n\t\t  [S]"
 LOCAL_VIEW_BUTTON = "LOCAL VIEW\n\t\t [G]"
 GLOBAL_VIEW_BUTTON = "GLOBAL VIEW\n\t\t  [G]"
 CENTER_VIEWPOINT_BUTTON = "CENTER VIEWPOINT\n\t\t\t\t[C]"
+SHOW_VOXEL_GRID_BUTTON = "SHOW VOXEL GRID\n\t\t\t\t[V]"
+HIDE_VOXEL_GRID_BUTTON = "HIDE VOXEL GRID\n\t\t\t [V]"
 QUIT_BUTTON = "QUIT\n  [Q]"
 
 # Colors
@@ -200,7 +202,8 @@ class Kissualizer(StubVisualizer):
             voxel_grid.set_transform(np.linalg.inv(self._last_pose))
 
     def _unregister_voxel_grid(self):
-        self._ps.remove_curve_network("voxel_grid")
+        if self._ps.has_curve_network("voxel_grid"):
+            self._ps.remove_curve_network("voxel_grid")
 
     def _generate_new_voxel(self, voxel: np.ndarray, idx: int):
         verts = np.array(
@@ -243,6 +246,9 @@ class Kissualizer(StubVisualizer):
         button_name = PAUSE_BUTTON if self._play_mode else START_BUTTON
         if self._gui.Button(button_name) or self._gui.IsKeyPressed(self._gui.ImGuiKey_Space):
             self._play_mode = not self._play_mode
+            if self._play_mode:
+                self._toggle_voxel_grid = False
+                self._unregister_voxel_grid()
 
     def _next_frame_callback(self):
         if self._gui.Button(NEXT_FRAME_BUTTON) or self._gui.IsKeyPressed(self._gui.ImGuiKey_N):
@@ -259,8 +265,6 @@ class Kissualizer(StubVisualizer):
         if self._gui.TreeNodeEx("Odometry Information", self._gui.ImGuiTreeNodeFlags_DefaultOpen):
             for key in self._vis_infos:
                 self._gui.TextUnformatted(f"{key}: {self._vis_infos[key]}")
-            if not self._play_mode and self._global_view:
-                self._gui.TextUnformatted(f"Selected Pose: {self._selected_pose}")
             self._gui.TreePop()
 
     def _center_viewpoint_callback(self):
@@ -304,15 +308,6 @@ class Kissualizer(StubVisualizer):
         if changed:
             self._ps.get_point_cloud("local_map").set_enabled(self._toggle_map)
 
-        # TODO: make it a button and avoid play mode while it is showed
-        # VOXEL GRID
-        changed, self._toggle_voxel_grid = self._gui.Checkbox("Voxel Grid", self._toggle_voxel_grid)
-        if changed:
-            if self._toggle_voxel_grid:
-                self._register_voxel_grid()
-            else:
-                self._unregister_voxel_grid()
-
     def _background_color_callback(self):
         changed, self._background_color = self._gui.ColorEdit3(
             "Background Color",
@@ -320,6 +315,24 @@ class Kissualizer(StubVisualizer):
         )
         if changed:
             self._ps.set_background_color(self._background_color)
+
+    def _analysis_callback(self):
+        info_string = "Double click on a pose in 'GLOBAL VIEW' to visualize here its pose:"
+        if self._gui.TreeNodeEx("Analysis", self._gui.ImGuiTreeNodeFlags_DefaultOpen):
+            button_name = (
+                HIDE_VOXEL_GRID_BUTTON if self._toggle_voxel_grid else SHOW_VOXEL_GRID_BUTTON
+            )
+            if self._gui.Button(button_name) or self._gui.IsKeyPressed(self._gui.ImGuiKey_V):
+                self._toggle_voxel_grid = not self._toggle_voxel_grid
+                if self._toggle_voxel_grid:
+                    self._register_voxel_grid()
+                else:
+                    self._unregister_voxel_grid()
+
+            self._gui.TextUnformatted(info_string)
+            if self._selected_pose != "":
+                self._gui.TextUnformatted(f"Selected Pose: {self._selected_pose}")
+            self._gui.TreePop()
 
     def _global_view_callback(self):
         button_name = LOCAL_VIEW_BUTTON if self._global_view else GLOBAL_VIEW_BUTTON
@@ -330,11 +343,17 @@ class Kissualizer(StubVisualizer):
                 self._ps.get_point_cloud("keypoints").set_transform(self._last_pose)
                 self._ps.get_point_cloud("local_map").set_transform(np.eye(4))
                 self._register_trajectory()
+                if self._toggle_voxel_grid:
+                    self._ps.get_curve_network("voxel_grid").set_transform(np.eye(4))
             else:
                 self._ps.get_point_cloud("current_frame").set_transform(np.eye(4))
                 self._ps.get_point_cloud("keypoints").set_transform(np.eye(4))
                 self._ps.get_point_cloud("local_map").set_transform(np.linalg.inv(self._last_pose))
                 self._unregister_trajectory()
+                if self._toggle_voxel_grid:
+                    self._ps.get_curve_network("voxel_grid").set_transform(
+                        np.linalg.inv(self._last_pose)
+                    )
             self._ps.reset_camera_to_home_view()
 
     def _quit_callback(self):
@@ -355,7 +374,7 @@ class Kissualizer(StubVisualizer):
             name, idx = self._ps.get_selection()
             if name == "trajectory" and self._ps.has_point_cloud(name):
                 pose = self._trajectory[idx]
-                self._selected_pose = f"x: {pose[0]:7.3f}, y: {pose[1]:7.3f}, z: {pose[2]:7.3f}>"
+                self._selected_pose = f"x: {pose[0]:7.3f}, y: {pose[1]:7.3f}, z: {pose[2]:7.3f}"
             else:
                 self._selected_pose = ""
 
@@ -372,6 +391,10 @@ class Kissualizer(StubVisualizer):
         self._gui.Separator()
         self._toggle_buttons_andslides_callback()
         self._background_color_callback()
+        if not self._play_mode:
+            self._gui.Separator()
+            self._analysis_callback()
+            self._gui.Separator()
         self._global_view_callback()
         self._gui.SameLine()
         self._center_viewpoint_callback()
