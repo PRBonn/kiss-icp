@@ -56,7 +56,7 @@ class StubVisualizer(ABC):
     def __init__(self):
         pass
 
-    def update(self, source, keypoints, target_map, pose, vis_infos):
+    def update(self, source, keypoints, local_map, pose, vis_infos):
         pass
 
     def set_voxel_size(self, voxel_size):
@@ -99,10 +99,10 @@ class Kissualizer(StubVisualizer):
         # Initialize Visualizer
         self._initialize_visualizer()
 
-    def update(self, source, keypoints, target_map, pose, vis_infos: dict):
+    def update(self, source, keypoints, local_map, pose, vis_infos: dict):
         self._vis_infos = dict(sorted(vis_infos.items(), key=lambda item: len(item[0])))
         self._last_pose = pose
-        self._update_geometries(source, keypoints, target_map, pose)
+        self._update_geometries(source, keypoints, local_map, pose)
         while self._block_execution:
             self._ps.frame_tick()
             if self._play_mode:
@@ -122,8 +122,7 @@ class Kissualizer(StubVisualizer):
         self._ps.set_user_callback(self._main_gui_callback)
         self._ps.set_build_default_gui_panels(False)
 
-    # TODO: target_map -> local_map renaming
-    def _update_geometries(self, source, keypoints, target_map, pose):
+    def _update_geometries(self, source, keypoints, local_map, pose):
         # CURRENT FRAME
         frame_cloud = self._ps.register_point_cloud(
             "current_frame",
@@ -152,7 +151,7 @@ class Kissualizer(StubVisualizer):
         # LOCAL MAP
         map_cloud = self._ps.register_point_cloud(
             "local_map",
-            target_map.point_cloud(),
+            local_map.point_cloud(),
             color=LOCAL_MAP_COLOR,
             point_render_mode="quad",
         )
@@ -164,7 +163,7 @@ class Kissualizer(StubVisualizer):
         map_cloud.set_enabled(self._toggle_map)
 
         # VOXEL GRID (only if toggled)
-        self._last_local_map = target_map
+        self._last_local_map = local_map
         if self._toggle_voxel_grid:
             self._register_voxel_grid()
 
@@ -316,9 +315,9 @@ class Kissualizer(StubVisualizer):
         if changed:
             self._ps.set_background_color(self._background_color)
 
-    def _analysis_callback(self):
+    def _inspection_callback(self):
         info_string = "Double click on a pose in 'GLOBAL VIEW' to visualize here its pose:"
-        if self._gui.TreeNodeEx("Analysis", self._gui.ImGuiTreeNodeFlags_DefaultOpen):
+        if self._gui.TreeNodeEx("Inspection", self._gui.ImGuiTreeNodeFlags_DefaultOpen):
             button_name = (
                 HIDE_VOXEL_GRID_BUTTON if self._toggle_voxel_grid else SHOW_VOXEL_GRID_BUTTON
             )
@@ -393,7 +392,7 @@ class Kissualizer(StubVisualizer):
         self._background_color_callback()
         if not self._play_mode:
             self._gui.Separator()
-            self._analysis_callback()
+            self._inspection_callback()
             self._gui.Separator()
         self._global_view_callback()
         self._gui.SameLine()
