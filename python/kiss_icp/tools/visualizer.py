@@ -36,6 +36,8 @@ GLOBAL_VIEW_BUTTON = "GLOBAL VIEW\n\t\t  [G]"
 CENTER_VIEWPOINT_BUTTON = "CENTER VIEWPOINT\n\t\t\t\t[C]"
 SHOW_VOXEL_GRID_BUTTON = "SHOW VOXEL GRID\n\t\t\t\t[V]"
 HIDE_VOXEL_GRID_BUTTON = "HIDE VOXEL GRID\n\t\t\t [V]"
+ORTHO_ON_BUTTON = "ORTHO VIEW ON\n\t\t\t [O]"
+ORTHO_OFF_BUTTON = "ORTHO VIEW OFF\n\t\t\t  [O]"
 QUIT_BUTTON = "QUIT\n  [Q]"
 
 # Colors
@@ -84,6 +86,7 @@ class Kissualizer(StubVisualizer):
         self._toggle_keypoints = True
         self._toggle_map = True
         self._toggle_voxel_grid = False
+        self._toggle_ortho = False
         self._global_view = False
 
         # Create data
@@ -318,15 +321,27 @@ class Kissualizer(StubVisualizer):
     def _inspection_callback(self):
         info_string = "Double click on a pose in 'GLOBAL VIEW' to visualize here its pose:"
         if self._gui.TreeNodeEx("Inspection", self._gui.ImGuiTreeNodeFlags_DefaultOpen):
-            button_name = (
+            voxel_grid_button_name = (
                 HIDE_VOXEL_GRID_BUTTON if self._toggle_voxel_grid else SHOW_VOXEL_GRID_BUTTON
             )
-            if self._gui.Button(button_name) or self._gui.IsKeyPressed(self._gui.ImGuiKey_V):
+            if self._gui.Button(voxel_grid_button_name) or self._gui.IsKeyPressed(
+                self._gui.ImGuiKey_V
+            ):
                 self._toggle_voxel_grid = not self._toggle_voxel_grid
                 if self._toggle_voxel_grid:
                     self._register_voxel_grid()
                 else:
                     self._unregister_voxel_grid()
+
+            # TODO: off ortho when out of inspection mode
+            ortho_button_name = ORTHO_OFF_BUTTON if self._toggle_ortho else ORTHO_ON_BUTTON
+            self._gui.SameLine()
+            if self._gui.Button(ortho_button_name) or self._gui.IsKeyPressed(self._gui.ImGuiKey_O):
+                self._toggle_ortho = not self._toggle_ortho
+                if self._toggle_ortho:
+                    self._ps.set_view_projection_mode("orthographic")
+                else:
+                    self._ps.set_view_projection_mode("perspective")
 
             self._gui.TextUnformatted(info_string)
             if self._selected_pose != "":
