@@ -36,16 +36,7 @@
 
 namespace kiss_icp {
 struct VoxelHashMap {
-    struct VoxelBlock {
-        // buffer of points with a max limit of n_points
-        std::vector<Eigen::Vector3d> points;
-        int num_points_;
-        inline void AddPoint(const Eigen::Vector3d &point) {
-            if (points.size() < static_cast<size_t>(num_points_)) points.push_back(point);
-        }
-    };
-
-    explicit VoxelHashMap(double voxel_size, double max_distance, int max_points_per_voxel)
+    explicit VoxelHashMap(double voxel_size, double max_distance, unsigned int max_points_per_voxel)
         : voxel_size_(voxel_size),
           max_distance_(max_distance),
           max_points_per_voxel_(max_points_per_voxel) {}
@@ -57,12 +48,12 @@ struct VoxelHashMap {
     void AddPoints(const std::vector<Eigen::Vector3d> &points);
     void RemovePointsFarFromLocation(const Eigen::Vector3d &origin);
     std::vector<Eigen::Vector3d> Pointcloud() const;
-    std::vector<Eigen::Vector3d> GetPoints(const std::vector<Voxel> &query_voxels) const;
     std::vector<Voxel> GetVoxels() const;
+    std::tuple<Eigen::Vector3d, double> GetClosestNeighbor(const Eigen::Vector3d &point) const;
 
     double voxel_size_;
     double max_distance_;
-    int max_points_per_voxel_;
-    tsl::robin_map<Voxel, VoxelBlock> map_;
+    unsigned int max_points_per_voxel_;
+    tsl::robin_map<Voxel, std::vector<Eigen::Vector3d>> map_;
 };
 }  // namespace kiss_icp
