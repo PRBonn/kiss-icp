@@ -124,6 +124,7 @@ class Kissualizer(StubVisualizer):
         self._ps.set_verbosity(0)
         self._ps.set_user_callback(self._main_gui_callback)
         self._ps.set_build_default_gui_panels(False)
+        self._ps.set_SSAA_factor(4)
 
     def _update_geometries(self, source, keypoints, local_map, pose):
         # CURRENT FRAME
@@ -187,6 +188,8 @@ class Kissualizer(StubVisualizer):
         self._ps.remove_point_cloud("trajectory")
 
     def _register_voxel_grid(self):
+        if self._last_local_map is None:
+            return
         voxels = self._last_local_map.get_voxels()
         self._voxel_grid_nodes = np.zeros((voxels.shape[0] * 8, 3), dtype=np.float64)
         self._voxel_grid_edges = np.zeros((voxels.shape[0] * 12, 2), dtype=np.int64)
@@ -236,9 +239,10 @@ class Kissualizer(StubVisualizer):
                 [4, 7],
             ]
         ).astype(np.int64)
-        verts -= self._voxel_size / 2.0
-        verts *= self._voxel_size
-        verts += voxel
+        # verts -= self._voxel_size / 2.0
+        # verts *= self._voxel_size
+        verts = verts + voxel
+        verts = verts * self._voxel_size
         edges += idx * 8
         self._voxel_grid_nodes[idx * 8 : idx * 8 + 8] = verts
         self._voxel_grid_edges[idx * 12 : idx * 12 + 12] = edges
@@ -251,6 +255,11 @@ class Kissualizer(StubVisualizer):
             if self._play_mode:
                 self._toggle_voxel_grid = False
                 self._unregister_voxel_grid()
+                self._ps.set_SSAA_factor(1)
+                self._ps.set_view_projection_mode("perspective")
+                self._ps.set_navigation_style("turntable")
+            else:
+                self._ps.set_SSAA_factor(4)
 
     def _next_frame_callback(self):
         if self._gui.Button(NEXT_FRAME_BUTTON) or self._gui.IsKeyPressed(self._gui.ImGuiKey_N):
@@ -333,15 +342,17 @@ class Kissualizer(StubVisualizer):
                 else:
                     self._unregister_voxel_grid()
 
-            # TODO: off ortho when out of inspection mode
             ortho_button_name = ORTHO_OFF_BUTTON if self._toggle_ortho else ORTHO_ON_BUTTON
             self._gui.SameLine()
             if self._gui.Button(ortho_button_name) or self._gui.IsKeyPressed(self._gui.ImGuiKey_O):
                 self._toggle_ortho = not self._toggle_ortho
                 if self._toggle_ortho:
                     self._ps.set_view_projection_mode("orthographic")
+                    self._ps.set_navigation_style("planar")
                 else:
                     self._ps.set_view_projection_mode("perspective")
+                    self._ps.set_navigation_style("turntable")
+                self._ps.reset_camera_to_home_view()
 
             self._gui.TextUnformatted(info_string)
             if self._selected_pose != "":
