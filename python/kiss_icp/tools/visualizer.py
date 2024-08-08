@@ -254,9 +254,11 @@ class Kissualizer(StubVisualizer):
                 self._toggle_voxel_grid = False
                 self._unregister_voxel_grid()
                 self._ps.set_SSAA_factor(1)
-                self._ps.reset_camera_to_home_view()  # to reset FoV
-                self._ps.set_view_projection_mode("perspective")
-                self._ps.set_navigation_style("turntable")
+                if self._toggle_ortho:
+                    self._ps.reset_camera_to_home_view()  # to reset FoV
+                    self._ps.set_view_projection_mode("perspective")
+                    self._ps.set_navigation_style("turntable")
+                    self._toggle_ortho = False
             else:
                 self._ps.set_SSAA_factor(4)
 
