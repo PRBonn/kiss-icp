@@ -438,3 +438,4 @@ class Kissualizer(StubVisualizer):
         self._center_viewpoint_callback()
         self._gui.Separator()
         self._quit_callback()
+
