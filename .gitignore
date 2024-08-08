@@ -6,6 +6,7 @@ _skbuild/
 .gitlab-ci-local/
 .polyscope.ini
 imgui.ini
+kisshot_*
 
 # Created by https://www.toptal.com/developers/gitignore/api/python,c++
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,c++
