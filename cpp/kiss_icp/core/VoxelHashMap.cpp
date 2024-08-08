@@ -65,7 +65,7 @@ namespace kiss_icp {
 std::tuple<Eigen::Vector3d, double> VoxelHashMap::GetClosestNeighbor(
     const Eigen::Vector3d &point) const {
     // Convert the point to voxel coordinates
-    const auto &voxel = kiss_icp::PointToVoxel(point, voxel_size_);
+    const auto &voxel = PointToVoxel(point, voxel_size_);
     // Get nearby voxels on the map
     const auto &query_voxels = GetAdjacentVoxels(voxel);
     // Extract the points contained within the neighborhood voxels
