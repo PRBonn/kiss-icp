@@ -68,5 +68,5 @@ class VoxelHashMap:
         return np.asarray(self._internal_map._point_cloud())
 
     def get_voxels(self) -> np.ndarray:
-        """Return the occupied voxels, in indices (i,j,k( as a np.array."""
+        """Return the occupied voxels, in indices (i,j,k) as a np.array."""
         return np.asarray(self._internal_map._get_voxels())
