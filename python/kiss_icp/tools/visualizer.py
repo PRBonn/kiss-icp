@@ -35,7 +35,7 @@ LOCAL_VIEW_BUTTON = "LOCAL VIEW\n\t\t [G]"
 GLOBAL_VIEW_BUTTON = "GLOBAL VIEW\n\t\t  [G]"
 CENTER_VIEWPOINT_BUTTON = "CENTER VIEWPOINT\n\t\t\t\t[C]"
 SHOW_VOXEL_GRID_BUTTON = "SHOW VOXEL GRID\n\t\t\t\t[V]"
-HIDE_VOXEL_GRID_BUTTON = "HIDE VOXEL GRID\n\t\t\t [V]"
+HIDE_VOXEL_GRID_BUTTON = "HIDE VOXEL GRID\n\t\t\t  [V]"
 ORTHO_ON_BUTTON = "ORTHO VIEW ON\n\t\t\t [O]"
 ORTHO_OFF_BUTTON = "ORTHO VIEW OFF\n\t\t\t  [O]"
 QUIT_BUTTON = "QUIT\n  [Q]"
@@ -239,8 +239,6 @@ class Kissualizer(StubVisualizer):
                 [4, 7],
             ]
         ).astype(np.int64)
-        # verts -= self._voxel_size / 2.0
-        # verts *= self._voxel_size
         verts = verts + voxel
         verts = verts * self._voxel_size
         edges += idx * 8
@@ -256,6 +254,7 @@ class Kissualizer(StubVisualizer):
                 self._toggle_voxel_grid = False
                 self._unregister_voxel_grid()
                 self._ps.set_SSAA_factor(1)
+                self._ps.reset_camera_to_home_view()  # to reset FoV
                 self._ps.set_view_projection_mode("perspective")
                 self._ps.set_navigation_style("turntable")
             else:
@@ -284,7 +283,6 @@ class Kissualizer(StubVisualizer):
         ):
             self._ps.reset_camera_to_home_view()
 
-    # TODO: add keyboard bindings to toggle keypoints/map/frame
     def _toggle_buttons_andslides_callback(self):
         # FRAME
         changed, self._frame_size = self._gui.SliderFloat(
@@ -293,8 +291,11 @@ class Kissualizer(StubVisualizer):
         if changed:
             self._ps.get_point_cloud("current_frame").set_radius(self._frame_size, relative=False)
         self._gui.SameLine()
-        changed, self._toggle_frame = self._gui.Checkbox("Frame Cloud", self._toggle_frame)
-        if changed:
+        f_key_pressed = self._gui.IsKeyPressed(self._gui.ImGuiKey_F)
+        if f_key_pressed:
+            self._toggle_frame = not self._toggle_frame
+        changed, self._toggle_frame = self._gui.Checkbox("[F] Frame Cloud", self._toggle_frame)
+        if changed or f_key_pressed:
             self._ps.get_point_cloud("current_frame").set_enabled(self._toggle_frame)
 
         # KEYPOINTS
@@ -304,8 +305,13 @@ class Kissualizer(StubVisualizer):
         if changed:
             self._ps.get_point_cloud("keypoints").set_radius(self._keypoints_size, relative=False)
         self._gui.SameLine()
-        changed, self._toggle_keypoints = self._gui.Checkbox("Keypoints", self._toggle_keypoints)
-        if changed:
+        k_key_pressed = self._gui.IsKeyPressed(self._gui.ImGuiKey_K)
+        if k_key_pressed:
+            self._toggle_keypoints = not self._toggle_keypoints
+        changed, self._toggle_keypoints = self._gui.Checkbox(
+            "[K] Keypoints", self._toggle_keypoints
+        )
+        if changed or k_key_pressed:
             self._ps.get_point_cloud("keypoints").set_enabled(self._toggle_keypoints)
 
         # LOCAL MAP
@@ -315,8 +321,11 @@ class Kissualizer(StubVisualizer):
         if changed:
             self._ps.get_point_cloud("local_map").set_radius(self._map_size, relative=False)
         self._gui.SameLine()
-        changed, self._toggle_map = self._gui.Checkbox("Local Map", self._toggle_map)
-        if changed:
+        m_key_pressed = self._gui.IsKeyPressed(self._gui.ImGuiKey_M)
+        if m_key_pressed:
+            self._toggle_map = not self._toggle_map
+        changed, self._toggle_map = self._gui.Checkbox("[M] Local Map", self._toggle_map)
+        if changed or m_key_pressed:
             self._ps.get_point_cloud("local_map").set_enabled(self._toggle_map)
 
     def _background_color_callback(self):
@@ -350,6 +359,7 @@ class Kissualizer(StubVisualizer):
                     self._ps.set_view_projection_mode("orthographic")
                     self._ps.set_navigation_style("planar")
                 else:
+                    self._ps.reset_camera_to_home_view()  # to reset Fov
                     self._ps.set_view_projection_mode("perspective")
                     self._ps.set_navigation_style("turntable")
                 self._ps.reset_camera_to_home_view()
