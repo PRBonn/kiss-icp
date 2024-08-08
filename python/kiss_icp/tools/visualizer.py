@@ -337,7 +337,7 @@ class Kissualizer(StubVisualizer):
             self._ps.set_background_color(self._background_color)
 
     def _inspection_callback(self):
-        info_string = "Double click on a pose in 'GLOBAL VIEW' to visualize here its pose:"
+        info_string = "Double-click on the trajectory to visualize it (only global view):"
         if self._gui.TreeNodeEx("Inspection", self._gui.ImGuiTreeNodeFlags_DefaultOpen):
             voxel_grid_button_name = (
                 HIDE_VOXEL_GRID_BUTTON if self._toggle_voxel_grid else SHOW_VOXEL_GRID_BUTTON
@@ -366,7 +366,7 @@ class Kissualizer(StubVisualizer):
 
             self._gui.TextUnformatted(info_string)
             if self._selected_pose != "":
-                self._gui.TextUnformatted(f"Selected Pose: {self._selected_pose}")
+                self._gui.TextUnformatted(f"\t\tSelected Pose: {self._selected_pose}")
             self._gui.TreePop()
 
     def _global_view_callback(self):
@@ -430,11 +430,9 @@ class Kissualizer(StubVisualizer):
             self._gui.Separator()
             self._inspection_callback()
             self._gui.Separator()
+            self._trajectory_pick_callback()
         self._global_view_callback()
         self._gui.SameLine()
         self._center_viewpoint_callback()
         self._gui.Separator()
         self._quit_callback()
-
-        # Mouse callbacks
-        self._trajectory_pick_callback()
