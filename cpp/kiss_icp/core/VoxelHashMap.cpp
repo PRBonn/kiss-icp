@@ -56,14 +56,14 @@ std::tuple<Eigen::Vector3d, double> VoxelHashMap::GetClosestNeighbor(
     // Find the nearest neighbor
     Eigen::Vector3d closest_neighbor = Eigen::Vector3d::Zero();
     double closest_distance = std::numeric_limits<double>::max();
-    auto closer = [&query](const auto &lhs, const auto &rhs) {
-        return (lhs - query).norm() < (rhs - query).norm();
-    };
-    std::for_each(query_voxels.cbegin(), query_voxels.cend(), [&](const auto &qv) {
-        auto search = map_.find(qv);
+    std::for_each(query_voxels.cbegin(), query_voxels.cend(), [&](const auto &query_voxel) {
+        auto search = map_.find(query_voxel);
         if (search != map_.end()) {
             const auto &points = search.value();
-            const auto &neighbor = *std::min_element(points.cbegin(), points.cend(), closer);
+            const Eigen::Vector3d &neighbor = *std::min_element(
+                points.cbegin(), points.cend(), [&](const auto &lhs, const auto &rhs) {
+                    return (lhs - query).norm() < (rhs - query).norm();
+                });
             double distance = (neighbor - query).norm();
             if (distance < closest_distance) {
                 closest_neighbor = neighbor;
