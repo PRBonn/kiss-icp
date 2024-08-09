@@ -30,12 +30,16 @@
 #include "VoxelUtils.hpp"
 
 namespace {
+static constexpr int adjacent_voxels = 1;
+static constexpr int voxels_per_side = 2 * adjacent_voxels + 1;
+static constexpr int max_adjacent_voxels = voxels_per_side * voxels_per_side * voxels_per_side;
+
 std::vector<kiss_icp::Voxel> GetAdjacentVoxels(const Eigen::Vector3d &point,
-                                               const kiss_icp::VoxelHashMap &grid,
-                                               const int adjacent_voxels = 1) {
+                                               const kiss_icp::VoxelHashMap &grid) {
     // Convert the point to voxel coordinates
     const auto &voxel = kiss_icp::PointToVoxel(point, grid.voxel_size_);
     std::vector<kiss_icp::Voxel> voxel_neighborhood;
+    voxel_neighborhood.reserve(max_adjacent_voxels);
     for (int i = voxel.x() - adjacent_voxels; i < voxel.x() + adjacent_voxels + 1; ++i) {
         for (int j = voxel.y() - adjacent_voxels; j < voxel.y() + adjacent_voxels + 1; ++j) {
             for (int k = voxel.z() - adjacent_voxels; k < voxel.z() + adjacent_voxels + 1; ++k) {
