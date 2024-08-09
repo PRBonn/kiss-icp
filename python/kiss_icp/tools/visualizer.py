@@ -54,6 +54,36 @@ FRAME_PTS_SIZE = 0.06
 KEYPOINTS_PTS_SIZE = 0.2
 MAP_PTS_SIZE = 0.08
 
+# Voxels Prototype
+VOXEL_VERTICES = np.array(
+    [
+        [0, 0, 0],
+        [1, 0, 0],
+        [1, 1, 0],
+        [0, 1, 0],
+        [0, 0, 1],
+        [1, 0, 1],
+        [1, 1, 1],
+        [0, 1, 1],
+    ]
+).astype(np.float64)
+VOXEL_EDGES = np.array(
+    [
+        [0, 1],
+        [1, 2],
+        [2, 3],
+        [0, 3],
+        [0, 4],
+        [5, 4],
+        [1, 5],
+        [5, 6],
+        [2, 6],
+        [6, 7],
+        [3, 7],
+        [4, 7],
+    ]
+).astype(np.int64)
+
 
 class StubVisualizer(ABC):
     def __init__(self):
@@ -95,8 +125,6 @@ class Kissualizer(StubVisualizer):
         self._last_pose = np.eye(4)
         self._vis_infos = dict()
         self._selected_pose = ""
-        self._voxel_grid_nodes = np.array([])
-        self._voxel_grid_edges = np.array([])
         self._last_local_map = None
         self._registration = None
         self._voxel_size = 1.0
@@ -200,14 +228,18 @@ class Kissualizer(StubVisualizer):
         if self._last_local_map is None:
             return
         voxels = self._last_local_map.get_voxels()
-        self._voxel_grid_nodes = np.zeros((voxels.shape[0] * 8, 3), dtype=np.float64)
-        self._voxel_grid_edges = np.zeros((voxels.shape[0] * 12, 2), dtype=np.int64)
+        voxel_grid_nodes = np.zeros((voxels.shape[0] * 8, 3), dtype=np.float64)
+        voxel_grid_edges = np.zeros((voxels.shape[0] * 12, 2), dtype=np.int64)
 
         for idx, voxel in enumerate(voxels):
-            self._generate_new_voxel(voxel, idx)
+            verts = np.copy(VOXEL_VERTICES) + voxel
+            verts = verts * self._voxel_size
+            edges = np.copy(VOXEL_EDGES) + (idx * 8)
+            voxel_grid_nodes[idx * 8 : idx * 8 + 8] = verts
+            voxel_grid_edges[idx * 12 : idx * 12 + 12] = edges
 
         voxel_grid = self._ps.register_curve_network(
-            "voxel_grid", self._voxel_grid_nodes, self._voxel_grid_edges, color=VOXEL_GRID_COLOR
+            "voxel_grid", voxel_grid_nodes, voxel_grid_edges, color=VOXEL_GRID_COLOR
         )
         voxel_grid.set_radius(0.01, relative=False)
         if self._global_view:
@@ -245,41 +277,6 @@ class Kissualizer(StubVisualizer):
     def _unregister_correspondences(self):
         if self._ps.has_curve_network("correspondences"):
             self._ps.remove_curve_network("correspondences")
-
-    def _generate_new_voxel(self, voxel: np.ndarray, idx: int):
-        verts = np.array(
-            [
-                [0, 0, 0],
-                [1, 0, 0],
-                [1, 1, 0],
-                [0, 1, 0],
-                [0, 0, 1],
-                [1, 0, 1],
-                [1, 1, 1],
-                [0, 1, 1],
-            ]
-        ).astype(np.float64)
-        edges = np.array(
-            [
-                [0, 1],
-                [1, 2],
-                [2, 3],
-                [0, 3],
-                [0, 4],
-                [5, 4],
-                [1, 5],
-                [5, 6],
-                [2, 6],
-                [6, 7],
-                [3, 7],
-                [4, 7],
-            ]
-        ).astype(np.int64)
-        verts = verts + voxel
-        verts = verts * self._voxel_size
-        edges += idx * 8
-        self._voxel_grid_nodes[idx * 8 : idx * 8 + 8] = verts
-        self._voxel_grid_edges[idx * 12 : idx * 12 + 12] = edges
 
     # GUI Callbacks ---------------------------------------------------------------------------
     def _start_pause_callback(self):
