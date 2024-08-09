@@ -92,7 +92,8 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
                     .matrix();
             },
             "points"_a, "voxel_map"_a, "initial_guess"_a, "max_correspondance_distance"_a,
-            "kernel"_a);
+            "kernel"_a)
+        .def("_get_correspondences", [](Registration &self) { return self.last_correspondences_; });
 
     // AdaptiveThreshold bindings
     py::class_<AdaptiveThreshold> adaptive_threshold(m, "_AdaptiveThreshold", "Don't use this");

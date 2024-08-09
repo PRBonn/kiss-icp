@@ -63,3 +63,6 @@ class Registration:
             max_correspondance_distance=max_correspondance_distance,
             kernel=kernel,
         )
+
+    def get_correspondences(self) -> np.ndarray:
+        return self._registration._get_correspondences()

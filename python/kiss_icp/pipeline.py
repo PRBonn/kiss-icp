@@ -106,6 +106,10 @@ class OdometryPipeline:
             self.poses[idx - self._first] = self.odometry.last_pose
             self.times[idx - self._first] = time.perf_counter_ns() - start_time
 
+            # DEBUG
+            ccc = self.odometry.registration.get_correspondences()
+            # print(ccc)
+
             # Udate visualizer
             self._vis_infos["FPS"] = int(np.floor(self._get_fps()))
             self.visualizer.update(

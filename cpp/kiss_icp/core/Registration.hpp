@@ -28,6 +28,8 @@
 
 #include "VoxelHashMap.hpp"
 
+using Correspondences = std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>;
+
 namespace kiss_icp {
 
 struct Registration {
@@ -42,5 +44,6 @@ struct Registration {
     int max_num_iterations_;
     double convergence_criterion_;
     int max_num_threads_;
+    Correspondences last_correspondences_;
 };
 }  // namespace kiss_icp
