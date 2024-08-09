@@ -36,6 +36,8 @@ GLOBAL_VIEW_BUTTON = "GLOBAL VIEW\n\t\t  [G]"
 CENTER_VIEWPOINT_BUTTON = "CENTER VIEWPOINT\n\t\t\t\t[C]"
 SHOW_VOXEL_GRID_BUTTON = "SHOW VOXEL GRID\n\t\t\t\t[V]"
 HIDE_VOXEL_GRID_BUTTON = "HIDE VOXEL GRID\n\t\t\t  [V]"
+SHOW_CORRESPONDENCES_BUTTON = "SHOW CORRESPONDENCES\n\t\t\t\t\t   [A]"
+HIDE_CORRESPONDENCES_BUTTON = "HIDE CORRESPONDENCES\n\t\t\t\t\t  [A]"
 QUIT_BUTTON = "QUIT\n  [Q]"
 
 # Colors
@@ -45,6 +47,7 @@ KEYPOINTS_COLOR = [1, 0.7568, 0.0274]
 LOCAL_MAP_COLOR = [0.0, 0.3019, 0.2509]
 TRAJECTORY_COLOR = [0.1176, 0.5333, 0.8980]
 VOXEL_GRID_COLOR = [0.9, 0.9, 0.9]
+CORRESPONDENCES_COLOR = [0.9, 0.1, 0.0]
 
 # Size constants
 FRAME_PTS_SIZE = 0.06
@@ -56,7 +59,7 @@ class StubVisualizer(ABC):
     def __init__(self):
         pass
 
-    def update(self, source, keypoints, local_map, pose, vis_infos):
+    def update(self, source, keypoints, odometry, vis_infos):
         pass
 
     def set_voxel_size(self, voxel_size):
@@ -84,6 +87,7 @@ class Kissualizer(StubVisualizer):
         self._toggle_keypoints = True
         self._toggle_map = True
         self._toggle_voxel_grid = False
+        self._toggle_correspondences = False
         self._global_view = False
 
         # Create data
@@ -93,16 +97,21 @@ class Kissualizer(StubVisualizer):
         self._selected_pose = ""
         self._voxel_grid_nodes = np.array([])
         self._voxel_grid_edges = np.array([])
+        self._correspondences_nodes = np.array([])
+        self._correspondences_edges = np.array([])
         self._last_local_map = None
+        self._registration = None
         self._voxel_size = 1.0
 
         # Initialize Visualizer
         self._initialize_visualizer()
 
-    def update(self, source, keypoints, local_map, pose, vis_infos: dict):
+    def update(self, source, keypoints, odometry, vis_infos: dict):
         self._vis_infos = dict(sorted(vis_infos.items(), key=lambda item: len(item[0])))
-        self._last_pose = pose
-        self._update_geometries(source, keypoints, local_map, pose)
+        self._last_pose = odometry.last_pose
+        self._update_geometries(
+            source, keypoints, odometry.local_map, odometry.last_pose, odometry.registration
+        )
         while self._block_execution:
             self._ps.frame_tick()
             if self._play_mode:
@@ -123,7 +132,7 @@ class Kissualizer(StubVisualizer):
         self._ps.set_build_default_gui_panels(False)
         self._ps.set_SSAA_factor(4)
 
-    def _update_geometries(self, source, keypoints, local_map, pose):
+    def _update_geometries(self, source, keypoints, local_map, pose, registration):
         # CURRENT FRAME
         frame_cloud = self._ps.register_point_cloud(
             "current_frame",
@@ -168,6 +177,11 @@ class Kissualizer(StubVisualizer):
         if self._toggle_voxel_grid:
             self._register_voxel_grid()
 
+        # CORRESPONDENCES (only if toggled)
+        self._registration = registration
+        if self._toggle_correspondences:
+            self._register_correspondences()
+
         # TRAJECTORY (only visible in global view)
         self._trajectory.append(pose[:3, 3])
         if self._global_view:
@@ -206,6 +220,33 @@ class Kissualizer(StubVisualizer):
     def _unregister_voxel_grid(self):
         if self._ps.has_curve_network("voxel_grid"):
             self._ps.remove_curve_network("voxel_grid")
+
+    def _register_correspondences(self):
+        if self._registration is None:
+            return
+        correspondences = self._registration.get_correspondences()
+        correspondences_nodes = np.zeros((len(correspondences) * 2, 3), dtype=np.float64)
+        correspondences_edges = np.zeros((len(correspondences), 2), dtype=np.int64)
+
+        for idx, correspondence in enumerate(correspondences):
+            correspondences_nodes[idx * 2] = correspondence[0]
+            correspondences_nodes[(idx * 2) + 1] = correspondence[1]
+            correspondences_edges[idx] = np.array([idx * 2, (idx * 2) + 1])
+        correspondences_curve = self._ps.register_curve_network(
+            "correspondences",
+            correspondences_nodes,
+            correspondences_edges,
+            color=CORRESPONDENCES_COLOR,
+        )
+        correspondences_curve.set_radius(0.01, relative=False)
+        if self._global_view:
+            correspondences_curve.set_transform(np.eye(4))
+        else:
+            correspondences_curve.set_transform(np.linalg.inv(self._last_pose))
+
+    def _unregister_correspondences(self):
+        if self._ps.has_curve_network("correspondences"):
+            self._ps.remove_curve_network("correspondences")
 
     def _generate_new_voxel(self, voxel: np.ndarray, idx: int):
         verts = np.array(
@@ -250,6 +291,8 @@ class Kissualizer(StubVisualizer):
             if self._play_mode:
                 self._toggle_voxel_grid = False
                 self._unregister_voxel_grid()
+                self._toggle_correspondences = False
+                self._unregister_correspondences()
                 self._ps.set_SSAA_factor(1)
             else:
                 self._ps.set_SSAA_factor(4)
@@ -345,6 +388,21 @@ class Kissualizer(StubVisualizer):
                 else:
                     self._unregister_voxel_grid()
 
+            self._gui.SameLine()
+            correspondences_button_name = (
+                HIDE_CORRESPONDENCES_BUTTON
+                if self._toggle_correspondences
+                else SHOW_CORRESPONDENCES_BUTTON
+            )
+            if self._gui.Button(correspondences_button_name) or self._gui.IsKeyPressed(
+                self._gui.ImGuiKey_A
+            ):
+                self._toggle_correspondences = not self._toggle_correspondences
+                if self._toggle_correspondences:
+                    self._register_correspondences()
+                else:
+                    self._unregister_correspondences()
+
             # POSE PICKING Text
             self._gui.TextUnformatted(
                 "Double-click on the trajectory to visualize it (only global view):"
@@ -364,6 +422,8 @@ class Kissualizer(StubVisualizer):
                 self._register_trajectory()
                 if self._toggle_voxel_grid:
                     self._ps.get_curve_network("voxel_grid").set_transform(np.eye(4))
+                if self._toggle_correspondences:
+                    self._ps.get_curve_network("correspondences").set_transform(np.eye(4))
             else:
                 self._ps.get_point_cloud("current_frame").set_transform(np.eye(4))
                 self._ps.get_point_cloud("keypoints").set_transform(np.eye(4))
@@ -373,6 +433,11 @@ class Kissualizer(StubVisualizer):
                     self._ps.get_curve_network("voxel_grid").set_transform(
                         np.linalg.inv(self._last_pose)
                     )
+                if self._toggle_correspondences:
+                    self._ps.get_curve_network("correspondences").set_transform(
+                        np.linalg.inv(self._last_pose)
+                    )
+
             self._ps.reset_camera_to_home_view()
 
     def _quit_callback(self):
