@@ -36,8 +36,6 @@ GLOBAL_VIEW_BUTTON = "GLOBAL VIEW\n\t\t  [G]"
 CENTER_VIEWPOINT_BUTTON = "CENTER VIEWPOINT\n\t\t\t\t[C]"
 SHOW_VOXEL_GRID_BUTTON = "SHOW VOXEL GRID\n\t\t\t\t[V]"
 HIDE_VOXEL_GRID_BUTTON = "HIDE VOXEL GRID\n\t\t\t  [V]"
-ORTHO_ON_BUTTON = "ORTHO VIEW ON\n\t\t\t [O]"
-ORTHO_OFF_BUTTON = "ORTHO VIEW OFF\n\t\t\t  [O]"
 QUIT_BUTTON = "QUIT\n  [Q]"
 
 # Colors
@@ -86,7 +84,6 @@ class Kissualizer(StubVisualizer):
         self._toggle_keypoints = True
         self._toggle_map = True
         self._toggle_voxel_grid = False
-        self._toggle_ortho = False
         self._global_view = False
 
         # Create data
@@ -254,11 +251,6 @@ class Kissualizer(StubVisualizer):
                 self._toggle_voxel_grid = False
                 self._unregister_voxel_grid()
                 self._ps.set_SSAA_factor(1)
-                if self._toggle_ortho:
-                    self._ps.reset_camera_to_home_view()  # to reset FoV
-                    self._ps.set_view_projection_mode("perspective")
-                    self._ps.set_navigation_style("turntable")
-                    self._toggle_ortho = False
             else:
                 self._ps.set_SSAA_factor(4)
 
@@ -339,8 +331,8 @@ class Kissualizer(StubVisualizer):
             self._ps.set_background_color(self._background_color)
 
     def _inspection_callback(self):
-        info_string = "Double-click on the trajectory to visualize it (only global view):"
         if self._gui.TreeNodeEx("Inspection", self._gui.ImGuiTreeNodeFlags_DefaultOpen):
+            # VOXEL GRID Button
             voxel_grid_button_name = (
                 HIDE_VOXEL_GRID_BUTTON if self._toggle_voxel_grid else SHOW_VOXEL_GRID_BUTTON
             )
@@ -353,20 +345,10 @@ class Kissualizer(StubVisualizer):
                 else:
                     self._unregister_voxel_grid()
 
-            ortho_button_name = ORTHO_OFF_BUTTON if self._toggle_ortho else ORTHO_ON_BUTTON
-            self._gui.SameLine()
-            if self._gui.Button(ortho_button_name) or self._gui.IsKeyPressed(self._gui.ImGuiKey_O):
-                self._toggle_ortho = not self._toggle_ortho
-                if self._toggle_ortho:
-                    self._ps.set_view_projection_mode("orthographic")
-                    self._ps.set_navigation_style("planar")
-                else:
-                    self._ps.reset_camera_to_home_view()  # to reset Fov
-                    self._ps.set_view_projection_mode("perspective")
-                    self._ps.set_navigation_style("turntable")
-                self._ps.reset_camera_to_home_view()
-
-            self._gui.TextUnformatted(info_string)
+            # POSE PICKING Text
+            self._gui.TextUnformatted(
+                "Double-click on the trajectory to visualize it (only global view):"
+            )
             if self._selected_pose != "":
                 self._gui.TextUnformatted(f"\t\tSelected Pose: {self._selected_pose}")
             self._gui.TreePop()
