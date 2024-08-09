@@ -32,12 +32,16 @@
 namespace {
 using kiss_icp::Voxel;
 
-std::vector<Voxel> GetAdjacentVoxels(const Voxel &voxel, int adjacent_voxels = 1) {
+std::vector<Voxel> GetAdjacentVoxels(const Voxel &voxel,
+                                     const kiss_icp::VoxelHashMap &grid,
+                                     const int adjacent_voxels = 1) {
     std::vector<Voxel> voxel_neighborhood;
     for (int i = voxel.x() - adjacent_voxels; i < voxel.x() + adjacent_voxels + 1; ++i) {
         for (int j = voxel.y() - adjacent_voxels; j < voxel.y() + adjacent_voxels + 1; ++j) {
             for (int k = voxel.z() - adjacent_voxels; k < voxel.z() + adjacent_voxels + 1; ++k) {
-                voxel_neighborhood.emplace_back(i, j, k);
+                if (grid.map_.contains({i, j, k})) {
+                    voxel_neighborhood.emplace_back(i, j, k);
+                }
             }
         }
     }
@@ -52,23 +56,20 @@ std::tuple<Eigen::Vector3d, double> VoxelHashMap::GetClosestNeighbor(
     // Convert the point to voxel coordinates
     const auto &voxel = PointToVoxel(query, voxel_size_);
     // Get nearby voxels on the map
-    const auto &query_voxels = GetAdjacentVoxels(voxel);
+    const auto &query_voxels = GetAdjacentVoxels(voxel, *this);
     // Find the nearest neighbor
     Eigen::Vector3d closest_neighbor = Eigen::Vector3d::Zero();
     double closest_distance = std::numeric_limits<double>::max();
     std::for_each(query_voxels.cbegin(), query_voxels.cend(), [&](const auto &query_voxel) {
-        auto search = map_.find(query_voxel);
-        if (search != map_.end()) {
-            const auto &points = search.value();
-            const Eigen::Vector3d &neighbor = *std::min_element(
-                points.cbegin(), points.cend(), [&](const auto &lhs, const auto &rhs) {
-                    return (lhs - query).norm() < (rhs - query).norm();
-                });
-            double distance = (neighbor - query).norm();
-            if (distance < closest_distance) {
-                closest_neighbor = neighbor;
-                closest_distance = distance;
-            }
+        const auto &points = map_.at(query_voxel);
+        const Eigen::Vector3d &neighbor = *std::min_element(
+            points.cbegin(), points.cend(), [&](const auto &lhs, const auto &rhs) {
+                return (lhs - query).norm() < (rhs - query).norm();
+            });
+        double distance = (neighbor - query).norm();
+        if (distance < closest_distance) {
+            closest_neighbor = neighbor;
+            closest_distance = distance;
         }
     });
     return std::make_tuple(closest_neighbor, closest_distance);
