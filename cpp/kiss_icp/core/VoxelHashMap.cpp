@@ -30,12 +30,12 @@
 #include "VoxelUtils.hpp"
 
 namespace {
-using kiss_icp::Voxel;
-
-std::vector<Voxel> GetAdjacentVoxels(const Voxel &voxel,
-                                     const kiss_icp::VoxelHashMap &grid,
-                                     const int adjacent_voxels = 1) {
-    std::vector<Voxel> voxel_neighborhood;
+std::vector<kiss_icp::Voxel> GetAdjacentVoxels(const Eigen::Vector3d &point,
+                                               const kiss_icp::VoxelHashMap &grid,
+                                               const int adjacent_voxels = 1) {
+    // Convert the point to voxel coordinates
+    const auto &voxel = kiss_icp::PointToVoxel(point, grid.voxel_size_);
+    std::vector<kiss_icp::Voxel> voxel_neighborhood;
     for (int i = voxel.x() - adjacent_voxels; i < voxel.x() + adjacent_voxels + 1; ++i) {
         for (int j = voxel.y() - adjacent_voxels; j < voxel.y() + adjacent_voxels + 1; ++j) {
             for (int k = voxel.z() - adjacent_voxels; k < voxel.z() + adjacent_voxels + 1; ++k) {
@@ -53,10 +53,8 @@ namespace kiss_icp {
 
 std::tuple<Eigen::Vector3d, double> VoxelHashMap::GetClosestNeighbor(
     const Eigen::Vector3d &query) const {
-    // Convert the point to voxel coordinates
-    const auto &voxel = PointToVoxel(query, voxel_size_);
     // Get nearby voxels on the map
-    const auto &query_voxels = GetAdjacentVoxels(voxel, *this);
+    const auto &query_voxels = GetAdjacentVoxels(query, *this);
     // Find the nearest neighbor
     Eigen::Vector3d closest_neighbor = Eigen::Vector3d::Zero();
     double closest_distance = std::numeric_limits<double>::max();
