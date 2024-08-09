@@ -97,8 +97,6 @@ class Kissualizer(StubVisualizer):
         self._selected_pose = ""
         self._voxel_grid_nodes = np.array([])
         self._voxel_grid_edges = np.array([])
-        self._correspondences_nodes = np.array([])
-        self._correspondences_edges = np.array([])
         self._last_local_map = None
         self._registration = None
         self._voxel_size = 1.0
