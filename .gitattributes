@@ -2,3 +2,4 @@
 *.hpp linguist-language=C++
 *.md linguist-documentation
 *.py linguist-vendored
+*.ipynb linguist-vendored
