@@ -46,7 +46,7 @@ class McapDataloader:
         self.summary = self.bag.get_summary()
         self.topic = self.check_topic(topic)
         self.n_scans = self._get_n_scans()
-        self.msgs = read_ros2_messages(mcap_file, topics=self.topic)
+        self.msgs = read_ros2_messages(mcap_file, topics=[self.topic])
         self.timestamps = []
         self.read_point_cloud = read_point_cloud
         self.use_global_visualizer = True
