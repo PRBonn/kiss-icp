@@ -37,7 +37,7 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
                                                     const std::vector<double> &timestamps) {
     const auto &deskew_frame = [&]() -> std::vector<Eigen::Vector3d> {
         if (!config_.deskew || timestamps.empty()) return frame;
-        return DeSkewScan(frame, timestamps, last_delta_);
+        return DeSkewScan(frame, timestamps, last_delta_, config_.max_num_threads);
     }();
     return RegisterFrame(deskew_frame);
 }

@@ -31,6 +31,7 @@ namespace kiss_icp {
 /// Compensate the frame by interpolating the delta pose
 std::vector<Eigen::Vector3d> DeSkewScan(const std::vector<Eigen::Vector3d> &frame,
                                         const std::vector<double> &timestamps,
-                                        const Sophus::SE3d &delta);
+                                        const Sophus::SE3d &delta,
+                                        int max_n_threads);
 
 }  // namespace kiss_icp
