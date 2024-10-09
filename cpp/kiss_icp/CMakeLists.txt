@@ -21,7 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 cmake_minimum_required(VERSION 3.16...3.26)
-project(kiss_icp_cpp VERSION 1.0.0 LANGUAGES CXX)
+project(kiss_icp_cpp VERSION 1.1.0 LANGUAGES CXX)
 
 # Setup build options
 option(USE_CCACHE "Build using Ccache if found on the path" ON)
