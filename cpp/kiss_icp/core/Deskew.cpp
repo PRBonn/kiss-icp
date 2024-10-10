@@ -21,8 +21,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 #include "Deskew.hpp"
-
-#include <tbb/parallel_for.h>
+#include "Parallel.hpp"
 
 #include <Eigen/Core>
 #include <sophus/se3.hpp>
@@ -36,11 +35,15 @@ constexpr double mid_pose_timestamp{0.5};
 namespace kiss_icp {
 std::vector<Eigen::Vector3d> DeSkewScan(const std::vector<Eigen::Vector3d> &frame,
                                         const std::vector<double> &timestamps,
-                                        const Sophus::SE3d &delta) {
+                                        const Sophus::SE3d &delta,
+                                        int max_n_threads) {
+    // We trust this will not change as the config will not change over the duration of the run.
+    static parallel::NParallel n_parallel(max_n_threads);
+
     const auto delta_pose = delta.log();
     std::vector<Eigen::Vector3d> corrected_frame(frame.size());
-    // TODO(All): This tbb execution is ignoring the max_n_threads config value
-    tbb::parallel_for(size_t(0), frame.size(), [&](size_t i) {
+
+    n_parallel.n_for(size_t(0), frame.size(), [&](size_t i) {
         const auto motion = Sophus::SE3d::exp((timestamps[i] - mid_pose_timestamp) * delta_pose);
         corrected_frame[i] = motion * frame[i];
     });
