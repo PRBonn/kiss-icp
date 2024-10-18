@@ -32,7 +32,6 @@
 #include <memory>
 #include <vector>
 
-#include "kiss_icp/core/Deskew.hpp"
 #include "kiss_icp/core/Preprocessing.hpp"
 #include "kiss_icp/core/Registration.hpp"
 #include "kiss_icp/core/Threshold.hpp"
@@ -106,16 +105,6 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
                 self.UpdateModelDeviation(model_deviation);
             },
             "model_deviation"_a);
-
-    // DeSkewScan
-    m.def(
-        "_deskew_scan",
-        [](const std::vector<Eigen::Vector3d> &frame, const std::vector<double> &timestamps,
-           const Eigen::Matrix4d &T_delta) {
-            Sophus::SE3d delta(T_delta);
-            return DeSkewScan(frame, timestamps, delta);
-        },
-        "frame"_a, "timestamps"_a, "delta"_a);
 
     // prerpocessing modules
     m.def("_voxel_down_sample", &VoxelDownsample, "frame"_a, "voxel_size"_a);

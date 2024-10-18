@@ -26,6 +26,7 @@
 #include <tuple>
 #include <vector>
 
+#include "kiss_icp/core/Preprocessing.hpp"
 #include "kiss_icp/core/Registration.hpp"
 #include "kiss_icp/core/Threshold.hpp"
 #include "kiss_icp/core/VoxelHashMap.hpp"
@@ -60,6 +61,7 @@ public:
 public:
     explicit KissICP(const KISSConfig &config)
         : config_(config),
+          preprocessor_(config.max_range, config.min_range, config.deskew, config.max_num_threads),
           registration_(
               config.max_num_iterations, config.convergence_criterion, config.max_num_threads),
           local_map_(config.voxel_size, config.max_range, config.max_points_per_voxel),
@@ -88,6 +90,7 @@ private:
 
     // KISS-ICP pipeline modules
     KISSConfig config_;
+    Preprocessor preprocessor_;
     Registration registration_;
     VoxelHashMap local_map_;
     AdaptiveThreshold adaptive_threshold_;

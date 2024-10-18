@@ -26,7 +26,6 @@
 #include <Eigen/Core>
 #include <vector>
 
-#include "kiss_icp/core/Deskew.hpp"
 #include "kiss_icp/core/Preprocessing.hpp"
 #include "kiss_icp/core/Registration.hpp"
 #include "kiss_icp/core/VoxelHashMap.hpp"
@@ -35,19 +34,11 @@ namespace kiss_icp::pipeline {
 
 KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vector3d> &frame,
                                                     const std::vector<double> &timestamps) {
-    const auto &deskew_frame = [&]() -> std::vector<Eigen::Vector3d> {
-        if (!config_.deskew || timestamps.empty()) return frame;
-        return DeSkewScan(frame, timestamps, last_delta_);
-    }();
-    return RegisterFrame(deskew_frame);
-}
-
-KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vector3d> &frame) {
     // Preprocess the input cloud
-    const auto &cropped_frame = Preprocess(frame, config_.max_range, config_.min_range);
+    const auto &preprocessed_frame = preprocessor_.Preprocess(frame, timestamps, last_delta_);
 
     // Voxelize
-    const auto &[source, frame_downsample] = Voxelize(cropped_frame);
+    const auto &[source, frame_downsample] = Voxelize(preprocessed_frame);
 
     // Get adaptive_threshold
     const double sigma = adaptive_threshold_.ComputeThreshold();
