@@ -36,7 +36,7 @@ struct Preprocessor {
 
     std::vector<Eigen::Vector3d> Preprocess(const std::vector<Eigen::Vector3d> &frame,
                                             const std::vector<double> &timestamps,
-                                            const Sophus::SE3d &relative_platform_motion) const;
+                                            const Sophus::SE3d &relative_motion) const;
     double max_range_;
     double min_range_;
     bool deskew_;

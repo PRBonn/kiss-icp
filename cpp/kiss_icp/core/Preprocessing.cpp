@@ -64,10 +64,9 @@ Preprocessor::Preprocessor(const double max_range,
         tbb::global_control::max_allowed_parallelism, static_cast<size_t>(max_num_threads_));
 }
 
-std::vector<Eigen::Vector3d> Preprocessor::Preprocess(
-    const std::vector<Eigen::Vector3d> &frame,
-    const std::vector<double> &timestamps,
-    const Sophus::SE3d &relative_platform_motion) const {
+std::vector<Eigen::Vector3d> Preprocessor::Preprocess(const std::vector<Eigen::Vector3d> &frame,
+                                                      const std::vector<double> &timestamps,
+                                                      const Sophus::SE3d &relative_motion) const {
     std::vector<Eigen::Vector3d> preprocessed_frame;
     preprocessed_frame.reserve(frame.size());
     preprocessed_frame = tbb::parallel_reduce(
@@ -82,7 +81,7 @@ std::vector<Eigen::Vector3d> Preprocessor::Preprocess(
             for (size_t idx = r.begin(); idx < r.end(); ++idx) {
                 const auto &point =
                     (deskew_ && !timestamps.empty())
-                        ? DeSkewPoint(frame.at(idx), timestamps.at(idx), relative_platform_motion)
+                        ? DeSkewPoint(frame.at(idx), timestamps.at(idx), relative_motion)
                         : frame.at(idx);
                 const double point_range = point.norm();
                 if (point_range < max_range_ && point_range > min_range_) {
