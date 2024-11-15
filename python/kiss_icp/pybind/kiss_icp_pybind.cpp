@@ -77,8 +77,8 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
     // Point Cloud registration
     py::class_<Registration> internal_registration(m, "_Registration", "Don't use this");
     internal_registration
-        .def(py::init<int, double, int>(), "max_num_iterations"_a, "convergence_criterion"_a,
-             "max_num_threads"_a)
+        .def(py::init<int, double, int, bool>(), "max_num_iterations"_a, "convergence_criterion"_a,
+             "max_num_threads"_a, "planar"_a)
         .def(
             "_align_points_to_map",
             [](Registration &self, const std::vector<Eigen::Vector3d> &points,

@@ -88,13 +88,23 @@ Correspondences DataAssociation(const std::vector<Eigen::Vector3d> &points,
     return correspondences;
 }
 
-LinearSystem BuildLinearSystem(const Correspondences &correspondences, const double kernel_scale) {
-    auto compute_jacobian_and_residual = [](const auto &correspondence) {
+LinearSystem BuildLinearSystem(const Correspondences &correspondences,
+                               const double kernel_scale,
+                               const bool planar) {
+    auto compute_jacobian_and_residual = [planar](const auto &correspondence) {
         const auto &[source, target] = correspondence;
-        const Eigen::Vector3d residual = source - target;
+        Eigen::Vector3d residual = source - target;
+        if (planar) {
+            residual.z() = 0;
+        }
         Eigen::Matrix3_6d J_r;
         J_r.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity();
         J_r.block<3, 3>(0, 3) = -1.0 * Sophus::SO3d::hat(source);
+        if (planar) {
+            J_r.row(2).setZero();  // z
+            J_r.col(3).setZero();  // roll
+            J_r.col(4).setZero();  // pitch
+        }
         return std::make_tuple(J_r, residual);
     };
 
@@ -134,12 +144,16 @@ LinearSystem BuildLinearSystem(const Correspondences &correspondences, const dou
 
 namespace kiss_icp {
 
-Registration::Registration(int max_num_iteration, double convergence_criterion, int max_num_threads)
+Registration::Registration(int max_num_iteration,
+                           double convergence_criterion,
+                           int max_num_threads,
+                           bool planar)
     : max_num_iterations_(max_num_iteration),
       convergence_criterion_(convergence_criterion),
       // Only manipulate the number of threads if the user specifies something greater than 0
       max_num_threads_(max_num_threads > 0 ? max_num_threads
-                                           : tbb::this_task_arena::max_concurrency()) {
+                                           : tbb::this_task_arena::max_concurrency()),
+      planar_(planar) {
     // This global variable requires static duration storage to be able to manipulate the max
     // concurrency from TBB across the entire class
     static const auto tbb_control_settings = tbb::global_control(
@@ -163,8 +177,13 @@ Sophus::SE3d Registration::AlignPointsToMap(const std::vector<Eigen::Vector3d> &
         // Equation (10)
         const auto correspondences = DataAssociation(source, voxel_map, max_distance);
         // Equation (11)
-        const auto &[JTJ, JTr] = BuildLinearSystem(correspondences, kernel_scale);
-        const Eigen::Vector6d dx = JTJ.ldlt().solve(-JTr);
+        const auto &[JTJ, JTr] = BuildLinearSystem(correspondences, kernel_scale, planar_);
+        Eigen::Vector6d dx = JTJ.ldlt().solve(-JTr);
+        if (planar_) {
+            dx[2] = 0.0;  // z
+            dx[3] = 0.0;  // roll
+            dx[4] = 0.0;  // pitch
+        }
         const Sophus::SE3d estimation = Sophus::SE3d::exp(dx);
         // Equation (12)
         TransformPoints(estimation, source);
@@ -174,7 +193,17 @@ Sophus::SE3d Registration::AlignPointsToMap(const std::vector<Eigen::Vector3d> &
         if (dx.norm() < convergence_criterion_) break;
     }
     // Spit the final transformation
-    return T_icp * initial_guess;
+    auto final_transformation = T_icp * initial_guess;
+    if (planar_) {
+        Eigen::Matrix3d R = final_transformation.rotationMatrix();
+        double yaw = std::atan2(R(1, 0), R(0, 0));
+        Eigen::Matrix3d R_2D = Eigen::Matrix3d::Identity();
+        R_2D << std::cos(yaw), -std::sin(yaw), 0, std::sin(yaw), std::cos(yaw), 0, 0, 0, 1;
+        Eigen::Vector3d t = final_transformation.translation();
+        t.z() = 0.0;
+        final_transformation = Sophus::SE3d(R_2D, t);
+    }
+    return final_transformation;
 }
 
 }  // namespace kiss_icp

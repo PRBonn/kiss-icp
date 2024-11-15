@@ -50,6 +50,9 @@ struct KISSConfig {
 
     // Motion compensation
     bool deskew = false;
+
+    // 2D Mode
+    bool planar = false;
 };
 
 class KissICP {
@@ -60,8 +63,10 @@ public:
 public:
     explicit KissICP(const KISSConfig &config)
         : config_(config),
-          registration_(
-              config.max_num_iterations, config.convergence_criterion, config.max_num_threads),
+          registration_(config.max_num_iterations,
+                        config.convergence_criterion,
+                        config.max_num_threads,
+                        config.planar),
           local_map_(config.voxel_size, config.max_range, config.max_points_per_voxel),
           adaptive_threshold_(config.initial_threshold, config.min_motion_th, config.max_range) {}
 

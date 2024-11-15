@@ -41,6 +41,7 @@ class Registration:
         max_num_iterations: int,
         convergence_criterion: float,
         max_num_threads: int = 0,
+        planar: bool = False,
     ):
         self._registration = kiss_icp_pybind._Registration(
             max_num_iterations=max_num_iterations,
