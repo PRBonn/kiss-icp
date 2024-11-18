@@ -1,6 +1,6 @@
 #include <kiss_icp/pipeline/KissICP.hpp>
 
-int main(){
+int main() {
     struct kiss_icp::pipeline::KISSConfig config;
     config.deskew = true;
     config.initial_threshold = 2.0;
@@ -11,5 +11,4 @@ int main(){
     config.voxel_size = 1.0;
     kiss_icp::pipeline::KissICP icp_pipeline{config};
     // TODO: use pipeline here
-    
 }
