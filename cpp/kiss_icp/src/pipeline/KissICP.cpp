@@ -21,7 +21,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "KissICP.hpp"
+#include "kiss_icp/pipeline/KissICP.hpp"
 
 #include <Eigen/Core>
 #include <vector>

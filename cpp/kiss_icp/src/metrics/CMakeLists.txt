@@ -22,5 +22,13 @@
 # SOFTWARE.
 add_library(kiss_icp_metrics STATIC)
 target_sources(kiss_icp_metrics PRIVATE Metrics.cpp)
+target_include_directories(kiss_icp_metrics PUBLIC
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/kiss_icp/metrics>
+  $<INSTALL_INTERFACE:include/kiss_icp/metrics>
+)
 target_link_libraries(kiss_icp_metrics PUBLIC Eigen3::Eigen)
 set_global_target_properties(kiss_icp_metrics)
+
+install(TARGETS kiss_icp_metrics
+        DESTINATION lib/kiss_icp/metrics
+        EXPORT kiss_icpTargets)

@@ -23,12 +23,16 @@
 cmake_minimum_required(VERSION 3.16...3.26)
 project(kiss_icp_cpp VERSION 1.1.0 LANGUAGES CXX)
 
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
 # Setup build options
 option(USE_CCACHE "Build using Ccache if found on the path" ON)
 option(USE_SYSTEM_EIGEN3 "Use system pre-installed Eigen" ON)
 option(USE_SYSTEM_SOPHUS "Use system pre-installed Sophus" ON)
 option(USE_SYSTEM_TSL-ROBIN-MAP "Use system pre-installed tsl_robin" ON)
 option(USE_SYSTEM_TBB "Use system pre-installed oneAPI/tbb" ON)
+option(DOWNLOAD_MISSING_DEPS "try and download missing depedencies from repos" OFF)
 
 # ccache setup
 if(USE_CCACHE)
@@ -45,9 +49,35 @@ set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-include(3rdparty/find_dependencies.cmake)
-include(cmake/CompilerOptions.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/3rdparty/find_dependencies.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/cmake/CompilerOptions.cmake)
 
-add_subdirectory(core)
-add_subdirectory(metrics)
-add_subdirectory(pipeline)
+add_subdirectory(src)
+
+install(EXPORT kiss_icpTargets
+        FILE kiss_icpTargets.cmake
+        NAMESPACE kiss_icp::
+        DESTINATION "share/cmake/kiss_icp")
+
+
+configure_package_config_file(${CMAKE_CURRENT_LIST_DIR}/cmake/Config.cmake.in
+  "${CMAKE_CURRENT_BINARY_DIR}/kiss_icpConfig.cmake"
+  INSTALL_DESTINATION "share/cmake/kiss_icp"
+)
+
+# generate the version file for the config file
+write_basic_package_version_file(
+  "${CMAKE_CURRENT_BINARY_DIR}/kiss_icpConfigVersion.cmake"
+  VERSION "${version}"
+  COMPATIBILITY SameMinorVersion
+)
+
+
+install(DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/include/kiss_icp"
+        DESTINATION "include")
+
+install(FILES
+          "${CMAKE_CURRENT_BINARY_DIR}/kiss_icpConfig.cmake"
+          "${CMAKE_CURRENT_BINARY_DIR}/kiss_icpConfigVersion.cmake"
+        DESTINATION "share/cmake/kiss_icp"
+)
