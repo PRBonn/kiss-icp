@@ -54,30 +54,17 @@ include(${CMAKE_CURRENT_LIST_DIR}/cmake/CompilerOptions.cmake)
 
 add_subdirectory(src)
 
-install(EXPORT kiss_icpTargets
-        FILE kiss_icpTargets.cmake
-        NAMESPACE kiss_icp::
-        DESTINATION "share/cmake/kiss_icp")
+install(EXPORT kiss_icpTargets FILE kiss_icpTargets.cmake NAMESPACE kiss_icp:: DESTINATION "share/cmake/kiss_icp")
 
-
-configure_package_config_file(${CMAKE_CURRENT_LIST_DIR}/cmake/Config.cmake.in
-  "${CMAKE_CURRENT_BINARY_DIR}/kiss_icpConfig.cmake"
-  INSTALL_DESTINATION "share/cmake/kiss_icp"
-)
+configure_package_config_file(
+  ${CMAKE_CURRENT_LIST_DIR}/cmake/Config.cmake.in "${CMAKE_CURRENT_BINARY_DIR}/kiss_icpConfig.cmake"
+  INSTALL_DESTINATION "share/cmake/kiss_icp")
 
 # generate the version file for the config file
-write_basic_package_version_file(
-  "${CMAKE_CURRENT_BINARY_DIR}/kiss_icpConfigVersion.cmake"
-  VERSION "${version}"
-  COMPATIBILITY SameMinorVersion
-)
+write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/kiss_icpConfigVersion.cmake" VERSION "${version}"
+                                 COMPATIBILITY SameMinorVersion)
 
+install(DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/include/kiss_icp" DESTINATION "include")
 
-install(DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/include/kiss_icp"
-        DESTINATION "include")
-
-install(FILES
-          "${CMAKE_CURRENT_BINARY_DIR}/kiss_icpConfig.cmake"
-          "${CMAKE_CURRENT_BINARY_DIR}/kiss_icpConfigVersion.cmake"
-        DESTINATION "share/cmake/kiss_icp"
-)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/kiss_icpConfig.cmake"
+              "${CMAKE_CURRENT_BINARY_DIR}/kiss_icpConfigVersion.cmake" DESTINATION "share/cmake/kiss_icp")

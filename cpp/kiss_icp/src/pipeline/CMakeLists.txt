@@ -23,14 +23,9 @@
 
 add_library(kiss_icp_pipeline STATIC)
 target_sources(kiss_icp_pipeline PRIVATE KissICP.cpp)
-target_include_directories(kiss_icp_pipeline PUBLIC
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/kiss_icp/pipeline>
-  $<INSTALL_INTERFACE:include/kiss_icp/pipeline>
-)
+target_include_directories(kiss_icp_pipeline PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/kiss_icp/pipeline>
+                                                    $<INSTALL_INTERFACE:include/kiss_icp/pipeline>)
 target_link_libraries(kiss_icp_pipeline PUBLIC kiss_icp_core)
 set_global_target_properties(kiss_icp_pipeline)
 
-install(TARGETS kiss_icp_pipeline
-        DESTINATION lib/kiss_icp/pipeline
-        EXPORT kiss_icpTargets
-        )
+install(TARGETS kiss_icp_pipeline DESTINATION lib/kiss_icp/pipeline EXPORT kiss_icpTargets)

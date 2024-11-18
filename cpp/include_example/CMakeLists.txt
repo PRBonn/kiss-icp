@@ -8,4 +8,3 @@ target_link_libraries(example PRIVATE kiss_icp::kiss_icp_pipeline)
 #for other components (not used in example.cpp):
 #target_link_libraries(example PRIVATE kiss_icp::kiss_icp_core)
 #target_link_libraries(example PRIVATE kiss_icp::kiss_icp_metrics)
-

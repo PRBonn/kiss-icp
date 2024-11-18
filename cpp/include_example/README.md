@@ -7,4 +7,3 @@ See `CMakeLists.txt` for details on how to find the library and link the targets
 cmake -Bbuild
 cmake --build build -j$(nproc --all)
 ```
-
