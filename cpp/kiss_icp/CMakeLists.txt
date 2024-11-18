@@ -32,7 +32,7 @@ option(USE_SYSTEM_EIGEN3 "Use system pre-installed Eigen" ON)
 option(USE_SYSTEM_SOPHUS "Use system pre-installed Sophus" ON)
 option(USE_SYSTEM_TSL-ROBIN-MAP "Use system pre-installed tsl_robin" ON)
 option(USE_SYSTEM_TBB "Use system pre-installed oneAPI/tbb" ON)
-option(DOWNLOAD_MISSING_DEPS "try and download missing depedencies from repos" OFF)
+option(DOWNLOAD_MISSING_DEPS "try and download missing depedencies from repos" ON)
 
 # ccache setup
 if(USE_CCACHE)
