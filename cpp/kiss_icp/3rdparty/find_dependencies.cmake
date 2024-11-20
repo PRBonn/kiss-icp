@@ -41,8 +41,7 @@ if(NOT DOWNLOAD_MISSING_DEPS)
   find_package(Eigen3 REQUIRED) # sudo apt install libeigen3-dev
   find_package(Sophus REQUIRED) # sudo apt install ros-noetic-sophus
   find_package(TBB REQUIRED) # sudo apt install libtbb-dev
-  find_package(
-    tsl-robin-map REQUIRED)
+  find_package(tsl-robin-map REQUIRED)
 
   # clone & install from https://github.com/Tessil/robin-map.git into misc_ws, and run `cmake -Bbuild && cmake --build build && sudo cmake --install build`)
 
@@ -68,11 +67,11 @@ endif()
 
 if(NOT (TARGET Eigen3::Eigen AND TARGET Sophus::Sophus AND TARGET tsl::robin_map AND TARGET TBB::tbb))
   message(
-    FATAL_ERROR
+    WARNING
       "
   Exporting fetched dependencies is currently broken
   I have no idea how to do it automatically ¯\\_(ツ)_/¯
-  please set DOWNLOAD_MISSING_DEPS to OFF in the main CMakeLists.txt and install the dependencies yourself.
+  If you want to do this, please set DOWNLOAD_MISSING_DEPS to OFF in the main CMakeLists.txt and install the dependencies yourself.
   The find_dependencies file lists the corresponding installation instructions.
   ")
 endif()
