@@ -32,7 +32,8 @@ option(USE_SYSTEM_EIGEN3 "Use system pre-installed Eigen" ON)
 option(USE_SYSTEM_SOPHUS "Use system pre-installed Sophus" ON)
 option(USE_SYSTEM_TSL-ROBIN-MAP "Use system pre-installed tsl_robin" ON)
 option(USE_SYSTEM_TBB "Use system pre-installed oneAPI/tbb" ON)
-option(DOWNLOAD_MISSING_DEPS "try and download missing depedencies from repos" ON)
+option(DOWNLOAD_MISSING_DEPS "Try and download missing depedencies from repos" ON)
+option(INSTALL_KISS_ICP_CPP "Install kiss_icp c++ library, requires all dependencies to be installed system-wide" ON)
 
 # ccache setup
 if(USE_CCACHE)
@@ -54,17 +55,19 @@ include(${CMAKE_CURRENT_LIST_DIR}/cmake/CompilerOptions.cmake)
 
 add_subdirectory(src)
 
-install(EXPORT kiss_icpTargets FILE kiss_icpTargets.cmake NAMESPACE kiss_icp:: DESTINATION "share/cmake/kiss_icp")
+if(INSTALL_KISS_ICP_CPP)
+  install(EXPORT kiss_icpTargets FILE kiss_icpTargets.cmake NAMESPACE kiss_icp:: DESTINATION "share/cmake/kiss_icp")
 
-configure_package_config_file(
-  ${CMAKE_CURRENT_LIST_DIR}/cmake/Config.cmake.in "${CMAKE_CURRENT_BINARY_DIR}/kiss_icpConfig.cmake"
-  INSTALL_DESTINATION "share/cmake/kiss_icp")
+  configure_package_config_file(
+    ${CMAKE_CURRENT_LIST_DIR}/cmake/Config.cmake.in "${CMAKE_CURRENT_BINARY_DIR}/kiss_icpConfig.cmake"
+    INSTALL_DESTINATION "share/cmake/kiss_icp")
 
-# generate the version file for the config file
-write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/kiss_icpConfigVersion.cmake" VERSION "${version}"
-                                 COMPATIBILITY SameMinorVersion)
+  # generate the version file for the config file
+  write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/kiss_icpConfigVersion.cmake" VERSION "${version}"
+                                   COMPATIBILITY SameMinorVersion)
 
-install(DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/include/kiss_icp" DESTINATION "include")
+  install(DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/include/kiss_icp" DESTINATION "include")
 
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/kiss_icpConfig.cmake"
-              "${CMAKE_CURRENT_BINARY_DIR}/kiss_icpConfigVersion.cmake" DESTINATION "share/cmake/kiss_icp")
+  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/kiss_icpConfig.cmake"
+                "${CMAKE_CURRENT_BINARY_DIR}/kiss_icpConfigVersion.cmake" DESTINATION "share/cmake/kiss_icp")
+endif()

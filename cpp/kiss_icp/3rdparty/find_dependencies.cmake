@@ -64,15 +64,22 @@ if(TARGET tsl::robin_map)
   message("Found package tsl-robin-map locally")
 endif()
 
-if(NOT (TARGET Eigen3::Eigen AND TARGET Sophus::Sophus AND TARGET tsl::robin_map AND TARGET TBB::tbb))
+if(INSTALL_KISS_ICP_CPP AND NOT (TARGET Eigen3::Eigen AND TARGET Sophus::Sophus AND TARGET tsl::robin_map AND TARGET
+                                                                                                              TBB::tbb))
   message(
     WARNING
       "
-  Exporting fetched dependencies is currently broken
+  Exporting fetched dependencies is currently broken.
   I have no idea how to do it automatically ¯\\_(ツ)_/¯
-  If you want to do this, please set DOWNLOAD_MISSING_DEPS to OFF in the main CMakeLists.txt and install the dependencies yourself.
+  If you want to make the kiss_icp c++ library available system-wide,
+  please set DOWNLOAD_MISSING_DEPS to OFF in the main CMakeLists.txt and install the dependencies yourself.
   The find_dependencies file lists the corresponding installation instructions.
   ")
+  set(INSTALL_KISS_ICP_CPP OFF)
+else()
+  if(INSTALL_KISS_ICP_CPP)
+    message("All system dependencies found! Installing kiss_icp as a c++ library is possible.")
+  endif()
 endif()
 
 if(DOWNLOAD_MISSING_DEPS)

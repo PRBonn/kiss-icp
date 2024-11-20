@@ -21,15 +21,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "kiss_icp/pipeline/KissICP.hpp"
+#include "KissICP.hpp"
 
 #include <Eigen/Core>
 #include <vector>
 
-#include "kiss_icp/core/Deskew.hpp"
-#include "kiss_icp/core/Preprocessing.hpp"
-#include "kiss_icp/core/Registration.hpp"
-#include "kiss_icp/core/VoxelHashMap.hpp"
+#include "Deskew.hpp"
+#include "Preprocessing.hpp"
+#include "Registration.hpp"
+#include "VoxelHashMap.hpp"
 
 namespace kiss_icp::pipeline {
 
