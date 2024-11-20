@@ -37,7 +37,82 @@ function(find_external_dependency PACKAGE_NAME TARGET_NAME INCLUDED_CMAKE_PATH)
   endif()
 endfunction()
 
-find_external_dependency("Eigen3" "Eigen3::Eigen" "${CMAKE_CURRENT_LIST_DIR}/eigen/eigen.cmake")
-find_external_dependency("Sophus" "Sophus::Sophus" "${CMAKE_CURRENT_LIST_DIR}/sophus/sophus.cmake")
-find_external_dependency("TBB" "TBB::tbb" "${CMAKE_CURRENT_LIST_DIR}/tbb/tbb.cmake")
-find_external_dependency("tsl-robin-map" "tsl::robin_map" "${CMAKE_CURRENT_LIST_DIR}/tsl_robin/tsl_robin.cmake")
+if(NOT DOWNLOAD_MISSING_DEPS)
+  find_package(Eigen3 REQUIRED) # sudo apt install libeigen3-dev
+  find_package(Sophus REQUIRED) # sudo apt install ros-noetic-sophus
+  find_package(TBB REQUIRED) # sudo apt install libtbb-dev
+  # clone & install from https://github.com/Tessil/robin-map.git into misc_ws, and run `cmake -Bbuild && cmake --build build && sudo cmake --install build`)
+  find_package(tsl-robin-map REQUIRED)
+
+else()
+  find_package(Eigen3 QUIET)
+  find_package(Sophus QUIET)
+  find_package(TBB QUIET)
+  find_package(tsl-robin-map QUIET)
+endif()
+
+if(TARGET Eigen3::Eigen)
+  message("Found package Eigen3 locally")
+endif()
+if(TARGET Sophus::Sophus)
+  message("Found package Sophus locally")
+endif()
+if(TARGET TBB::tbb)
+  message("Found package TBB locally")
+endif()
+if(TARGET tsl::robin_map)
+  message("Found package tsl-robin-map locally")
+endif()
+
+if(INSTALL_KISS_ICP_CPP AND NOT (TARGET Eigen3::Eigen AND TARGET Sophus::Sophus AND TARGET tsl::robin_map AND TARGET
+                                                                                                              TBB::tbb))
+  message(
+    WARNING
+      "
+  Exporting fetched dependencies is currently broken.
+  I have no idea how to do it automatically ¯\\_(ツ)_/¯
+  If you want to make the kiss_icp c++ library available system-wide,
+  please set DOWNLOAD_MISSING_DEPS to OFF in the main CMakeLists.txt and install the dependencies yourself.
+  The find_dependencies file lists the corresponding installation instructions.
+  ")
+  set(INSTALL_KISS_ICP_CPP OFF)
+else()
+  if(INSTALL_KISS_ICP_CPP)
+    message("All system dependencies found! Installing kiss_icp as a c++ library is possible.")
+  endif()
+endif()
+
+if(DOWNLOAD_MISSING_DEPS)
+  if(NOT TARGET Eigen3::Eigen)
+    message("Trying to download external dependency Eigen3...")
+    find_external_dependency("Eigen3" "Eigen3::Eigen" "${CMAKE_CURRENT_LIST_DIR}/eigen/eigen.cmake")
+    message("done.")
+    if(NOT TARGET Eigen3::Eigen)
+      message(FATAL_ERROR "loading Eigen3::Eigen failed.")
+    endif()
+  endif()
+  if(NOT TARGET Sophus::Sophus)
+    message("Trying to download external dependency Sophus...")
+    find_external_dependency("Sophus" "Sophus::Sophus" "${CMAKE_CURRENT_LIST_DIR}/sophus/sophus.cmake")
+    message("done.")
+    if(NOT TARGET Sophus::Sophus)
+      message(FATAL_ERROR "loading Sophus::Sophus failed.")
+    endif()
+  endif()
+  if(NOT TARGET TBB::tbb)
+    message("Trying to download external dependency TBB...")
+    find_external_dependency("TBB" "TBB::tbb" "${CMAKE_CURRENT_LIST_DIR}/tbb/tbb.cmake")
+    message("done.")
+    if(NOT TARGET TBB::tbb)
+      message(FATAL_ERROR "loading TBB:tbb failed.")
+    endif()
+  endif()
+  if(NOT TARGET tsl::robin_map)
+    message("Trying to download external dependency tsl-robin-map...")
+    find_external_dependency("tsl-robin-map" "tsl::robin_map" "${CMAKE_CURRENT_LIST_DIR}/tsl_robin/tsl_robin.cmake")
+    message("done.")
+    if(NOT TARGET tsl::robin_map)
+      message(FATAL_ERROR "loading tsl::robin_map failed.")
+    endif()
+  endif()
+endif()

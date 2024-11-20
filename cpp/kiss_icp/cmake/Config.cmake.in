@@ -1,0 +1,11 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+find_dependency(Eigen3 REQUIRED)
+find_dependency(Sophus REQUIRED)
+find_dependency(TBB REQUIRED)
+find_dependency(tsl-robin-map REQUIRED)
+
+include("${CMAKE_CURRENT_LIST_DIR}/kiss_icpTargets.cmake")
+
+check_required_components(kiss_icp)

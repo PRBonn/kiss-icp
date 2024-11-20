@@ -2,9 +2,18 @@
 
 ## How to build
 
-```sh
+```bash
 cmake -Bbuild
 cmake --build build -j$(nproc --all)
+```
+
+## How to install:
+
+```bash
+# install system-wide
+cmake --install build
+# or install to a custom location (e.g. "/usr/local")
+cmake --install build --prefix "<your_custom_install_prefix>"
 ```
 
 ## Dependencies

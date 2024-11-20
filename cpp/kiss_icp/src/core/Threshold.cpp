@@ -20,27 +20,32 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-#pragma once
+#include "kiss_icp/core/Threshold.hpp"
 
-#include <Eigen/Core>
+#include <Eigen/Geometry>
+#include <cmath>
 #include <sophus/se3.hpp>
-#include <vector>
-
-#include "VoxelHashMap.hpp"
 
 namespace kiss_icp {
+AdaptiveThreshold::AdaptiveThreshold(double initial_threshold,
+                                     double min_motion_threshold,
+                                     double max_range)
+    : min_motion_threshold_(min_motion_threshold),
+      max_range_(max_range),
+      model_sse_(initial_threshold * initial_threshold),
+      num_samples_(1) {}
 
-struct Registration {
-    explicit Registration(int max_num_iteration, double convergence_criterion, int max_num_threads);
+void AdaptiveThreshold::UpdateModelDeviation(const Sophus::SE3d &current_deviation) {
+    const double model_error = [&]() {
+        const double theta = Eigen::AngleAxisd(current_deviation.rotationMatrix()).angle();
+        const double delta_rot = 2.0 * max_range_ * std::sin(theta / 2.0);
+        const double delta_trans = current_deviation.translation().norm();
+        return delta_trans + delta_rot;
+    }();
+    if (model_error > min_motion_threshold_) {
+        model_sse_ += model_error * model_error;
+        num_samples_++;
+    }
+}
 
-    Sophus::SE3d AlignPointsToMap(const std::vector<Eigen::Vector3d> &frame,
-                                  const VoxelHashMap &voxel_map,
-                                  const Sophus::SE3d &initial_guess,
-                                  const double max_correspondence_distance,
-                                  const double kernel_scale);
-
-    int max_num_iterations_;
-    double convergence_criterion_;
-    int max_num_threads_;
-};
 }  // namespace kiss_icp

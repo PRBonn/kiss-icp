@@ -20,14 +20,14 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-#include "VoxelHashMap.hpp"
+#include "kiss_icp/core/VoxelHashMap.hpp"
 
 #include <Eigen/Core>
 #include <algorithm>
 #include <sophus/se3.hpp>
 #include <vector>
 
-#include "VoxelUtils.hpp"
+#include "kiss_icp/core/VoxelUtils.hpp"
 
 namespace {
 using kiss_icp::Voxel;

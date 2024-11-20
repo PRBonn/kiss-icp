@@ -20,8 +20,11 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+add_library(kiss_icp_metrics STATIC)
+target_sources(kiss_icp_metrics PRIVATE Metrics.cpp)
+target_include_directories(kiss_icp_metrics PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+                                                   $<INSTALL_INTERFACE:include>)
+target_link_libraries(kiss_icp_metrics PUBLIC Eigen3::Eigen)
+set_global_target_properties(kiss_icp_metrics)
 
-add_library(kiss_icp_pipeline STATIC)
-target_sources(kiss_icp_pipeline PRIVATE KissICP.cpp)
-target_link_libraries(kiss_icp_pipeline PUBLIC kiss_icp_core)
-set_global_target_properties(kiss_icp_pipeline)
+install(TARGETS kiss_icp_metrics DESTINATION lib/kiss_icp/metrics EXPORT kiss_icpTargets)

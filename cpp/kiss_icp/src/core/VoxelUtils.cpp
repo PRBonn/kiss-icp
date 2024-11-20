@@ -1,4 +1,4 @@
-#include "VoxelUtils.hpp"
+#include "kiss_icp/core/VoxelUtils.hpp"
 
 #include <tsl/robin_map.h>
 

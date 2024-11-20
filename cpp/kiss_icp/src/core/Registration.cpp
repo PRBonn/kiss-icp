@@ -20,7 +20,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-#include "Registration.hpp"
+#include "kiss_icp/core/Registration.hpp"
 
 #include <tbb/blocked_range.h>
 #include <tbb/global_control.h>
@@ -35,8 +35,8 @@
 #include <sophus/so3.hpp>
 #include <tuple>
 
-#include "VoxelHashMap.hpp"
-#include "VoxelUtils.hpp"
+#include "kiss_icp/core/VoxelHashMap.hpp"
+#include "kiss_icp/core/VoxelUtils.hpp"
 
 namespace Eigen {
 using Matrix6d = Eigen::Matrix<double, 6, 6>;

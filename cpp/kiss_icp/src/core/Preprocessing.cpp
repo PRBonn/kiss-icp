@@ -20,32 +20,25 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-#include "Threshold.hpp"
+#include "kiss_icp/core/Preprocessing.hpp"
 
+#include <tsl/robin_map.h>
+
+#include <Eigen/Core>
 #include <Eigen/Geometry>
-#include <cmath>
-#include <sophus/se3.hpp>
+#include <algorithm>
+#include <vector>
 
 namespace kiss_icp {
-AdaptiveThreshold::AdaptiveThreshold(double initial_threshold,
-                                     double min_motion_threshold,
-                                     double max_range)
-    : min_motion_threshold_(min_motion_threshold),
-      max_range_(max_range),
-      model_sse_(initial_threshold * initial_threshold),
-      num_samples_(1) {}
-
-void AdaptiveThreshold::UpdateModelDeviation(const Sophus::SE3d &current_deviation) {
-    const double model_error = [&]() {
-        const double theta = Eigen::AngleAxisd(current_deviation.rotationMatrix()).angle();
-        const double delta_rot = 2.0 * max_range_ * std::sin(theta / 2.0);
-        const double delta_trans = current_deviation.translation().norm();
-        return delta_trans + delta_rot;
-    }();
-    if (model_error > min_motion_threshold_) {
-        model_sse_ += model_error * model_error;
-        num_samples_++;
-    }
+std::vector<Eigen::Vector3d> Preprocess(const std::vector<Eigen::Vector3d> &frame,
+                                        double max_range,
+                                        double min_range) {
+    std::vector<Eigen::Vector3d> inliers;
+    std::copy_if(frame.cbegin(), frame.cend(), std::back_inserter(inliers), [&](const auto &pt) {
+        const double norm = pt.norm();
+        return norm < max_range && norm > min_range;
+    });
+    return inliers;
 }
 
 }  // namespace kiss_icp
