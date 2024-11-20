@@ -41,9 +41,8 @@ if(NOT DOWNLOAD_MISSING_DEPS)
   find_package(Eigen3 REQUIRED) # sudo apt install libeigen3-dev
   find_package(Sophus REQUIRED) # sudo apt install ros-noetic-sophus
   find_package(TBB REQUIRED) # sudo apt install libtbb-dev
-  find_package(tsl-robin-map REQUIRED)
-
   # clone & install from https://github.com/Tessil/robin-map.git into misc_ws, and run `cmake -Bbuild && cmake --build build && sudo cmake --install build`)
+  find_package(tsl-robin-map REQUIRED)
 
 else()
   find_package(Eigen3)
