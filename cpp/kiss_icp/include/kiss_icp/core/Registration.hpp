@@ -26,7 +26,7 @@
 #include <sophus/se3.hpp>
 #include <vector>
 
-#include "VoxelHashMap.hpp"
+#include "kiss_icp/core/VoxelHashMap.hpp"
 
 namespace kiss_icp {
 

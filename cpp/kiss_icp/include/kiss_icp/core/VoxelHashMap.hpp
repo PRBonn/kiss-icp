@@ -32,7 +32,7 @@
 #include <sophus/se3.hpp>
 #include <vector>
 
-#include "VoxelUtils.hpp"
+#include "kiss_icp/core/VoxelUtils.hpp"
 
 namespace kiss_icp {
 struct VoxelHashMap {

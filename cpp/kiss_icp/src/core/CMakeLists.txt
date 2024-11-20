@@ -23,8 +23,8 @@
 add_library(kiss_icp_core STATIC)
 target_sources(kiss_icp_core PRIVATE Registration.cpp Deskew.cpp VoxelHashMap.cpp VoxelUtils.cpp Preprocessing.cpp
                                      Threshold.cpp)
-target_include_directories(kiss_icp_core PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/kiss_icp/core>
-                                                $<INSTALL_INTERFACE:include/kiss_icp/core>)
+target_include_directories(kiss_icp_core PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+                                                $<INSTALL_INTERFACE:include>)
 target_link_libraries(kiss_icp_core PUBLIC Eigen3::Eigen tsl::robin_map Sophus::Sophus)
 target_link_libraries(kiss_icp_core PRIVATE TBB::tbb)
 set_global_target_properties(kiss_icp_core)

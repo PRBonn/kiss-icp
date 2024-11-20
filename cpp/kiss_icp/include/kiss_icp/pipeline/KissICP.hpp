@@ -26,9 +26,9 @@
 #include <tuple>
 #include <vector>
 
-#include "Registration.hpp"
-#include "Threshold.hpp"
-#include "VoxelHashMap.hpp"
+#include "kiss_icp/core/Registration.hpp"
+#include "kiss_icp/core/Threshold.hpp"
+#include "kiss_icp/core/VoxelHashMap.hpp"
 
 namespace kiss_icp::pipeline {
 
