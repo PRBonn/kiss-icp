@@ -23,7 +23,6 @@
 import numpy as np
 
 from kiss_icp.config import KISSConfig
-from kiss_icp.deskew import get_motion_compensator
 from kiss_icp.mapping import get_voxel_hash_map
 from kiss_icp.preprocess import get_preprocessor
 from kiss_icp.registration import get_registration
