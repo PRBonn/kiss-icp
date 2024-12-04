@@ -23,8 +23,10 @@
 #include "Registration.hpp"
 
 #include <tbb/blocked_range.h>
+#include <tbb/concurrent_vector.h>
 #include <tbb/global_control.h>
 #include <tbb/info.h>
+#include <tbb/parallel_for.h>
 #include <tbb/parallel_reduce.h>
 #include <tbb/task_arena.h>
 
@@ -44,7 +46,7 @@ using Matrix3_6d = Eigen::Matrix<double, 3, 6>;
 using Vector6d = Eigen::Matrix<double, 6, 1>;
 }  // namespace Eigen
 
-using Correspondences = std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>;
+using Correspondences = tbb::concurrent_vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>;
 using LinearSystem = std::pair<Eigen::Matrix6d, Eigen::Vector6d>;
 
 namespace {
@@ -61,30 +63,17 @@ Correspondences DataAssociation(const std::vector<Eigen::Vector3d> &points,
     using points_iterator = std::vector<Eigen::Vector3d>::const_iterator;
     Correspondences correspondences;
     correspondences.reserve(points.size());
-    correspondences = tbb::parallel_reduce(
+    tbb::parallel_for(
         // Range
         tbb::blocked_range<points_iterator>{points.cbegin(), points.cend()},
-        // Identity
-        correspondences,
-        // 1st lambda: Parallel computation
-        [&](const tbb::blocked_range<points_iterator> &r, Correspondences res) -> Correspondences {
-            res.reserve(r.size());
+        [&](const tbb::blocked_range<points_iterator> &r) {
             std::for_each(r.begin(), r.end(), [&](const auto &point) {
                 const auto &[closest_neighbor, distance] = voxel_map.GetClosestNeighbor(point);
                 if (distance < max_correspondance_distance) {
-                    res.emplace_back(point, closest_neighbor);
+                    correspondences.emplace_back(point, closest_neighbor);
                 }
             });
-            return res;
-        },
-        // 2nd lambda: Parallel reduction
-        [](Correspondences a, const Correspondences &b) -> Correspondences {
-            a.insert(a.end(),                              //
-                     std::make_move_iterator(b.cbegin()),  //
-                     std::make_move_iterator(b.cend()));
-            return a;
         });
-
     return correspondences;
 }
 
