@@ -37,15 +37,30 @@
 #include <vector>
 
 namespace {
-constexpr double mid_pose_timestamp{0.5};
+static constexpr double end_pose_stamp{1.0};
+struct StubDeskewer {
+    StubDeskewer(const std::vector<Eigen::Vector3d> &frame,
+                 const std::vector<double> &timestamps,
+                 const Sophus::SE3d &relative_motion)
+        : points_(&frame), stamps_(&timestamps), motion_(relative_motion) {}
 
-struct MotionDeskewer {
-    Eigen::Vector3d operator()(const Eigen::Vector3d &point,
-                               const double timestamp,
-                               const Sophus::SE3d &delta) {
-        const auto delta_pose = delta.log();
-        const auto motion = Sophus::SE3d::exp((timestamp - mid_pose_timestamp) * delta_pose);
-        return motion * point;
+    Eigen::Vector3d operator()(const size_t idx) { return points_->at(idx); }
+
+    const std::vector<Eigen::Vector3d> *points_;
+    const std::vector<double> *stamps_;
+    const Sophus::SE3d motion_;
+};
+
+struct MotionDeskewer : public StubDeskewer {
+    MotionDeskewer(const std::vector<Eigen::Vector3d> &frame,
+                   const std::vector<double> &timestamps,
+                   const Sophus::SE3d &relative_motion)
+        : StubDeskewer(frame, timestamps, relative_motion) {}
+
+    Eigen::Vector3d operator()(const size_t idx) {
+        const auto delta_pose = motion_.log();
+        const auto motion = Sophus::SE3d::exp((stamps_->at(idx) - end_pose_stamp) * delta_pose);
+        return motion * points_->at(idx);
     }
 };
 }  // namespace
@@ -58,13 +73,9 @@ Preprocessor::Preprocessor(const double max_range,
                            const int max_num_threads)
     : max_range_(max_range),
       min_range_(min_range),
-      deskewer_(
-          [](const Eigen::Vector3d &point, const double, const Sophus::SE3d &) { return point; }),
+      deskew_(deskew),
       max_num_threads_(max_num_threads > 0 ? max_num_threads
                                            : tbb::this_task_arena::max_concurrency()) {
-    if (deskew) {
-        deskewer_ = MotionDeskewer();
-    }
     // This global variable requires static duration storage to be able to manipulate the max
     // concurrency from TBB across the entire class
     static const auto tbb_control_settings = tbb::global_control(
@@ -74,6 +85,10 @@ Preprocessor::Preprocessor(const double max_range,
 std::vector<Eigen::Vector3d> Preprocessor::Preprocess(const std::vector<Eigen::Vector3d> &frame,
                                                       const std::vector<double> &timestamps,
                                                       const Sophus::SE3d &relative_motion) const {
+    using DeskewerType = std::function<Eigen::Vector3d(const size_t)>;
+    DeskewerType compute_deskewed_point = (deskew_ && !timestamps.empty())
+                                              ? MotionDeskewer(frame, timestamps, relative_motion)
+                                              : StubDeskewer(frame, timestamps, relative_motion);
     tbb::concurrent_vector<Eigen::Vector3d> preprocessed_frame;
     preprocessed_frame.reserve(frame.size());
     tbb::parallel_for(
@@ -84,8 +99,7 @@ std::vector<Eigen::Vector3d> Preprocessor::Preprocess(const std::vector<Eigen::V
             for (size_t idx = r.begin(); idx < r.end(); ++idx) {
                 const double point_range = frame.at(idx).norm();
                 if (point_range < max_range_ && point_range > min_range_) {
-                    const auto &point =
-                        deskewer_(frame.at(idx), timestamps.at(idx), relative_motion);
+                    const auto &point = compute_deskewed_point(idx);
                     preprocessed_frame.emplace_back(point);
                 }
             };
