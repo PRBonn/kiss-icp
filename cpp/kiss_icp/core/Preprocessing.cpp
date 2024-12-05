@@ -22,7 +22,6 @@
 // SOFTWARE.
 #include "Preprocessing.hpp"
 
-#include <oneapi/tbb/concurrent_vector.h>
 #include <tbb/blocked_range.h>
 #include <tbb/concurrent_vector.h>
 #include <tbb/global_control.h>
