@@ -23,6 +23,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <functional>
 #include <sophus/se3.hpp>
 #include <vector>
 
@@ -39,7 +40,9 @@ struct Preprocessor {
                                             const Sophus::SE3d &relative_motion) const;
     double max_range_;
     double min_range_;
-    bool deskew_;
+    using DeskewerType =
+        std::function<Eigen::Vector3d(const Eigen::Vector3d &, const double, const Sophus::SE3d &)>;
+    DeskewerType deskewer_;
     int max_num_threads_;
 };
 }  // namespace kiss_icp

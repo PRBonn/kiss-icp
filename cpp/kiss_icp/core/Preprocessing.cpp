@@ -22,10 +22,12 @@
 // SOFTWARE.
 #include "Preprocessing.hpp"
 
+#include <oneapi/tbb/concurrent_vector.h>
 #include <tbb/blocked_range.h>
+#include <tbb/concurrent_vector.h>
 #include <tbb/global_control.h>
 #include <tbb/info.h>
-#include <tbb/parallel_reduce.h>
+#include <tbb/parallel_for.h>
 #include <tbb/task_arena.h>
 
 #include <Eigen/Core>
@@ -37,14 +39,15 @@
 namespace {
 constexpr double mid_pose_timestamp{0.5};
 
-Eigen::Vector3d DeSkewPoint(const Eigen::Vector3d &point,
-                            const double timestamp,
-                            const Sophus::SE3d &delta) {
-    const auto delta_pose = delta.log();
-    const auto motion = Sophus::SE3d::exp((timestamp - mid_pose_timestamp) * delta_pose);
-    return motion * point;
-}
-
+struct MotionDeskewer {
+    Eigen::Vector3d operator()(const Eigen::Vector3d &point,
+                               const double timestamp,
+                               const Sophus::SE3d &delta) {
+        const auto delta_pose = delta.log();
+        const auto motion = Sophus::SE3d::exp((timestamp - mid_pose_timestamp) * delta_pose);
+        return motion * point;
+    }
+};
 }  // namespace
 
 namespace kiss_icp {
@@ -55,9 +58,13 @@ Preprocessor::Preprocessor(const double max_range,
                            const int max_num_threads)
     : max_range_(max_range),
       min_range_(min_range),
-      deskew_(deskew),
+      deskewer_(
+          [](const Eigen::Vector3d &point, const double, const Sophus::SE3d &) { return point; }),
       max_num_threads_(max_num_threads > 0 ? max_num_threads
                                            : tbb::this_task_arena::max_concurrency()) {
+    if (deskew) {
+        deskewer_ = MotionDeskewer();
+    }
     // This global variable requires static duration storage to be able to manipulate the max
     // concurrency from TBB across the entire class
     static const auto tbb_control_settings = tbb::global_control(
@@ -67,37 +74,24 @@ Preprocessor::Preprocessor(const double max_range,
 std::vector<Eigen::Vector3d> Preprocessor::Preprocess(const std::vector<Eigen::Vector3d> &frame,
                                                       const std::vector<double> &timestamps,
                                                       const Sophus::SE3d &relative_motion) const {
-    std::vector<Eigen::Vector3d> preprocessed_frame;
+    tbb::concurrent_vector<Eigen::Vector3d> preprocessed_frame;
     preprocessed_frame.reserve(frame.size());
-    preprocessed_frame = tbb::parallel_reduce(
+    tbb::parallel_for(
         // Index Range
         tbb::blocked_range<size_t>(0, frame.size()),
-        // Initial value
-        preprocessed_frame,
         // Parallel Compute
-        [&](const tbb::blocked_range<size_t> &r,
-            std::vector<Eigen::Vector3d> preprocessed_block) -> std::vector<Eigen::Vector3d> {
-            preprocessed_block.reserve(r.size());
+        [&](const tbb::blocked_range<size_t> &r) {
             for (size_t idx = r.begin(); idx < r.end(); ++idx) {
-                const auto &point =
-                    (deskew_ && !timestamps.empty())
-                        ? DeSkewPoint(frame.at(idx), timestamps.at(idx), relative_motion)
-                        : frame.at(idx);
-                const double point_range = point.norm();
+                const double point_range = frame.at(idx).norm();
                 if (point_range < max_range_ && point_range > min_range_) {
-                    preprocessed_block.emplace_back(point);
+                    const auto &point =
+                        deskewer_(frame.at(idx), timestamps.at(idx), relative_motion);
+                    preprocessed_frame.emplace_back(point);
                 }
             };
-            return preprocessed_block;
-        },
-        // Reduction
-        [](std::vector<Eigen::Vector3d> a,
-           const std::vector<Eigen::Vector3d> &b) -> std::vector<Eigen::Vector3d> {
-            a.insert(a.end(),                              //
-                     std::make_move_iterator(b.cbegin()),  //
-                     std::make_move_iterator(b.cend()));
-            return a;
         });
-    return preprocessed_frame;
+    std::vector<Eigen::Vector3d> returned(std::make_move_iterator(preprocessed_frame.cbegin()),  //
+                                          std::make_move_iterator(preprocessed_frame.cend()));
+    return returned;
 }
 }  // namespace kiss_icp
