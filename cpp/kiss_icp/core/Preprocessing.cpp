@@ -41,7 +41,7 @@ struct StubDeskewer {
     StubDeskewer(const std::vector<double> &timestamps, const Sophus::SE3d &relative_motion)
         : stamps_(timestamps), motion_(relative_motion) {}
 
-    Eigen::Vector3d operator()(const Eigen::Vector3d &point, const size_t &) { return point; }
+    Eigen::Vector3d operator()(const Eigen::Vector3d &point, const size_t &) const { return point; }
 
     const std::vector<double> &stamps_;
     const Sophus::SE3d motion_;
@@ -51,7 +51,7 @@ struct MotionDeskewer : public StubDeskewer {
     MotionDeskewer(const std::vector<double> &timestamps, const Sophus::SE3d &relative_motion)
         : StubDeskewer(timestamps, relative_motion) {}
 
-    Eigen::Vector3d operator()(const Eigen::Vector3d &point, const size_t &idx) {
+    Eigen::Vector3d operator()(const Eigen::Vector3d &point, const size_t &idx) const {
         const auto delta_pose = motion_.log();
         const auto motion = Sophus::SE3d::exp((stamps_.at(idx) - mid_pose_timestamp) * delta_pose);
         return motion * point;
@@ -80,9 +80,9 @@ std::vector<Eigen::Vector3d> Preprocessor::Preprocess(const std::vector<Eigen::V
                                                       const std::vector<double> &timestamps,
                                                       const Sophus::SE3d &relative_motion) const {
     using DeskewerType = std::function<Eigen::Vector3d(const Eigen::Vector3d &, const size_t &)>;
-    DeskewerType deskewer = (deskew_ && !timestamps.empty())
-                                ? MotionDeskewer(timestamps, relative_motion)
-                                : StubDeskewer(timestamps, relative_motion);
+    const DeskewerType deskewer = (deskew_ && !timestamps.empty())
+                                      ? MotionDeskewer(timestamps, relative_motion)
+                                      : StubDeskewer(timestamps, relative_motion);
     tbb::concurrent_vector<Eigen::Vector3d> preprocessed_frame;
     preprocessed_frame.reserve(frame.size());
     tbb::parallel_for(
