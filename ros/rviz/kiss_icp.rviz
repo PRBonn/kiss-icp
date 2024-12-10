@@ -59,7 +59,7 @@ Visualization Manager:
             Filter size: 10
             History Policy: Keep Last
             Reliability Policy: Best Effort
-            Value: /kiss/frame
+            Value: kiss/frame
           Use Fixed Frame: true
           Use rainbow: true
           Value: true
@@ -93,7 +93,7 @@ Visualization Manager:
             Filter size: 10
             History Policy: Keep Last
             Reliability Policy: Best Effort
-            Value: /kiss/keypoints
+            Value: kiss/keypoints
           Use Fixed Frame: true
           Use rainbow: true
           Value: false
@@ -127,7 +127,7 @@ Visualization Manager:
             Filter size: 10
             History Policy: Keep Last
             Reliability Policy: Best Effort
-            Value: /kiss/local_map
+            Value: kiss/local_map
           Use Fixed Frame: true
           Use rainbow: true
           Value: true
@@ -170,7 +170,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Best Effort
-        Value: /kiss/odometry
+        Value: kiss/odometry
       Value: true
   Enabled: true
   Global Options:
