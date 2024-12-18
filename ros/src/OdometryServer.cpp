@@ -200,7 +200,10 @@ void OdometryServer::PublishClouds(const std::vector<Eigen::Vector3d> frame,
 
     frame_publisher_->publish(std::move(EigenToPointCloud2(frame, header)));
     kpoints_publisher_->publish(std::move(EigenToPointCloud2(keypoints, header)));
-    map_publisher_->publish(std::move(EigenToPointCloud2(kiss_map, kiss_pose, header)));
+
+    auto local_map_header = header;
+    local_map_header.frame_id = lidar_odom_frame_;
+    map_publisher_->publish(std::move(EigenToPointCloud2(kiss_map, local_map_header)));
 }
 }  // namespace kiss_icp_ros
 
