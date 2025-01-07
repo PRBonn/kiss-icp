@@ -33,17 +33,18 @@
 #include <Eigen/Geometry>
 #include <algorithm>
 #include <functional>
+#include <iostream>
 #include <vector>
 
 namespace {
 constexpr double mid_pose_timestamp{0.5};
 struct StubDeskewer {
     StubDeskewer(const std::vector<double> &timestamps, const Sophus::SE3d &relative_motion)
-        : stamps_(timestamps), motion_(relative_motion) {}
+        : stamps_(&timestamps), motion_(relative_motion) {}
 
     Eigen::Vector3d operator()(const Eigen::Vector3d &point, const size_t &) const { return point; }
 
-    const std::vector<double> &stamps_;
+    const std::vector<double> *stamps_;
     const Sophus::SE3d motion_;
 };
 
@@ -52,8 +53,9 @@ struct MotionDeskewer : public StubDeskewer {
         : StubDeskewer(timestamps, relative_motion) {}
 
     Eigen::Vector3d operator()(const Eigen::Vector3d &point, const size_t &idx) const {
+        std::cout << "I am deskwing" << std::endl;
         const auto delta_pose = motion_.log();
-        const auto motion = Sophus::SE3d::exp((stamps_.at(idx) - mid_pose_timestamp) * delta_pose);
+        const auto motion = Sophus::SE3d::exp((stamps_->at(idx) - mid_pose_timestamp) * delta_pose);
         return motion * point;
     }
 };
