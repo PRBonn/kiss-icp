@@ -33,7 +33,6 @@
 #include <Eigen/Geometry>
 #include <algorithm>
 #include <functional>
-#include <iostream>
 #include <vector>
 
 namespace {
@@ -53,7 +52,6 @@ struct MotionDeskewer : public StubDeskewer {
         : StubDeskewer(timestamps, relative_motion) {}
 
     Eigen::Vector3d operator()(const Eigen::Vector3d &point, const size_t &idx) const {
-        std::cout << "I am deskwing" << std::endl;
         const auto pose = Sophus::SE3d::exp((stamps_.at(idx) - mid_pose_timestamp) * motion_);
         return pose * point;
     }
