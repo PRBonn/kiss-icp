@@ -24,6 +24,7 @@
 
 #include <Eigen/Core>
 #include <algorithm>
+#include <array>
 #include <sophus/se3.hpp>
 #include <vector>
 
@@ -31,11 +32,13 @@
 
 namespace {
 using kiss_icp::Voxel;
-static const std::array<Voxel, 27> shifts{
-    {{0, 0, 0},   {1, 0, 0},   {-1, 0, 0}, {0, 1, 0},   {0, -1, 0},  {0, 0, 1},   {0, 0, -1},
-     {1, 1, 0},   {1, -1, 0},  {-1, 1, 0}, {-1, -1, 0}, {1, 0, 1},   {1, 0, -1},  {-1, 0, 1},
-     {-1, 0, -1}, {0, 1, 1},   {0, 1, -1}, {0, -1, 1},  {0, -1, -1}, {1, 1, 1},   {1, 1, -1},
-     {1, -1, 1},  {1, -1, -1}, {-1, 1, 1}, {-1, 1, -1}, {-1, -1, 1}, {-1, -1, -1}}};
+static const std::array<Voxel, 27> voxel_shifts{
+    {Voxel{0, 0, 0},   Voxel{1, 0, 0},   Voxel{-1, 0, 0},  Voxel{0, 1, 0},   Voxel{0, -1, 0},
+     Voxel{0, 0, 1},   Voxel{0, 0, -1},  Voxel{1, 1, 0},   Voxel{1, -1, 0},  Voxel{-1, 1, 0},
+     Voxel{-1, -1, 0}, Voxel{1, 0, 1},   Voxel{1, 0, -1},  Voxel{-1, 0, 1},  Voxel{-1, 0, -1},
+     Voxel{0, 1, 1},   Voxel{0, 1, -1},  Voxel{0, -1, 1},  Voxel{0, -1, -1}, Voxel{1, 1, 1},
+     Voxel{1, 1, -1},  Voxel{1, -1, 1},  Voxel{1, -1, -1}, Voxel{-1, 1, 1},  Voxel{-1, 1, -1},
+     Voxel{-1, -1, 1}, Voxel{-1, -1, -1}}};
 }  // namespace
 
 namespace kiss_icp {
@@ -47,7 +50,7 @@ std::tuple<Eigen::Vector3d, double> VoxelHashMap::GetClosestNeighbor(
     // Find the nearest neighbor
     Eigen::Vector3d closest_neighbor = Eigen::Vector3d::Zero();
     double closest_distance = std::numeric_limits<double>::max();
-    std::for_each(shifts.cbegin(), shifts.cend(), [&](const auto &voxel_shift) {
+    std::for_each(voxel_shifts.cbegin(), voxel_shifts.cend(), [&](const auto &voxel_shift) {
         const auto &query_voxel = voxel + voxel_shift;
         auto search = map_.find(query_voxel);
         if (search != map_.end()) {
