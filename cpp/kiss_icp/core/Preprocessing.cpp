@@ -83,8 +83,8 @@ std::vector<Eigen::Vector3d> Preprocessor::Preprocess(const std::vector<Eigen::V
     std::vector<Eigen::Vector3d> preprocessed_frame;
     preprocessed_frame.reserve(deskewed_frame.size());
     std::for_each(deskewed_frame.cbegin(), deskewed_frame.cend(), [&](const auto &point) {
-        const double norm = point.norm();
-        if (norm < max_range_ && norm > min_range_) {
+        const double point_range = point.norm();
+        if (point_range < max_range_ && point_range > min_range_) {
             preprocessed_frame.emplace_back(point);
         }
     });
