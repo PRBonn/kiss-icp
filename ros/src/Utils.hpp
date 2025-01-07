@@ -185,11 +185,6 @@ inline void FillPointCloud2XYZ(const std::vector<Eigen::Vector3d> &points, Point
     }
 }
 
-inline void FillPointCloud2Timestamp(const std::vector<double> &timestamps, PointCloud2 &msg) {
-    sensor_msgs::PointCloud2Iterator<double> msg_t(msg, "time");
-    for (size_t i = 0; i < timestamps.size(); i++, ++msg_t) *msg_t = timestamps[i];
-}
-
 inline std::vector<double> GetTimestamps(const PointCloud2::ConstSharedPtr msg) {
     auto timestamp_field = GetTimestampField(msg);
     if (!timestamp_field.has_value()) return {};
@@ -227,14 +222,5 @@ inline std::unique_ptr<PointCloud2> EigenToPointCloud2(const std::vector<Eigen::
     std::transform(points.cbegin(), points.cend(), points_t.begin(),
                    [&](const auto &point) { return T * point; });
     return EigenToPointCloud2(points_t, header);
-}
-
-inline std::unique_ptr<PointCloud2> EigenToPointCloud2(const std::vector<Eigen::Vector3d> &points,
-                                                       const std::vector<double> &timestamps,
-                                                       const Header &header) {
-    auto msg = CreatePointCloud2Msg(points.size(), header, true);
-    FillPointCloud2XYZ(points, *msg);
-    FillPointCloud2Timestamp(timestamps, *msg);
-    return msg;
 }
 }  // namespace kiss_icp_ros::utils
