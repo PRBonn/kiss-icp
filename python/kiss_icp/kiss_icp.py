@@ -39,7 +39,6 @@ class KissICP:
         self.preprocessor = get_preprocessor(self.config)
         self.registration = get_registration(self.config)
         self.local_map = get_voxel_hash_map(self.config)
-        self.preprocess = get_preprocessor(self.config)
 
     def register_frame(self, frame, timestamps):
         # Apply motion compensation
