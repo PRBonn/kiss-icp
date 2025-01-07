@@ -24,6 +24,7 @@
 
 #include <Eigen/Core>
 #include <algorithm>
+#include <array>
 #include <sophus/se3.hpp>
 #include <vector>
 
@@ -31,18 +32,13 @@
 
 namespace {
 using kiss_icp::Voxel;
-
-std::vector<Voxel> GetAdjacentVoxels(const Voxel &voxel, int adjacent_voxels = 1) {
-    std::vector<Voxel> voxel_neighborhood;
-    for (int i = voxel.x() - adjacent_voxels; i < voxel.x() + adjacent_voxels + 1; ++i) {
-        for (int j = voxel.y() - adjacent_voxels; j < voxel.y() + adjacent_voxels + 1; ++j) {
-            for (int k = voxel.z() - adjacent_voxels; k < voxel.z() + adjacent_voxels + 1; ++k) {
-                voxel_neighborhood.emplace_back(i, j, k);
-            }
-        }
-    }
-    return voxel_neighborhood;
-}
+static const std::array<Voxel, 27> voxel_shifts{
+    {Voxel{0, 0, 0},   Voxel{1, 0, 0},   Voxel{-1, 0, 0},  Voxel{0, 1, 0},   Voxel{0, -1, 0},
+     Voxel{0, 0, 1},   Voxel{0, 0, -1},  Voxel{1, 1, 0},   Voxel{1, -1, 0},  Voxel{-1, 1, 0},
+     Voxel{-1, -1, 0}, Voxel{1, 0, 1},   Voxel{1, 0, -1},  Voxel{-1, 0, 1},  Voxel{-1, 0, -1},
+     Voxel{0, 1, 1},   Voxel{0, 1, -1},  Voxel{0, -1, 1},  Voxel{0, -1, -1}, Voxel{1, 1, 1},
+     Voxel{1, 1, -1},  Voxel{1, -1, 1},  Voxel{1, -1, -1}, Voxel{-1, 1, 1},  Voxel{-1, 1, -1},
+     Voxel{-1, -1, 1}, Voxel{-1, -1, -1}}};
 }  // namespace
 
 namespace kiss_icp {
@@ -51,12 +47,11 @@ std::tuple<Eigen::Vector3d, double> VoxelHashMap::GetClosestNeighbor(
     const Eigen::Vector3d &query) const {
     // Convert the point to voxel coordinates
     const auto &voxel = PointToVoxel(query, voxel_size_);
-    // Get nearby voxels on the map
-    const auto &query_voxels = GetAdjacentVoxels(voxel);
     // Find the nearest neighbor
     Eigen::Vector3d closest_neighbor = Eigen::Vector3d::Zero();
     double closest_distance = std::numeric_limits<double>::max();
-    std::for_each(query_voxels.cbegin(), query_voxels.cend(), [&](const auto &query_voxel) {
+    std::for_each(voxel_shifts.cbegin(), voxel_shifts.cend(), [&](const auto &voxel_shift) {
+        const auto &query_voxel = voxel + voxel_shift;
         auto search = map_.find(query_voxel);
         if (search != map_.end()) {
             const auto &points = search.value();
