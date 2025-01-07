@@ -112,12 +112,11 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
 
     // Initialize publishers
     rclcpp::QoS qos((rclcpp::SystemDefaultsQoS().keep_last(1).durability_volatile()));
-    odom_publisher_ = create_publisher<nav_msgs::msg::Odometry>("/kiss/odometry", qos);
+    odom_publisher_ = create_publisher<nav_msgs::msg::Odometry>("kiss/odometry", qos);
     if (publish_debug_clouds_) {
-        frame_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("/kiss/frame", qos);
-        kpoints_publisher_ =
-            create_publisher<sensor_msgs::msg::PointCloud2>("/kiss/keypoints", qos);
-        map_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("/kiss/local_map", qos);
+        frame_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("kiss/frame", qos);
+        kpoints_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("kiss/keypoints", qos);
+        map_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("kiss/local_map", qos);
     }
 
     // Initialize the transform broadcaster
