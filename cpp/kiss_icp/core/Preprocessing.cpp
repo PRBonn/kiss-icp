@@ -40,12 +40,12 @@ namespace {
 constexpr double mid_pose_timestamp{0.5};
 struct StubDeskewer {
     StubDeskewer(const std::vector<double> &timestamps, const Sophus::SE3d &relative_motion)
-        : stamps_(&timestamps), motion_(relative_motion) {}
+        : stamps_(timestamps), motion_(relative_motion.log()) {}
 
     Eigen::Vector3d operator()(const Eigen::Vector3d &point, const size_t &) const { return point; }
 
-    const std::vector<double> *stamps_;
-    const Sophus::SE3d motion_;
+    const std::vector<double> &stamps_;
+    const Sophus::SE3d::Tangent motion_;
 };
 
 struct MotionDeskewer : public StubDeskewer {
@@ -54,9 +54,8 @@ struct MotionDeskewer : public StubDeskewer {
 
     Eigen::Vector3d operator()(const Eigen::Vector3d &point, const size_t &idx) const {
         std::cout << "I am deskwing" << std::endl;
-        const auto delta_pose = motion_.log();
-        const auto motion = Sophus::SE3d::exp((stamps_->at(idx) - mid_pose_timestamp) * delta_pose);
-        return motion * point;
+        const auto pose = Sophus::SE3d::exp((stamps_.at(idx) - mid_pose_timestamp) * motion_);
+        return pose * point;
     }
 };
 }  // namespace
@@ -89,15 +88,14 @@ std::vector<Eigen::Vector3d> Preprocessor::Preprocess(const std::vector<Eigen::V
     preprocessed_frame.reserve(frame.size());
     tbb::parallel_for(
         // Index Range
-        tbb::blocked_range<size_t>(0, frame.size()),
+        tbb::blocked_range<size_t>{0, frame.size()},
         // Parallel Compute
         [&](const tbb::blocked_range<size_t> &r) {
             for (size_t idx = r.begin(); idx < r.end(); ++idx) {
                 const auto &point = frame.at(idx);
                 const double point_range = point.norm();
                 if (point_range < max_range_ && point_range > min_range_) {
-                    const auto &deskewed_point = deskewer(point, idx);
-                    preprocessed_frame.emplace_back(deskewed_point);
+                    preprocessed_frame.emplace_back(deskewer(point, idx));
                 }
             };
         });
