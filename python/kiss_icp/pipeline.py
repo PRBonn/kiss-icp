@@ -121,7 +121,7 @@ class OdometryPipeline:
             frame, timestamps = dataframe
         except ValueError:
             frame = dataframe
-            timestamps = np.zeros(frame.shape[0])
+            timestamps = np.array([])
         return frame, timestamps
 
     @staticmethod
