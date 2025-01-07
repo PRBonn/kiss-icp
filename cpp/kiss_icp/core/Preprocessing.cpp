@@ -41,7 +41,9 @@ struct StubDeskewer {
     StubDeskewer(const std::vector<double> &timestamps, const Sophus::SE3d &relative_motion)
         : stamps_(timestamps), motion_(relative_motion.log()) {}
 
-    Eigen::Vector3d operator()(const Eigen::Vector3d &point, const size_t &) const { return point; }
+    virtual Eigen::Vector3d operator()(const Eigen::Vector3d &point, const size_t &) const {
+        return point;
+    }
 
     const std::vector<double> &stamps_;
     const Sophus::SE3d::Tangent motion_;
@@ -51,7 +53,7 @@ struct MotionDeskewer : public StubDeskewer {
     MotionDeskewer(const std::vector<double> &timestamps, const Sophus::SE3d &relative_motion)
         : StubDeskewer(timestamps, relative_motion) {}
 
-    Eigen::Vector3d operator()(const Eigen::Vector3d &point, const size_t &idx) const {
+    Eigen::Vector3d operator()(const Eigen::Vector3d &point, const size_t &idx) const final {
         const auto pose = Sophus::SE3d::exp((stamps_.at(idx) - mid_pose_timestamp) * motion_);
         return pose * point;
     }
