@@ -59,15 +59,15 @@ class NewerCollegeDataset:
         points = self.PyntCloud.from_file(scan_file).points[["x", "y", "z"]].to_numpy()
         timestamps = self.get_timestamps()
         if points.shape[0] != timestamps.shape[0]:
-            # MuRan has some broken point clouds, just fallback to no timestamps
-            return points.astype(np.float64), np.ones(points.shape[0])
+            # Newer College has some broken point clouds, just fallback to no timestamps
+            return points.astype(np.float64), np.array([])
         return points.astype(np.float64), timestamps
 
     @staticmethod
     def get_timestamps():
         H = 64
         W = 1024
-        return (np.floor(np.arange(H * W) / H) / W).reshape(-1, 1)
+        return np.floor(np.arange(H * W) / H) / W
 
     @staticmethod
     def get_pcd_filenames(scans_folder):
