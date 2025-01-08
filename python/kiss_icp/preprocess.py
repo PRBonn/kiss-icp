@@ -27,18 +27,25 @@ from kiss_icp.pybind import kiss_icp_pybind
 
 
 def get_preprocessor(config: KISSConfig):
-    return Preprocessor(config)
+    return Preprocessor(
+        max_range=config.data.max_range,
+        min_range=config.data.min_range,
+        deskew=config.data.deskew,
+        max_num_threads=config.registration.max_num_threads,
+    )
 
 
 class Preprocessor:
-    def __init__(self, config: KISSConfig):
-        self.config = config
+    def __init__(self, max_range, min_range, deskew, max_num_threads):
+        self._preprocessor = kiss_icp_pybind._Preprocessor(
+            max_range, min_range, deskew, max_num_threads
+        )
 
-    def __call__(self, frame: np.ndarray):
+    def preprocess(self, frame: np.ndarray, timestamps: np.ndarray, relative_motion: np.ndarray):
         return np.asarray(
-            kiss_icp_pybind._preprocess(
+            self._preprocessor._preprocess(
                 kiss_icp_pybind._Vector3dVector(frame),
-                self.config.data.max_range,
-                self.config.data.min_range,
+                timestamps,
+                relative_motion,
             )
         )

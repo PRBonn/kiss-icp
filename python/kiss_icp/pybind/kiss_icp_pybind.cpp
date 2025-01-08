@@ -32,7 +32,6 @@
 #include <memory>
 #include <vector>
 
-#include "kiss_icp/core/Deskew.hpp"
 #include "kiss_icp/core/Preprocessing.hpp"
 #include "kiss_icp/core/Registration.hpp"
 #include "kiss_icp/core/Threshold.hpp"
@@ -74,6 +73,19 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
         .def("_remove_far_away_points", &VoxelHashMap::RemovePointsFarFromLocation, "origin"_a)
         .def("_point_cloud", &VoxelHashMap::Pointcloud);
 
+    py::class_<Preprocessor> internal_preprocessor(m, "_Preprocessor", "Don't use this");
+    internal_preprocessor
+        .def(py::init<double, double, bool, int>(), "max_range"_a, "min_range"_a, "deskew"_a,
+             "max_num_threads"_a)
+        .def(
+            "_preprocess",
+            [](Preprocessor &self, const std::vector<Eigen::Vector3d> &points,
+               const std::vector<double> &timestamps, const Eigen::Matrix4d &relative_motion) {
+                Sophus::SE3d motion(relative_motion);
+                return self.Preprocess(points, timestamps, motion);
+            },
+            "points"_a, "timestamps"_a, "relative_motion"_a);
+
     // Point Cloud registration
     py::class_<Registration> internal_registration(m, "_Registration", "Don't use this");
     internal_registration
@@ -107,19 +119,8 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
             },
             "model_deviation"_a);
 
-    // DeSkewScan
-    m.def(
-        "_deskew_scan",
-        [](const std::vector<Eigen::Vector3d> &frame, const std::vector<double> &timestamps,
-           const Eigen::Matrix4d &T_delta) {
-            Sophus::SE3d delta(T_delta);
-            return DeSkewScan(frame, timestamps, delta);
-        },
-        "frame"_a, "timestamps"_a, "delta"_a);
-
     // prerpocessing modules
     m.def("_voxel_down_sample", &VoxelDownsample, "frame"_a, "voxel_size"_a);
-    m.def("_preprocess", &Preprocess, "frame"_a, "max_range"_a, "min_range"_a);
     /// This function only applies for the KITTI dataset, and should NOT be used by any other
     /// dataset, the original idea and part of the implementation is taking from CT-ICP(Although
     /// IMLS-SLAM Originally introduced the calibration factor)

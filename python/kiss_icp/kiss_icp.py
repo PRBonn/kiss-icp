@@ -23,7 +23,6 @@
 import numpy as np
 
 from kiss_icp.config import KISSConfig
-from kiss_icp.deskew import get_motion_compensator
 from kiss_icp.mapping import get_voxel_hash_map
 from kiss_icp.preprocess import get_preprocessor
 from kiss_icp.registration import get_registration
@@ -36,18 +35,14 @@ class KissICP:
         self.last_pose = np.eye(4)
         self.last_delta = np.eye(4)
         self.config = config
-        self.compensator = get_motion_compensator(config)
         self.adaptive_threshold = get_threshold_estimator(self.config)
+        self.preprocessor = get_preprocessor(self.config)
         self.registration = get_registration(self.config)
         self.local_map = get_voxel_hash_map(self.config)
-        self.preprocess = get_preprocessor(self.config)
 
     def register_frame(self, frame, timestamps):
         # Apply motion compensation
-        frame = self.compensator.deskew_scan(frame, timestamps, self.last_delta)
-
-        # Preprocess the input cloud
-        frame = self.preprocess(frame)
+        frame = self.preprocessor.preprocess(frame, timestamps, self.last_delta)
 
         # Voxelize
         source, frame_downsample = self.voxelize(frame)
