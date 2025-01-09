@@ -1,0 +1,52 @@
+diff --git a/bonxai_core/include/bonxai/bonxai.hpp b/bonxai_core/include/bonxai/bonxai.hpp
+index 7d360cf..e43771e 100644
+--- a/bonxai_core/include/bonxai/bonxai.hpp
++++ b/bonxai_core/include/bonxai/bonxai.hpp
+@@ -367,7 +367,7 @@ inline size_t Grid<DataT>::memUsage() const {
+ template <typename DataT>
+ inline void VoxelGrid<DataT>::releaseUnusedMemory() {
+   std::vector<CoordT> keys_to_delete;
+-  for (const auto& [key, inner_grid] : root_map) {
++  for (auto& [key, inner_grid] : root_map) {
+     for (auto inner_it = inner_grid.mask().beginOn(); inner_it; ++inner_it) {
+       const int32_t inner_index = *inner_it;
+       auto& leaf_grid = inner_grid.cell(inner_index);
+@@ -404,9 +404,9 @@ inline VoxelGrid<DataT>::VoxelGrid(double voxel_size, uint8_t inner_bits, uint8_
+ template <typename DataT>
+ inline CoordT VoxelGrid<DataT>::posToCoord(double x, double y, double z) const {
+   return {
+-      static_cast<int32_t>(std::nearbyint(x * inv_resolution)),
+-      static_cast<int32_t>(std::nearbyint(y * inv_resolution)),
+-      static_cast<int32_t>(std::nearbyint(z * inv_resolution))};
++      static_cast<int32_t>(std::floor(x * inv_resolution)),
++      static_cast<int32_t>(std::floor(y * inv_resolution)),
++      static_cast<int32_t>(std::floor(z * inv_resolution))};
+ }
+ 
+ template <typename DataT>
+diff --git a/bonxai_core/include/bonxai/grid_coord.hpp b/bonxai_core/include/bonxai/grid_coord.hpp
+index da8fb7d..1f9727b 100644
+--- a/bonxai_core/include/bonxai/grid_coord.hpp
++++ b/bonxai_core/include/bonxai/grid_coord.hpp
+@@ -79,9 +79,9 @@ struct CoordT {
+ 
+ [[nodiscard]] inline CoordT PosToCoord(const Point3D& point, double inv_resolution) {
+   return {
+-      static_cast<int32_t>(std::nearbyint(point.x * inv_resolution)),
+-      static_cast<int32_t>(std::nearbyint(point.y * inv_resolution)),
+-      static_cast<int32_t>(std::nearbyint(point.z * inv_resolution))};
++      static_cast<int32_t>(std::floor(point.x * inv_resolution)),
++      static_cast<int32_t>(std::floor(point.y * inv_resolution)),
++      static_cast<int32_t>(std::floor(point.z * inv_resolution))};
+ }
+ 
+ [[nodiscard]] inline Point3D CoordToPos(const CoordT& coord, double resolution) {
+@@ -212,7 +212,7 @@ struct hash<Bonxai::CoordT> {
+   std::size_t operator()(const Bonxai::CoordT& p) const {
+     // same as OpenVDB
+     return ((1 << 20) - 1) & (static_cast<int64_t>(p.x) * 73856093 ^  //
+-                              static_cast<int64_t>(p.y) * 19349663 ^  //
++                              static_cast<int64_t>(p.y) * 19349669 ^  //
+                               static_cast<int64_t>(p.z) * 83492791);
+   }
+ };

@@ -22,5 +22,5 @@
 # SOFTWARE.
 add_library(kiss_icp_core STATIC)
 target_sources(kiss_icp_core PRIVATE Registration.cpp VoxelHashMap.cpp VoxelUtils.cpp Preprocessing.cpp Threshold.cpp)
-target_link_libraries(kiss_icp_core PUBLIC Eigen3::Eigen tsl::robin_map TBB::tbb Sophus::Sophus)
+target_link_libraries(kiss_icp_core PUBLIC Eigen3::Eigen tsl::robin_map TBB::tbb Sophus::Sophus bonxai_core)
 set_global_target_properties(kiss_icp_core)
