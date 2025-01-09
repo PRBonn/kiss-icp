@@ -69,7 +69,8 @@ std::vector<Eigen::Vector3d> Preprocessor::Preprocess(const std::vector<Eigen::V
                     for (size_t idx = r.begin(); idx < r.end(); ++idx) {
                         const auto &point = frame.at(idx);
                         const auto &stamp = timestamps.at(idx);
-                        const auto pose = Sophus::SE3d::exp(-stamp * motion);
+                        const auto pose =
+                            relative_motion.inverse() * Sophus::SE3d::exp(stamp * motion);
                         deskewed_frame.at(idx) = pose * point;
                     };
                 });
