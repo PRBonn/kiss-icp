@@ -35,10 +35,6 @@
 #include <functional>
 #include <vector>
 
-namespace {
-constexpr double mid_pose_stamp{0.5};
-}  // namespace
-
 namespace kiss_icp {
 
 Preprocessor::Preprocessor(const double max_range,
@@ -63,7 +59,7 @@ std::vector<Eigen::Vector3d> Preprocessor::Preprocess(const std::vector<Eigen::V
         if (!deskew_ || timestamps.empty()) {
             return frame;
         } else {
-            const auto motion = relative_motion.log();
+            const auto &motion = relative_motion.log();
             std::vector<Eigen::Vector3d> deskewed_frame(frame.size());
             tbb::parallel_for(
                 // Index Range
@@ -73,7 +69,7 @@ std::vector<Eigen::Vector3d> Preprocessor::Preprocess(const std::vector<Eigen::V
                     for (size_t idx = r.begin(); idx < r.end(); ++idx) {
                         const auto &point = frame.at(idx);
                         const auto &stamp = timestamps.at(idx);
-                        const auto pose = Sophus::SE3d::exp((stamp - mid_pose_stamp) * motion);
+                        const auto pose = Sophus::SE3d::exp(-stamp * motion);
                         deskewed_frame.at(idx) = pose * point;
                     };
                 });
