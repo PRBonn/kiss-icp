@@ -36,6 +36,7 @@
 #include "kiss_icp/core/Registration.hpp"
 #include "kiss_icp/core/Threshold.hpp"
 #include "kiss_icp/core/VoxelHashMap.hpp"
+#include "kiss_icp/core/VoxelUtils.hpp"
 #include "kiss_icp/metrics/Metrics.hpp"
 #include "stl_vector_eigen.h"
 
@@ -57,10 +58,6 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
              "max_points_per_voxel"_a)
         .def("_clear", &VoxelHashMap::Clear)
         .def("_empty", &VoxelHashMap::Empty)
-        .def("_update",
-             py::overload_cast<const std::vector<Eigen::Vector3d> &, const Eigen::Vector3d &>(
-                 &VoxelHashMap::Update),
-             "points"_a, "origin"_a)
         .def(
             "_update",
             [](VoxelHashMap &self, const std::vector<Eigen::Vector3d> &points,
