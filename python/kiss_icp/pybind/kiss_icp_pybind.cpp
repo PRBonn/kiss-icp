@@ -37,6 +37,7 @@
 #include "kiss_icp/core/Threshold.hpp"
 #include "kiss_icp/core/VoxelHashMap.hpp"
 #include "kiss_icp/metrics/Metrics.hpp"
+#include "kiss_icp/pipeline/KissICP.hpp"
 #include "stl_vector_eigen.h"
 
 namespace py = pybind11;
@@ -45,10 +46,41 @@ using namespace py::literals;
 PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector3d>);
 
 namespace kiss_icp {
+using pipeline;
+
+KISSConfig ReadConfig(const py::dict &yaml) {
+    KISSConfig config;
+    // data
+    config.max_range = yaml["data"]["max_range"].cast<double>();
+    config.min_range = yaml["data"]["min_range"].cast<double>();
+    config.deskew = yaml["data"]["deskew"].cast<bool>();
+    // mapping
+    config.voxel_size = yaml["mapping"]["voxel_size"].cast<double>();
+    config.max_points_per_voxel = yaml["mapping"]["max_points_per_voxel"].cast<int>();
+    // registration
+    config.max_num_iterations = yaml["registration"]["max_num_iterations "].cast<int>();
+    config.convergence_criterion = yaml["registration"]["convergence_criterion "].cast<double>();
+    config.max_num_threads = yaml["registration"]["max_num_threads "].cast<int>();
+    // adaptive threshold
+    config.min_motion_th = yaml["adaptive_threshold"]["min_motion_th"].cast<double>();
+    config.initial_threshold = yaml["adaptive_threshold"]["initial_threshold "].cast<double>();
+    return config;
+}
+
 PYBIND11_MODULE(kiss_icp_pybind, m) {
     auto vector3dvector = pybind_eigen_vector_of_vector<Eigen::Vector3d>(
         m, "_Vector3dVector", "std::vector<Eigen::Vector3d>",
         py::py_array_to_vectors_double<Eigen::Vector3d>);
+
+    py::class_<KissICP> internal_kiss_pipeline(m, "_KissICP", "Don't use this");
+    internal_kiss_pipeline
+        .def(py::init([](const py::dict &yaml) {
+            KISSConfig config = ReadConfig(yaml);
+            return std::make_shared<KissICP>(config);
+        }))
+        .def("_register_frame", &KissICP::RegisterFrame, "frame"_a, "timestamps"_a)
+        .def("_voxel_map", &KissICP::VoxelMap)
+        .def("_pose", [](KissICP &self) { return self.pose().matrix(); });
 
     // Map representation
     py::class_<VoxelHashMap> internal_map(m, "_VoxelHashMap", "Don't use this");

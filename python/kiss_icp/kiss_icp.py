@@ -20,59 +20,29 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from datetime import time
 import numpy as np
 
 from kiss_icp.config import KISSConfig
-from kiss_icp.mapping import get_voxel_hash_map
-from kiss_icp.preprocess import get_preprocessor
-from kiss_icp.registration import get_registration
-from kiss_icp.threshold import get_threshold_estimator
+from kiss_icp.pybind import kiss_icp_pybind
 from kiss_icp.voxelization import voxel_down_sample
 
 
 class KissICP:
     def __init__(self, config: KISSConfig):
-        self.last_pose = np.eye(4)
         self.last_delta = np.eye(4)
         self.config = config
-        self.adaptive_threshold = get_threshold_estimator(self.config)
-        self.preprocessor = get_preprocessor(self.config)
-        self.registration = get_registration(self.config)
-        self.local_map = get_voxel_hash_map(self.config)
+        self.kiss_icp = kiss_icp_pybind._KissICP(config)
+
+    @property
+    def last_pose(self):
+        self.kiss_icp._pose()
 
     def register_frame(self, frame, timestamps):
-        # Apply motion compensation
-        frame = self.preprocessor.preprocess(frame, timestamps, self.last_delta)
-
-        # Voxelize
-        source, frame_downsample = self.voxelize(frame)
-
-        # Get adaptive_threshold
-        sigma = self.adaptive_threshold.get_threshold()
-
-        # Compute initial_guess for ICP
-        initial_guess = self.last_pose @ self.last_delta
-
-        # Run ICP
-        new_pose = self.registration.align_points_to_map(
-            points=source,
-            voxel_map=self.local_map,
-            initial_guess=initial_guess,
-            max_correspondance_distance=3 * sigma,
-            kernel=sigma / 3,
-        )
-
-        # Compute the difference between the prediction and the actual estimate
-        model_deviation = np.linalg.inv(initial_guess) @ new_pose
-
-        # Update step: threshold, local map, delta, and the last pose
-        self.adaptive_threshold.update_model_deviation(model_deviation)
-        self.local_map.update(frame_downsample, new_pose)
-        self.last_delta = np.linalg.inv(self.last_pose) @ new_pose
-        self.last_pose = new_pose
-
-        # Return the (deskew) input raw scan (frame) and the points used for registration (source)
-        return frame, source
+        old_pose = self.last_pose
+        frame, source = self.kiss_icp._register_frame(frame, timestamps)
+        self.last_delta = np.linalg.inv(old_pose) @ self.last_pose
+        return np.asarray(frame), np.asarray(source)
 
     def voxelize(self, iframe):
         frame_downsample = voxel_down_sample(iframe, self.config.mapping.voxel_size * 0.5)

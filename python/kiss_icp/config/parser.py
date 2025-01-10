@@ -87,6 +87,10 @@ def load_config(
     if config.mapping.voxel_size is None:
         config.mapping.voxel_size = float(config.data.max_range / 100.0)
 
+    if config.adaptive_threshold.fixed_threshold is not None:
+        config.adaptive_threshold.initial_threshold = config.adaptive_threshold.fixed_threshold / 3
+        config.adaptive_threshold.min_motion_th = 1e8
+
     return config
 
 
