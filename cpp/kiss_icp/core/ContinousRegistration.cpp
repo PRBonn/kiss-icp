@@ -46,27 +46,19 @@ using Matrix3_6d = Eigen::Matrix<double, 3, 6>;
 using Vector6d = Eigen::Matrix<double, 6, 1>;
 }  // namespace Eigen
 
-using PointWithStamp = std::tuple<Eigen::Vector3d, double>;
+using PointWithStamp = std::tuple<const Eigen::Vector3d &, const double &>;
 using Correspondences = tbb::concurrent_vector<std::pair<PointWithStamp, Eigen::Vector3d>>;
 using LinearSystem = std::pair<Eigen::Matrix6d, Eigen::Vector6d>;
 
 namespace {
 inline double square(double x) { return x * x; }
 
-void TransformPoints(const kiss_icp::State &x, kiss_icp::StampedPointCloud &points) {
-    std::transform(points.cbegin(), points.cend(), points.begin(),
-                   [&](const auto &point_and_stamp) {
-                       const auto &[p, alpha] = point_and_stamp;
-                       return x.poseAtNormalizedTime(alpha) * p;
-                   });
-}
-
 struct PointCloudIterator {
     PointCloudIterator(const std::vector<Eigen::Vector3d>::const_iterator &pts,
                        const std::vector<double>::const_iterator &stamps)
         : pts_(pts), stamps_(stamps) {}
 
-    const PointWithStamp &operator*() const { return std::make_tuple(*pts_, *stamps_); }
+    const PointWithStamp operator*() const { return std::make_tuple(*pts_, *stamps_); }
 
     bool operator==(const PointCloudIterator &other) const {
         return pts_ == other.pts_ && stamps_ == other.stamps_;
@@ -75,6 +67,8 @@ struct PointCloudIterator {
     bool operator!=(const PointCloudIterator &other) const {
         return pts_ != other.pts_ || stamps_ != other.stamps_;
     }
+
+    int operator-(const PointCloudIterator &other) const { return std::distance(pts_, other.pts_); }
 
     PointCloudIterator &operator++() {
         ++pts_;
@@ -88,7 +82,7 @@ struct PointCloudIterator {
 
 Correspondences DataAssociation(const std::vector<Eigen::Vector3d> &points,
                                 const std::vector<double> &stamps,
-                                const State &x,
+                                const kiss_icp::State &x,
                                 const kiss_icp::VoxelHashMap &voxel_map,
                                 const double max_correspondance_distance) {
     PointCloudIterator begin(points.cbegin(), stamps.cbegin());
@@ -111,14 +105,22 @@ Correspondences DataAssociation(const std::vector<Eigen::Vector3d> &points,
     return correspondences;
 }
 
-LinearSystem BuildLinearSystem(const Correspondences &correspondences, const double kernel_scale) {
-    auto compute_jacobian_and_residual = [](const auto &correspondence) {
+LinearSystem BuildLinearSystem(const Correspondences &correspondences,
+                               const kiss_icp::State &x,
+                               const double kernel_scale) {
+    auto compute_jacobian_and_residual = [&](const auto &correspondence) {
         const auto &[source, target] = correspondence;
-        const Eigen::Vector3d residual = source - target;
-        Eigen::Matrix3_6d J_r;
-        J_r.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity();
-        J_r.block<3, 3>(0, 3) = -1.0 * Sophus::SO3d::hat(source);
-        return std::make_tuple(J_r, residual);
+        const auto &[point, alpha] = source;
+        const Eigen::Vector3d residual = x.transformPoint(point, alpha) - target;
+        Eigen::Matrix3_6d J_icp;
+        J_icp.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity();
+        J_icp.block<3, 3>(0, 3) = -1.0 * Sophus::SO3d::hat(point);
+        const Eigen::Matrix3d &rotation_at_alpha = x.poseAtNormalizedTime(alpha).so3().matrix();
+        const Eigen::Vector6d &omega_at_alpha = x.relativeMotionVectorAtNormalizedTime(alpha);
+        const auto J_exp = Sophus::SE3d::leftJacobian(-omega_at_alpha);
+
+        const auto J = rotation_at_alpha * J_icp * J_exp * std::pow(alpha, 3);
+        return std::make_tuple(J, residual);
     };
 
     auto sum_linear_systems = [](LinearSystem a, const LinearSystem &b) {

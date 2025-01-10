@@ -26,8 +26,8 @@
 #include <tuple>
 #include <vector>
 
+#include "kiss_icp/core/ContinousRegistration.hpp"
 #include "kiss_icp/core/Preprocessing.hpp"
-#include "kiss_icp/core/Registration.hpp"
 #include "kiss_icp/core/Threshold.hpp"
 #include "kiss_icp/core/VoxelHashMap.hpp"
 
@@ -86,11 +86,12 @@ public:
 private:
     Sophus::SE3d last_pose_;
     Sophus::SE3d last_delta_;
+    State state_;
 
     // KISS-ICP pipeline modules
     KISSConfig config_;
     Preprocessor preprocessor_;
-    Registration registration_;
+    ContinousRegistration registration_;
     VoxelHashMap local_map_;
     AdaptiveThreshold adaptive_threshold_;
 };

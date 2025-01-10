@@ -30,37 +30,92 @@
 #include "kiss_icp/core/Registration.hpp"
 #include "kiss_icp/core/VoxelHashMap.hpp"
 
+namespace {
+using StampedPointCloud = std::tuple<std::vector<Eigen::Vector3d>, std::vector<double>>;
+StampedPointCloud Downsample(const std::vector<Eigen::Vector3d> &frame,
+                             const std::vector<double> &timestamps,
+                             const double voxel_size,
+                             const double max_range,
+                             const double min_range) {
+    auto is_in_range = [&](const auto &point) {
+        const double point_range = point.norm();
+        return point_range < max_range && point_range > min_range;
+    };
+    tsl::robin_map<Voxel, size_t> grid;
+    grid.reserve(frame.size());
+    for (size_t i = 0; i < frame.size(); ++i) {
+        const auto &point = frame[i];
+        const auto voxel = PointToVoxel(frame[i], voxel_size);
+        if (!grid.contains(voxel)) grid.insert({voxel, i});
+    };
+    std::vector<Eigen::Vector3d> frame_dowsampled;
+    frame_dowsampled.reserve(grid.size());
+    std::vector<double> timestamps_dowsampled;
+    timestamps_dowsampled.reserve(grid.size());
+    std::for_each(grid.cbegin(), grid.cend(), [&](const auto &voxel_and_point) {
+        const auto &index = voxel_and_point.second;
+        frame_dowsampled.emplace_back(frame[index]);
+        timestamps_dowsampled.emplace_back(timestamps[index]);
+    });
+    return std::make_tuple(frame_dowsampled, timestamps_dowsampled);
+}
+std::tuple<StampedPointCloud, StampedPointCloud> Preprocess(
+    const std::vector<Eigen::Vector3d> &frame,
+    const std::vector<double> &timestamps,
+    const double voxel_size,
+    const double max_range,
+    const double min_range) {
+    const auto &[pts_downsampled, stamps_downsampled] =
+        Downsample(frame, timestamps, 0.5 * voxel_size, max_range, min_range);
+    const auto &[pts_source, stamps_source] =
+        Downsample(pts_downsampled, stamps_downsampled, 1.5 * voxel_size, max_range, min_range);
+    return std::make_tuple({pts_source, stamps_source}, {pts_downsampled, stamps_downsampled});
+}
+
+std::vector<Eigen::Vector3d> DeskewScan(const StampedPointCloud &frame, const State &state) {
+    const auto &[pts, stamps] = frame;
+    std::vector<Eigen::Vector3d> deskewed_frame(pts.size());
+    const auto &final_pose_inverse = state.poseAtNormalizedTime(1.0).inverse();
+    for (size_t i = 0; i < pts.size(); ++i) {
+        deskewed_frame[i] = final_pose_inverse * state.transformPoint(pts[i], stamps[i]);
+    }
+    return deskewed_frame;
+}
+}  // namespace
+
 namespace kiss_icp::pipeline {
 
 KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vector3d> &frame,
                                                     const std::vector<double> &timestamps) {
     // Preprocess the input cloud
-    const auto &preprocessed_frame = preprocessor_.Preprocess(frame, timestamps, last_delta_);
-
-    // Voxelize
-    const auto &[source, frame_downsample] = Voxelize(preprocessed_frame);
+    const auto &[pcd_source, pcd_downsampled] =
+        Preprocess(frame, timestamps, config_.voxel_size, config_.max_range, config_.min_range);
+    const auto &[source, source_stamps] = pcd_source;
 
     // Get adaptive_threshold
     const double sigma = adaptive_threshold_.ComputeThreshold();
 
-    // Compute initial_guess for ICP
-    const auto initial_guess = last_pose_ * last_delta_;
+    const auto previous_pose = state_.poseAtNormalizedTime(1.0);
 
     // Run ICP
-    const auto new_pose = registration_.AlignPointsToMap(source,         // frame
-                                                         local_map_,     // voxel_map
-                                                         initial_guess,  // initial_guess
-                                                         3.0 * sigma,    // max_correspondence_dist
-                                                         sigma / 3.0);   // kernel
+    state_ = registration_.AlignPointsToMap(source,  // frame
+                                            source_stamps,
+                                            local_map_,    // voxel_map
+                                            state_,        // initial_guess
+                                            3.0 * sigma,   // max_correspondence_dist
+                                            sigma / 3.0);  // kernel
 
     // Compute the difference between the prediction and the actual estimate
-    const auto model_deviation = initial_guess.inverse() * new_pose;
+    const auto new_pose = state.poseAtNormalizedTime(1.0);
+    const auto model_deviation = previous_pose.inverse() * new_pose;
 
     // Update step: threshold, local map, delta, and the last pose
     adaptive_threshold_.UpdateModelDeviation(model_deviation);
+    const auto &frame_dowsampled = DeskewScan(pcd_downsampled, state_);
     local_map_.Update(frame_downsample, new_pose);
     last_delta_ = last_pose_.inverse() * new_pose;
     last_pose_ = new_pose;
+    state_.computeNextState();
 
     // Return the (deskew) input raw scan (frame) and the points used for registration (source)
     return {frame, source};
