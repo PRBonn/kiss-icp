@@ -21,5 +21,5 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 pybind11_add_module(kiss_icp_pybind MODULE kiss_icp_pybind.cpp)
-target_link_libraries(kiss_icp_pybind PRIVATE kiss_icp_core kiss_icp_metrics)
+target_link_libraries(kiss_icp_pybind PRIVATE kiss_icp_core kiss_icp_pipeline kiss_icp_metrics)
 install(TARGETS kiss_icp_pybind DESTINATION .)

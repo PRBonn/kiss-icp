@@ -48,22 +48,25 @@ PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector3d>);
 namespace kiss_icp {
 using namespace pipeline;
 
-KissICP FromConfig(const py::dict &yaml) {
+KissICP FromConfig(const py::dict &data,
+                   const py::dict &mapping,
+                   const py::dict &registration,
+                   const py::dict &adaptive_threshold) {
     KISSConfig config;
     // data
-    config.max_range = yaml["data"]["max_range"].cast<double>();
-    config.min_range = yaml["data"]["min_range"].cast<double>();
-    config.deskew = yaml["data"]["deskew"].cast<bool>();
+    config.max_range = data["max_range"].cast<double>();
+    config.min_range = data["min_range"].cast<double>();
+    config.deskew = data["deskew"].cast<bool>();
     // mapping
-    config.voxel_size = yaml["mapping"]["voxel_size"].cast<double>();
-    config.max_points_per_voxel = yaml["mapping"]["max_points_per_voxel"].cast<int>();
+    config.voxel_size = mapping["voxel_size"].cast<double>();
+    config.max_points_per_voxel = mapping["max_points_per_voxel"].cast<int>();
     // registration
-    config.max_num_iterations = yaml["registration"]["max_num_iterations "].cast<int>();
-    config.convergence_criterion = yaml["registration"]["convergence_criterion "].cast<double>();
-    config.max_num_threads = yaml["registration"]["max_num_threads "].cast<int>();
+    config.max_num_iterations = registration["max_num_iterations"].cast<int>();
+    config.convergence_criterion = registration["convergence_criterion"].cast<double>();
+    config.max_num_threads = registration["max_num_threads"].cast<int>();
     // adaptive threshold
-    config.min_motion_th = yaml["adaptive_threshold"]["min_motion_th"].cast<double>();
-    config.initial_threshold = yaml["adaptive_threshold"]["initial_threshold "].cast<double>();
+    config.min_motion_th = adaptive_threshold["min_motion_th"].cast<double>();
+    config.initial_threshold = adaptive_threshold["initial_threshold"].cast<double>();
     return KissICP(config);
 }
 
@@ -75,7 +78,7 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
     py::class_<KissICP> internal_kiss_pipeline(m, "_KissICP", "Don't use this");
     internal_kiss_pipeline.def(py::init(&FromConfig))
         .def("_register_frame", &KissICP::RegisterFrame, "frame"_a, "timestamps"_a)
-        .def("_voxel_map", [](KissICP &self) { return self.VoxelMap(); })
+        .def("_local_map", [](KissICP &self) { return self.LocalMap(); })
         .def("_pose", [](KissICP &self) { return self.pose().matrix(); });
 
     // Map representation

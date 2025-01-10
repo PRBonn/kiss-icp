@@ -32,15 +32,27 @@ class KissICP:
     def __init__(self, config: KISSConfig):
         self.last_delta = np.eye(4)
         self.config = config
-        self.kiss_icp = kiss_icp_pybind._KissICP(config)
+        print(self.config.model_dump())
+        self.kiss_icp = kiss_icp_pybind._KissICP(
+            config.data.model_dump(),
+            config.mapping.model_dump(),
+            config.registration.model_dump(),
+            config.adaptive_threshold.model_dump(),
+        )
 
     @property
     def last_pose(self):
-        self.kiss_icp._pose()
+        return self.kiss_icp._pose()
+
+    @property
+    def local_map(self):
+        return np.asarray(self.kiss_icp._local_map())
 
     def register_frame(self, frame, timestamps):
         old_pose = self.last_pose
-        frame, source = self.kiss_icp._register_frame(frame, timestamps)
+        frame, source = self.kiss_icp._register_frame(
+            kiss_icp_pybind._Vector3dVector(frame), timestamps
+        )
         self.last_delta = np.linalg.inv(old_pose) @ self.last_pose
         return np.asarray(frame), np.asarray(source)
 

@@ -137,7 +137,7 @@ class Kissualizer(StubVisualizer):
         # LOCAL MAP
         map_cloud = self._ps.register_point_cloud(
             "local_map",
-            target_map.point_cloud(),
+            target_map,
             color=LOCAL_MAP_COLOR,
             point_render_mode="quad",
         )
