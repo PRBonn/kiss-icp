@@ -46,9 +46,9 @@ using namespace py::literals;
 PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector3d>);
 
 namespace kiss_icp {
-using pipeline;
+using namespace pipeline;
 
-KISSConfig ReadConfig(const py::dict &yaml) {
+KissICP FromConfig(const py::dict &yaml) {
     KISSConfig config;
     // data
     config.max_range = yaml["data"]["max_range"].cast<double>();
@@ -64,7 +64,7 @@ KISSConfig ReadConfig(const py::dict &yaml) {
     // adaptive threshold
     config.min_motion_th = yaml["adaptive_threshold"]["min_motion_th"].cast<double>();
     config.initial_threshold = yaml["adaptive_threshold"]["initial_threshold "].cast<double>();
-    return config;
+    return KissICP(config);
 }
 
 PYBIND11_MODULE(kiss_icp_pybind, m) {
@@ -73,13 +73,9 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
         py::py_array_to_vectors_double<Eigen::Vector3d>);
 
     py::class_<KissICP> internal_kiss_pipeline(m, "_KissICP", "Don't use this");
-    internal_kiss_pipeline
-        .def(py::init([](const py::dict &yaml) {
-            KISSConfig config = ReadConfig(yaml);
-            return std::make_shared<KissICP>(config);
-        }))
+    internal_kiss_pipeline.def(py::init(&FromConfig))
         .def("_register_frame", &KissICP::RegisterFrame, "frame"_a, "timestamps"_a)
-        .def("_voxel_map", &KissICP::VoxelMap)
+        .def("_voxel_map", [](KissICP &self) { return self.VoxelMap(); })
         .def("_pose", [](KissICP &self) { return self.pose().matrix(); });
 
     // Map representation
