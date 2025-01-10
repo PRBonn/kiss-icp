@@ -36,6 +36,7 @@
 #include <sophus/so3.hpp>
 #include <tuple>
 
+#include "State.hpp"
 #include "VoxelHashMap.hpp"
 #include "VoxelUtils.hpp"
 
@@ -45,29 +46,63 @@ using Matrix3_6d = Eigen::Matrix<double, 3, 6>;
 using Vector6d = Eigen::Matrix<double, 6, 1>;
 }  // namespace Eigen
 
-using Correspondences = tbb::concurrent_vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>;
+using PointWithStamp = std::tuple<Eigen::Vector3d, double>;
+using Correspondences = tbb::concurrent_vector<std::pair<PointWithStamp, Eigen::Vector3d>>;
 using LinearSystem = std::pair<Eigen::Matrix6d, Eigen::Vector6d>;
 
 namespace {
 inline double square(double x) { return x * x; }
 
-void TransformPoints(const Sophus::SE3d &T, std::vector<Eigen::Vector3d> &points) {
+void TransformPoints(const kiss_icp::State &x, kiss_icp::StampedPointCloud &points) {
     std::transform(points.cbegin(), points.cend(), points.begin(),
-                   [&](const auto &point) { return T * point; });
+                   [&](const auto &point_and_stamp) {
+                       const auto &[p, alpha] = point_and_stamp;
+                       return x.poseAtNormalizedTime(alpha) * p;
+                   });
 }
 
+struct PointCloudIterator {
+    PointCloudIterator(const std::vector<Eigen::Vector3d>::const_iterator &pts,
+                       const std::vector<double>::const_iterator &stamps)
+        : pts_(pts), stamps_(stamps) {}
+
+    const PointWithStamp &operator*() const { return std::make_tuple(*pts_, *stamps_); }
+
+    bool operator==(const PointCloudIterator &other) const {
+        return pts_ == other.pts_ && stamps_ == other.stamps_;
+    }
+
+    bool operator!=(const PointCloudIterator &other) const {
+        return pts_ != other.pts_ || stamps_ != other.stamps_;
+    }
+
+    PointCloudIterator &operator++() {
+        ++pts_;
+        ++stamps_;
+        return *this;
+    }
+
+    std::vector<Eigen::Vector3d>::const_iterator pts_;
+    std::vector<double>::const_iterator stamps_;
+};
+
 Correspondences DataAssociation(const std::vector<Eigen::Vector3d> &points,
+                                const std::vector<double> &stamps,
+                                const State &x,
                                 const kiss_icp::VoxelHashMap &voxel_map,
                                 const double max_correspondance_distance) {
-    using points_iterator = std::vector<Eigen::Vector3d>::const_iterator;
+    PointCloudIterator begin(points.cbegin(), stamps.cbegin());
+    PointCloudIterator end(points.cend(), stamps.cend());
     Correspondences correspondences;
     correspondences.reserve(points.size());
     tbb::parallel_for(
         // Range
-        tbb::blocked_range<points_iterator>{points.cbegin(), points.cend()},
-        [&](const tbb::blocked_range<points_iterator> &r) {
-            std::for_each(r.begin(), r.end(), [&](const auto &point) {
-                const auto &[closest_neighbor, distance] = voxel_map.GetClosestNeighbor(point);
+        tbb::blocked_range<PointCloudIterator>{begin, end},
+        [&](const tbb::blocked_range<PointCloudIterator> &r) {
+            std::for_each(r.begin(), r.end(), [&](const auto &point_with_stamp) {
+                const auto &[point, stamp] = point_with_stamp;
+                const auto &[closest_neighbor, distance] =
+                    voxel_map.GetClosestNeighbor(x.poseAtNormalizedTime(stamp) * point);
                 if (distance < max_correspondance_distance) {
                     correspondences.emplace_back(point, closest_neighbor);
                 }
@@ -136,35 +171,30 @@ ContinousRegistration::ContinousRegistration(int max_num_iteration,
         tbb::global_control::max_allowed_parallelism, static_cast<size_t>(max_num_threads_));
 }
 
-Sophus::SE3d ContinousRegistration::AlignPointsToMap(const std::vector<Eigen::Vector3d> &frame,
-                                                     const VoxelHashMap &voxel_map,
-                                                     const Sophus::SE3d &initial_guess,
-                                                     const double max_distance,
-                                                     const double kernel_scale) {
+State ContinousRegistration::AlignPointsToMap(const std::vector<Eigen::Vector3d> &frame,
+                                              const std::vector<double> &timestamps,
+                                              const VoxelHashMap &voxel_map,
+                                              const State &initial_guess,
+                                              const double max_distance,
+                                              const double kernel_scale) {
     if (voxel_map.Empty()) return initial_guess;
 
     // Equation (9)
     std::vector<Eigen::Vector3d> source = frame;
-    TransformPoints(initial_guess, source);
-
-    // ICP-loop
-    Sophus::SE3d T_icp = Sophus::SE3d();
+    State x = initial_guess;
     for (int j = 0; j < max_num_iterations_; ++j) {
         // Equation (10)
-        const auto correspondences = DataAssociation(source, voxel_map, max_distance);
+        const auto correspondences =
+            DataAssociation(source, timestamps, x, voxel_map, max_distance);
         // Equation (11)
-        const auto &[JTJ, JTr] = BuildLinearSystem(correspondences, kernel_scale);
+        const auto &[JTJ, JTr] = BuildLinearSystem(correspondences, x, kernel_scale);
         const Eigen::Vector6d dx = JTJ.ldlt().solve(-JTr);
-        const Sophus::SE3d estimation = Sophus::SE3d::exp(dx);
-        // Equation (12)
-        TransformPoints(estimation, source);
-        // Update iterations
-        T_icp = estimation * T_icp;
+        x.updateCoefficients(dx);
         // Termination criteria
         if (dx.norm() < convergence_criterion_) break;
     }
     // Spit the final transformation
-    return T_icp * initial_guess;
+    return x;
 }
 
 }  // namespace kiss_icp
