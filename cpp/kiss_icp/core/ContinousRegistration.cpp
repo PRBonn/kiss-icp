@@ -86,8 +86,8 @@ LinearSystem BuildLinearSystem(const Correspondences &correspondences,
         const auto &R = pose.so3().matrix();
         const Eigen::Vector3d residual = pose * source - target;
         Eigen::Matrix3_6d J_icp;
-        J_icp.block<3, 3>(0, 0) = R;
-        J_icp.block<3, 3>(0, 3) = -R * Sophus::SO3d::hat(source);
+        J_icp.block<3, 3>(0, 0) = R * square(alpha);
+        J_icp.block<3, 3>(0, 3) = -R * Sophus::SO3d::hat(source) * square(alpha);
         return std::make_tuple(J_icp, residual);
     };
 
@@ -159,8 +159,7 @@ State ContinousRegistration::AlignPointsToMap(const std::vector<Eigen::Vector3d>
         // Equation (11)
         const auto &[JTJ, JTr] = BuildLinearSystem(correspondences, x, kernel_scale);
         const Eigen::Vector6d dx = JTJ.ldlt().solve(-JTr);
-        x.pose = x.pose * Sophus::SE3d::exp(dx);
-        // x.updateCoefficients(dx);
+        x.updateCoefficients(dx);
         // Termination criteria
         if (dx.norm() < convergence_criterion_) break;
     }

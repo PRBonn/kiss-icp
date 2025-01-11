@@ -1,6 +1,7 @@
 #include "State.hpp"
 
 #include <iostream>
+#include <sophus/so3.hpp>
 
 namespace {
 double square(const double x) { return x * x; }

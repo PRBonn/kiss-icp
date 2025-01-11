@@ -70,11 +70,10 @@ std::tuple<StampedPointCloud, StampedPointCloud> Preprocess(
     const double max_range,
     const double min_range) {
     const std::vector<double> &stamps = std::invoke([&]() {
-        (void)timestamps;
-        // if (timestamps.empty()) {
-        return std::vector<double>(frame.size(), 1.0);
-        // }
-        // return timestamps;
+        if (timestamps.empty()) {
+            return std::vector<double>(frame.size(), 1.0);
+        }
+        return timestamps;
     });
     const auto &[pts_downsampled, stamps_downsampled] =
         Downsample(frame, stamps, 0.5 * voxel_size, max_range, min_range);
@@ -119,7 +118,6 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
 
     // Compute the difference between the prediction and the actual estimate
     const auto new_pose = state_.poseAtNormalizedTime(1.0);
-    std::cerr << "Velocity: " << state_.velocityAtNormalizedTime(1.0).transpose() << std::endl;
     const auto model_deviation = previous_pose.inverse() * new_pose;
 
     // Update step: threshold, local map, delta, and the last pose
@@ -128,9 +126,9 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
     local_map_.Update(frame_downsampled, new_pose.translation());
     last_delta_ = last_pose_.inverse() * new_pose;
     last_pose_ = new_pose;
-    // state_.computeNextState();
     state_.pose = state_.poseAtNormalizedTime(1.0);
-    state_.velocity_coefficient = last_delta_.log();
+    state_.velocity_coefficient = state_.velocityAtNormalizedTime(1.0);
+    state_.acceleration_coefficient.setZero();
 
     // Return the (deskew) input raw scan (frame) and the points used for registration (source)
     return {frame, source};
