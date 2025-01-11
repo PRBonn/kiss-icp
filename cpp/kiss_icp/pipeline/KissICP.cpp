@@ -33,65 +33,65 @@
 
 namespace {
 using namespace kiss_icp;
-// using StampedPointCloud = std::tuple<std::vector<Eigen::Vector3d>, std::vector<double>>;
-// StampedPointCloud Downsample(const std::vector<Eigen::Vector3d> &frame,
-//                              const std::vector<double> &timestamps,
-//                              const double voxel_size,
-//                              const double max_range,
-//                              const double min_range) {
-//     auto is_in_range = [&](const auto &point) {
-//         const double point_range = point.norm();
-//         return point_range < max_range && point_range > min_range;
-//     };
-//     tsl::robin_map<Voxel, size_t> grid;
-//     grid.reserve(frame.size());
-//     for (size_t i = 0; i < frame.size(); ++i) {
-//         const auto &point = frame[i];
-//         const auto voxel = PointToVoxel(point, voxel_size);
-//         if (!grid.contains(voxel) && is_in_range(point)) {
-//             grid.insert({voxel, i});
-//         };
-//     };
-//     std::vector<Eigen::Vector3d> frame_dowsampled;
-//     frame_dowsampled.reserve(grid.size());
-//     std::vector<double> timestamps_dowsampled;
-//     timestamps_dowsampled.reserve(grid.size());
-//     std::for_each(grid.cbegin(), grid.cend(), [&](const auto &voxel_and_point) {
-//         const auto &index = voxel_and_point.second;
-//         frame_dowsampled.emplace_back(frame[index]);
-//         timestamps_dowsampled.emplace_back(timestamps[index]);
-//     });
-//     return std::make_tuple(frame_dowsampled, timestamps_dowsampled);
-// }
-// std::tuple<StampedPointCloud, StampedPointCloud> Preprocess(
-//     const std::vector<Eigen::Vector3d> &frame,
-//     const std::vector<double> &timestamps,
-//     const double voxel_size,
-//     const double max_range,
-//     const double min_range) {
-//     const std::vector<double> &stamps = std::invoke([&]() {
-//         (void)timestamps;
-//         // if (timestamps.empty()) {
-//         return std::vector<double>(frame.size(), 1.0);
-//         // }
-//         // return timestamps;
-//     });
-//     const auto &[pts_downsampled, stamps_downsampled] =
-//         Downsample(frame, stamps, 0.5 * voxel_size, max_range, min_range);
-//     const auto &[pts_source, stamps_source] =
-//         Downsample(pts_downsampled, stamps_downsampled, 1.5 * voxel_size, max_range, min_range);
-//     return std::make_tuple(std::make_tuple(pts_source, stamps_source),
-//                            std::make_tuple(pts_downsampled, stamps_downsampled));
-// }
+using StampedPointCloud = std::tuple<std::vector<Eigen::Vector3d>, std::vector<double>>;
+StampedPointCloud Downsample(const std::vector<Eigen::Vector3d> &frame,
+                             const std::vector<double> &timestamps,
+                             const double voxel_size,
+                             const double max_range,
+                             const double min_range) {
+    auto is_in_range = [&](const auto &point) {
+        const double point_range = point.norm();
+        return point_range < max_range && point_range > min_range;
+    };
+    tsl::robin_map<Voxel, size_t> grid;
+    grid.reserve(frame.size());
+    for (size_t i = 0; i < frame.size(); ++i) {
+        const auto &point = frame[i];
+        const auto voxel = PointToVoxel(point, voxel_size);
+        if (!grid.contains(voxel) && is_in_range(point)) {
+            grid.insert({voxel, i});
+        };
+    };
+    std::vector<Eigen::Vector3d> frame_dowsampled;
+    frame_dowsampled.reserve(grid.size());
+    std::vector<double> timestamps_dowsampled;
+    timestamps_dowsampled.reserve(grid.size());
+    std::for_each(grid.cbegin(), grid.cend(), [&](const auto &voxel_and_point) {
+        const auto &index = voxel_and_point.second;
+        frame_dowsampled.emplace_back(frame[index]);
+        timestamps_dowsampled.emplace_back(timestamps[index]);
+    });
+    return std::make_tuple(frame_dowsampled, timestamps_dowsampled);
+}
+std::tuple<StampedPointCloud, StampedPointCloud> Preprocess(
+    const std::vector<Eigen::Vector3d> &frame,
+    const std::vector<double> &timestamps,
+    const double voxel_size,
+    const double max_range,
+    const double min_range) {
+    const std::vector<double> &stamps = std::invoke([&]() {
+        (void)timestamps;
+        // if (timestamps.empty()) {
+        return std::vector<double>(frame.size(), 1.0);
+        // }
+        // return timestamps;
+    });
+    const auto &[pts_downsampled, stamps_downsampled] =
+        Downsample(frame, stamps, 0.5 * voxel_size, max_range, min_range);
+    const auto &[pts_source, stamps_source] =
+        Downsample(pts_downsampled, stamps_downsampled, 1.5 * voxel_size, max_range, min_range);
+    return std::make_tuple(std::make_tuple(pts_source, stamps_source),
+                           std::make_tuple(pts_downsampled, stamps_downsampled));
+}
 
-// std::vector<Eigen::Vector3d> DeskewScan(const StampedPointCloud &frame, const State &state) {
-//     const auto &[pts, stamps] = frame;
-//     std::vector<Eigen::Vector3d> deskewed_frame(pts.size());
-//     for (size_t i = 0; i < pts.size(); ++i) {
-//         deskewed_frame[i] = state.transformPoint(pts[i], stamps[i]);
-//     }
-//     return deskewed_frame;
-// }
+std::vector<Eigen::Vector3d> DeskewScan(const StampedPointCloud &frame, const State &state) {
+    const auto &[pts, stamps] = frame;
+    std::vector<Eigen::Vector3d> deskewed_frame(pts.size());
+    for (size_t i = 0; i < pts.size(); ++i) {
+        deskewed_frame[i] = state.transformPoint(pts[i], stamps[i]);
+    }
+    return deskewed_frame;
+}
 }  // namespace
 
 namespace kiss_icp::pipeline {
@@ -99,19 +99,15 @@ namespace kiss_icp::pipeline {
 KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vector3d> &frame,
                                                     const std::vector<double> &timestamps) {
     // Preprocess the input cloud
-    // const auto &[pcd_source, pcd_downsampled] =
-    //     Preprocess(frame, timestamps, config_.voxel_size, config_.max_range, config_.min_range);
-    // const auto &[source, source_stamps] = pcd_source;
-    const auto &preprocessed_frame = preprocessor_.Preprocess(frame, timestamps, last_delta_);
+    const auto &[pcd_source, pcd_downsampled] =
+        Preprocess(frame, timestamps, config_.voxel_size, config_.max_range, config_.min_range);
 
-    const auto &[source, frame_dowsampled] = Voxelize(preprocessed_frame);
-    const std::vector<double> source_stamps(source.size(), 1.0);
+    const auto &[source, source_stamps] = pcd_source;
 
     // Get adaptive_threshold
     const double sigma = adaptive_threshold_.ComputeThreshold();
 
-    state_.pose = state_.pose * last_delta_;
-    const auto previous_pose = state_.pose;
+    const auto previous_pose = state_.poseAtNormalizedTime(1.0);
 
     // Run ICP
     state_ = registration_.AlignPointsToMap(source,  // frame
@@ -122,18 +118,19 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
                                             sigma / 3.0);  // kernel
 
     // Compute the difference between the prediction and the actual estimate
-    const auto new_pose = state_.pose;
+    const auto new_pose = state_.poseAtNormalizedTime(1.0);
     std::cerr << "Velocity: " << state_.velocityAtNormalizedTime(1.0).transpose() << std::endl;
     const auto model_deviation = previous_pose.inverse() * new_pose;
 
     // Update step: threshold, local map, delta, and the last pose
     adaptive_threshold_.UpdateModelDeviation(model_deviation);
-    // const auto &frame_downsampled = DeskewScan(pcd_downsampled, state_);
-    // local_map_.Update(frame_downsampled, new_pose.translation());
-    local_map_.Update(frame_dowsampled, new_pose);
+    const auto &frame_downsampled = DeskewScan(pcd_downsampled, state_);
+    local_map_.Update(frame_downsampled, new_pose.translation());
     last_delta_ = last_pose_.inverse() * new_pose;
     last_pose_ = new_pose;
     // state_.computeNextState();
+    state_.pose = state_.poseAtNormalizedTime(1.0);
+    state_.velocity_coefficient = last_delta_.log();
 
     // Return the (deskew) input raw scan (frame) and the points used for registration (source)
     return {frame, source};

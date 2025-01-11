@@ -82,7 +82,7 @@ LinearSystem BuildLinearSystem(const Correspondences &correspondences,
                                const double kernel_scale) {
     auto compute_jacobian_and_residual = [&](const auto &correspondence) {
         const auto &[source, alpha, target] = correspondence;
-        const auto &pose = x.pose;
+        const auto &pose = x.poseAtNormalizedTime(alpha);
         const auto &R = pose.so3().matrix();
         const Eigen::Vector3d residual = pose * source - target;
         Eigen::Matrix3_6d J_icp;
