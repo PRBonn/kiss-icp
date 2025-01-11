@@ -84,14 +84,14 @@ std::tuple<StampedPointCloud, StampedPointCloud> Preprocess(
                            std::make_tuple(pts_downsampled, stamps_downsampled));
 }
 
-std::vector<Eigen::Vector3d> DeskewScan(const StampedPointCloud &frame, const State &state) {
-    const auto &[pts, stamps] = frame;
-    std::vector<Eigen::Vector3d> deskewed_frame(pts.size());
-    for (size_t i = 0; i < pts.size(); ++i) {
-        deskewed_frame[i] = state.transformPoint(pts[i], stamps[i]);
-    }
-    return deskewed_frame;
-}
+// std::vector<Eigen::Vector3d> DeskewScan(const StampedPointCloud &frame, const State &state) {
+//     const auto &[pts, stamps] = frame;
+//     std::vector<Eigen::Vector3d> deskewed_frame(pts.size());
+//     for (size_t i = 0; i < pts.size(); ++i) {
+//         deskewed_frame[i] = state.transformPoint(pts[i], stamps[i]);
+//     }
+//     return deskewed_frame;
+// }
 }  // namespace
 
 namespace kiss_icp::pipeline {
@@ -106,7 +106,7 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
     // Get adaptive_threshold
     const double sigma = adaptive_threshold_.ComputeThreshold();
 
-    const auto previous_pose = state_.poseAtNormalizedTime(1.0);
+    const auto previous_pose = state_.pose;
 
     // Run ICP
     state_ = registration_.AlignPointsToMap(source,  // frame
@@ -117,17 +117,18 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
                                             sigma / 3.0);  // kernel
 
     // Compute the difference between the prediction and the actual estimate
-    const auto new_pose = state_.poseAtNormalizedTime(1.0);
+    const auto new_pose = state_.pose;
     std::cerr << "Velocity: " << state_.velocityAtNormalizedTime(1.0).transpose() << std::endl;
     const auto model_deviation = previous_pose.inverse() * new_pose;
 
     // Update step: threshold, local map, delta, and the last pose
     adaptive_threshold_.UpdateModelDeviation(model_deviation);
-    const auto &frame_downsampled = DeskewScan(pcd_downsampled, state_);
-    local_map_.Update(frame_downsampled, new_pose);
+    // const auto &frame_downsampled = DeskewScan(pcd_downsampled, state_);
+    // local_map_.Update(frame_downsampled, new_pose.translation());
+    local_map_.Update(std::get<0>(pcd_downsampled), new_pose);
     last_delta_ = last_pose_.inverse() * new_pose;
     last_pose_ = new_pose;
-    state_.computeNextState();
+    // state_.computeNextState();
 
     // Return the (deskew) input raw scan (frame) and the points used for registration (source)
     return {frame, source};

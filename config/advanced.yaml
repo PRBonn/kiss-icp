@@ -13,7 +13,7 @@ mapping:
   max_points_per_voxel: 20
 
 adaptive_threshold:
-  fixed_threshold: 0.3 # <- optional, disables adaptive threshold
+  fixed_threshold: 7.0 # <- optional, disables adaptive threshold
   # initial_threshold: 2.0
   # min_motion_th: 0.1
 

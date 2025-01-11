@@ -17,13 +17,11 @@ Sophus::SE3d State::poseAtNormalizedTime(const double alpha) const {
 }
 
 State::Vector6d State::velocityAtNormalizedTime(const double alpha) const {
-    const auto Jr_inverse = Sophus::SE3d::leftJacobianInverse(-pose.log());
-    return Jr_inverse * (2.0 * acceleration_coefficient * alpha + velocity_coefficient);
+    return 2.0 * acceleration_coefficient * alpha + velocity_coefficient;
 }
 
 void State::computeNextState() {
-    const auto &new_pose = poseAtNormalizedTime(1.0);
+    pose = poseAtNormalizedTime(1.0);
     velocity_coefficient = velocityAtNormalizedTime(1.0);
-    pose = new_pose;
 }
 }  // namespace kiss_icp
