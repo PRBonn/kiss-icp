@@ -82,17 +82,13 @@ LinearSystem BuildLinearSystem(const Correspondences &correspondences,
                                const double kernel_scale) {
     auto compute_jacobian_and_residual = [&](const auto &correspondence) {
         const auto &[source, alpha, target] = correspondence;
-        const auto &pose_at_alpha = x.poseAtNormalizedTime(alpha);
-        // const auto &omega_at_alpha = x.relativeMotionVectorAtNormalizedTime(alpha);
-        const auto &R_alpha = pose_at_alpha.so3().matrix();
-        const Eigen::Vector3d residual = pose_at_alpha * source - target;
+        const auto &pose = x.pose;
+        const auto &R = pose.so3().matrix();
+        const Eigen::Vector3d residual = pose * source - target;
         Eigen::Matrix3_6d J_icp;
-        J_icp.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity();
-        J_icp.block<3, 3>(0, 3) = -Sophus::SO3d::hat(source);
-        // const Eigen::Matrix6d &J_r = Sophus::SE3d::leftJacobian(omega_at_alpha);
-        const Eigen::Matrix6d &J_exp_right = Eigen::Matrix6d::Identity();
-        const Eigen::Matrix3_6d J = R_alpha * J_icp * J_exp_right * square(alpha);
-        return std::make_tuple(J, residual);
+        J_icp.block<3, 3>(0, 0) = R;
+        J_icp.block<3, 3>(0, 3) = -R * Sophus::SO3d::hat(source);
+        return std::make_tuple(J_icp, residual);
     };
 
     auto sum_linear_systems = [](LinearSystem a, const LinearSystem &b) {
