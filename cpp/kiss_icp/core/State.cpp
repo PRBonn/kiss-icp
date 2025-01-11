@@ -1,5 +1,7 @@
 #include "State.hpp"
 
+#include <iostream>
+
 namespace {
 double square(const double x) { return x * x; }
 }  // namespace

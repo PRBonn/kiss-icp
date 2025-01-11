@@ -18,6 +18,6 @@ adaptive_threshold:
   # min_motion_th: 0.1
 
 registration:
-  max_num_iterations: 500 # <- optional
+  max_num_iterations: 3 # <- optional
   convergence_criterion: 0.0001 # <- optional
-  max_num_threads: 0 # <- optional, 0 means automatic
+  max_num_threads: 1 # <- optional, 0 means automatic

@@ -31,6 +31,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <iostream>
 #include <numeric>
 #include <sophus/se3.hpp>
 #include <sophus/so3.hpp>
@@ -46,61 +47,32 @@ using Matrix3_6d = Eigen::Matrix<double, 3, 6>;
 using Vector6d = Eigen::Matrix<double, 6, 1>;
 }  // namespace Eigen
 
-using PointWithStamp = std::tuple<const Eigen::Vector3d &, const double &>;
+using PointWithStamp = std::tuple<Eigen::Vector3d, double>;
 using Correspondences = tbb::concurrent_vector<std::pair<PointWithStamp, Eigen::Vector3d>>;
 using LinearSystem = std::pair<Eigen::Matrix6d, Eigen::Vector6d>;
 
 namespace {
 inline double square(double x) { return x * x; }
 
-struct PointCloudIterator {
-    PointCloudIterator(const std::vector<Eigen::Vector3d>::const_iterator &pts,
-                       const std::vector<double>::const_iterator &stamps)
-        : pts_(pts), stamps_(stamps) {}
-
-    const PointWithStamp operator*() const { return std::make_tuple(*pts_, *stamps_); }
-
-    bool operator==(const PointCloudIterator &other) const {
-        return pts_ == other.pts_ && stamps_ == other.stamps_;
-    }
-
-    bool operator!=(const PointCloudIterator &other) const {
-        return pts_ != other.pts_ || stamps_ != other.stamps_;
-    }
-
-    int operator-(const PointCloudIterator &other) const { return std::distance(pts_, other.pts_); }
-
-    PointCloudIterator &operator++() {
-        ++pts_;
-        ++stamps_;
-        return *this;
-    }
-
-    std::vector<Eigen::Vector3d>::const_iterator pts_;
-    std::vector<double>::const_iterator stamps_;
-};
-
 Correspondences DataAssociation(const std::vector<Eigen::Vector3d> &points,
                                 const std::vector<double> &stamps,
                                 const kiss_icp::State &x,
                                 const kiss_icp::VoxelHashMap &voxel_map,
                                 const double max_correspondance_distance) {
-    PointCloudIterator begin(points.cbegin(), stamps.cbegin());
-    PointCloudIterator end(points.cend(), stamps.cend());
     Correspondences correspondences;
     correspondences.reserve(points.size());
     tbb::parallel_for(
         // Range
-        tbb::blocked_range<PointCloudIterator>{begin, end},
-        [&](const tbb::blocked_range<PointCloudIterator> &r) {
-            std::for_each(r.begin(), r.end(), [&](const auto &point_with_stamp) {
-                const auto &[point, stamp] = point_with_stamp;
+        tbb::blocked_range<size_t>{0, points.size()}, [&](const tbb::blocked_range<size_t> &r) {
+            for (size_t idx = r.begin(); idx < r.end(); ++idx) {
+                const auto &point = points[idx];
+                const auto &stamp = stamps[idx];
                 const auto &[closest_neighbor, distance] =
                     voxel_map.GetClosestNeighbor(x.poseAtNormalizedTime(stamp) * point);
                 if (distance < max_correspondance_distance) {
-                    correspondences.emplace_back(point, closest_neighbor);
+                    correspondences.emplace_back(PointWithStamp{point, stamp}, closest_neighbor);
                 }
-            });
+            }
         });
     return correspondences;
 }
@@ -112,14 +84,16 @@ LinearSystem BuildLinearSystem(const Correspondences &correspondences,
         const auto &[source, target] = correspondence;
         const auto &[point, alpha] = source;
         const Eigen::Vector3d residual = x.transformPoint(point, alpha) - target;
+        const Eigen::Matrix3d &R0 = x.poseAtNormalizedTime(0.0).so3().matrix();
+        const Eigen::Vector6d &omega_at_alpha = x.velocity_coefficient * alpha;
+        const auto &theta_at_alpha = omega_at_alpha.tail<3>();
+        const Eigen::Matrix3d &R_alpha = Sophus::SO3d::exp(theta_at_alpha).matrix();
+        const auto J_right_exp = Sophus::SO3d::leftJacobian(-theta_at_alpha);
         Eigen::Matrix3_6d J_icp;
-        J_icp.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity();
-        J_icp.block<3, 3>(0, 3) = -1.0 * Sophus::SO3d::hat(point);
-        const Eigen::Matrix3d &rotation_at_alpha = x.poseAtNormalizedTime(alpha).so3().matrix();
-        const Eigen::Vector6d &omega_at_alpha = x.relativeMotionVectorAtNormalizedTime(alpha);
-        const auto J_exp = Sophus::SE3d::leftJacobian(-omega_at_alpha);
-
-        const auto J = rotation_at_alpha * J_icp * J_exp * std::pow(alpha, 3);
+        J_icp.block<3, 3>(0, 0) = R0;
+        J_icp.block<3, 3>(0, 3) = -R_alpha * Sophus::SO3d::hat(point) * J_right_exp;
+        const auto &J = J_icp * square(alpha);
+        std::cerr << "J:\n" << J << "\n\n";
         return std::make_tuple(J, residual);
     };
 
@@ -190,7 +164,9 @@ State ContinousRegistration::AlignPointsToMap(const std::vector<Eigen::Vector3d>
             DataAssociation(source, timestamps, x, voxel_map, max_distance);
         // Equation (11)
         const auto &[JTJ, JTr] = BuildLinearSystem(correspondences, x, kernel_scale);
+        std::cerr << JTJ << std::endl;
         const Eigen::Vector6d dx = JTJ.ldlt().solve(-JTr);
+        std::cerr << "dx: " << dx.transpose() << std::endl;
         x.updateCoefficients(dx);
         // Termination criteria
         if (dx.norm() < convergence_criterion_) break;
