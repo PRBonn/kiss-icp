@@ -68,9 +68,10 @@ std::tuple<StampedPointCloud, StampedPointCloud> Preprocess(
     const std::vector<double> &timestamps,
     const double voxel_size,
     const double max_range,
-    const double min_range) {
+    const double min_range,
+    const bool deskew) {
     const std::vector<double> &stamps = std::invoke([&]() {
-        if (timestamps.empty()) {
+        if (timestamps.empty() || !deskew) {
             return std::vector<double>(frame.size(), 1.0);
         }
         return timestamps;
@@ -99,7 +100,8 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
                                                     const std::vector<double> &timestamps) {
     // Preprocess the input cloud
     const auto &[pcd_source, pcd_downsampled] =
-        Preprocess(frame, timestamps, config_.voxel_size, config_.max_range, config_.min_range);
+        Preprocess(frame, timestamps, config_.voxel_size, config_.max_range, config_.min_range,
+                   config_.deskew);
 
     const auto &[source, source_stamps] = pcd_source;
 
