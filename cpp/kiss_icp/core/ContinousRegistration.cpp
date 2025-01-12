@@ -52,7 +52,8 @@ using Correspondences = tbb::concurrent_vector<Association>;
 using LinearSystem = std::pair<Eigen::Matrix6d, Eigen::Vector6d>;
 
 namespace {
-inline double square(double x) { return x * x; }
+inline double square(const double x) { return x * x; }
+inline double cube(const double x) { return x * x * x; }
 
 Correspondences DataAssociation(const std::vector<Eigen::Vector3d> &points,
                                 const std::vector<double> &stamps,
@@ -86,8 +87,8 @@ LinearSystem BuildLinearSystem(const Correspondences &correspondences,
         const auto &R = pose.so3().matrix();
         const Eigen::Vector3d residual = pose * source - target;
         Eigen::Matrix3_6d J_icp;
-        J_icp.block<3, 3>(0, 0) = R * square(alpha);
-        J_icp.block<3, 3>(0, 3) = -R * Sophus::SO3d::hat(source) * square(alpha);
+        J_icp.block<3, 3>(0, 0) = R * cube(alpha);
+        J_icp.block<3, 3>(0, 3) = -R * Sophus::SO3d::hat(source) * cube(alpha);
         return std::make_tuple(J_icp, residual);
     };
 

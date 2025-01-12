@@ -128,9 +128,7 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
     local_map_.Update(frame_downsampled, new_pose.translation());
     last_delta_ = last_pose_.inverse() * new_pose;
     last_pose_ = new_pose;
-    state_.pose = state_.poseAtNormalizedTime(1.0);
-    state_.velocity_coefficient = state_.velocityAtNormalizedTime(1.0);
-    state_.acceleration_coefficient.setZero();
+    state_.computeNextState();
 
     // Return the (deskew) input raw scan (frame) and the points used for registration (source)
     return {frame, source};
