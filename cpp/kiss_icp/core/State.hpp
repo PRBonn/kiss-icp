@@ -5,13 +5,10 @@
 namespace kiss_icp {
 struct State {
     using Vector6d = Sophus::SE3d::Tangent;
-    Vector6d relativeMotionVectorAtNormalizedTime(const double tau) const;
 
     Sophus::SE3d poseAtNormalizedTime(const double tau) const;
-    Vector6d velocityAtNormalizedTime(const double tau) const;
-    Vector6d accelerationAtNormalizedTime(const double tau) const;
 
-    const std::array<Vector6d, 3> &coefficients() const { return coefficients_; }
+    const Vector6d &coefficient() const { return coefficient_; }
 
     void updateCoefficients(const Vector6d &dx);
 
@@ -23,8 +20,6 @@ struct State {
 
 protected:
     Sophus::SE3d pose;
-    std::array<Vector6d, 3> coefficients_{Vector6d::Zero(),  //
-                                          Vector6d::Zero(),  //
-                                          Vector6d::Zero()};
+    Vector6d coefficient_ = Vector6d::Zero();
 };
 }  // namespace kiss_icp
