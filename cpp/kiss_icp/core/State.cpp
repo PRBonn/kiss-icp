@@ -36,13 +36,7 @@ State::Vector6d State::accelerationAtNormalizedTime(const double tau) const {
     const auto &[a, b, c] = coefficients();
     return 0.5 * (6.0 * a * tau + 2.0 * b);
 }
-void State::updateCoefficients(const Vector6d &dx) {
-    const auto &omega = relativeMotionVectorAtNormalizedTime(1.0);
-    const Eigen::Matrix3d Jr_inverse =
-        Sophus::SO3d::leftJacobianInverse(omega.template tail<3>()).transpose();
-    coefficients_[0].head<3>() += dx.head<3>();
-    coefficients_[0].tail<3>() += Jr_inverse * dx.tail<3>();
-}
+void State::updateCoefficients(const Vector6d &dx) { coefficients_[0] += dx; }
 
 void State::computeNextState() {
     pose = poseAtNormalizedTime(1.0);
