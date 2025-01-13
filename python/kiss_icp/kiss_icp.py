@@ -21,6 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 from datetime import time
+
 import numpy as np
 
 from kiss_icp.config import KISSConfig
