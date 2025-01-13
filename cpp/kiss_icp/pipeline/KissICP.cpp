@@ -116,6 +116,10 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
                                             3.0 * sigma,   // max_correspondence_dist
                                             sigma / 3.0);  // kernel
 
+    const auto &[a, b, c] = state_.coefficients();
+    std::cerr << "a: " << a.transpose() << std::endl;
+    std::cerr << "b: " << b.transpose() << std::endl;
+    std::cerr << "c: " << c.transpose() << std::endl;
     // Compute the difference between the prediction and the actual estimate
     const auto new_pose = state_.poseAtNormalizedTime(1.0);
     const auto model_deviation = last_pose_.inverse() * new_pose;

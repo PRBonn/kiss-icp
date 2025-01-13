@@ -86,14 +86,10 @@ LinearSystem BuildLinearSystem(const Correspondences &correspondences,
         const auto &pose = x.poseAtNormalizedTime(alpha);
         const Eigen::Vector3d residual = pose * source - target;
         // Jacobian of T * p
-        const Eigen::Matrix3d R0 = x.poseAtNormalizedTime(0.0).so3().matrix();
-        const auto omega = x.relativeMotionVectorAtNormalizedTime(alpha);
-        const Eigen::Vector3d theta = omega.template tail<3>();
-        const auto Jl = Sophus::SO3d::leftJacobian(theta);
-        const Eigen::Vector3d p_hat = Sophus::SO3d::exp(theta) * source;
+        const Eigen::Matrix3d R = pose.so3().matrix();
         Eigen::Matrix3_6d J_icp;
-        J_icp.block<3, 3>(0, 0) = R0 * cube(alpha);
-        J_icp.block<3, 3>(0, 3) = -R0 * Sophus::SO3d::hat(p_hat) * Jl * cube(alpha);
+        J_icp.block<3, 3>(0, 0) = R * cube(alpha);
+        J_icp.block<3, 3>(0, 3) = -R * Sophus::SO3d::hat(source) * cube(alpha);
         return std::make_tuple(J_icp, residual);
     };
 

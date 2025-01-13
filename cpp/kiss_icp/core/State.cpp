@@ -38,8 +38,10 @@ State::Vector6d State::accelerationAtNormalizedTime(const double tau) const {
 
 void State::computeNextState() {
     pose = poseAtNormalizedTime(1.0);
-    coefficients_[0] = State::Vector6d::Zero();
-    coefficients_[1] = accelerationAtNormalizedTime(1.0);
-    coefficients_[2] = velocityAtNormalizedTime(1.0);
+    const State::Vector6d b0 = accelerationAtNormalizedTime(1.0);
+    const State::Vector6d c0 = velocityAtNormalizedTime(1.0);
+    // coefficients_[0] = State::Vector6d::Zero();
+    coefficients_[1] = b0;
+    coefficients_[2] = c0;
 }
 }  // namespace kiss_icp
