@@ -5,7 +5,7 @@
 
 namespace {
 double square(const double x) { return x * x; }
-double cube(const double x) { return x * x * x; }
+// double cube(const double x) { return x * x * x; }
 
 Sophus::SE3d v2t(const Sophus::SE3d::Tangent &v) {
     Sophus::SE3d T;
@@ -17,8 +17,9 @@ Sophus::SE3d v2t(const Sophus::SE3d::Tangent &v) {
 
 namespace kiss_icp {
 State::Vector6d State::relativeMotionVectorAtNormalizedTime(const double tau) const {
-    const auto &[a, b, c] = coefficients();
-    return a * cube(tau) + b * square(tau) + c * tau;
+    // const auto &[a, b, c] = coefficients();
+    // return a * cube(tau) + b * square(tau) + c * tau;
+    return coefficients_[0] * tau;
 }
 
 Sophus::SE3d State::poseAtNormalizedTime(const double tau) const {
@@ -45,9 +46,9 @@ void State::updateCoefficients(const Vector6d &dx) {
 
 void State::computeNextState() {
     pose = poseAtNormalizedTime(1.0);
-    const State::Vector6d b0 = accelerationAtNormalizedTime(1.0);
-    const State::Vector6d c0 = velocityAtNormalizedTime(1.0);
-    coefficients_[1] = 0.01 * b0;
-    coefficients_[2] = 0.1 * c0;
+    // const State::Vector6d b0 = accelerationAtNormalizedTime(1.0);
+    // const State::Vector6d c0 = velocityAtNormalizedTime(1.0);
+    // coefficients_[1] = 0.01 * b0;
+    // coefficients_[2] = 0.1 * c0;
 }
 }  // namespace kiss_icp
