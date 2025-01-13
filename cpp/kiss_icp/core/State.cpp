@@ -6,6 +6,13 @@
 namespace {
 double square(const double x) { return x * x; }
 double cube(const double x) { return x * x * x; }
+
+Sophus::SE3d v2t(const Sophus::SE3d::Tangent &v) {
+    Sophus::SE3d T;
+    T.so3() = Sophus::SO3d::exp(v.tail<3>());
+    T.translation() = v.head<3>();
+    return T;
+}
 }  // namespace
 
 namespace kiss_icp {
@@ -16,7 +23,7 @@ State::Vector6d State::relativeMotionVectorAtNormalizedTime(const double tau) co
 
 Sophus::SE3d State::poseAtNormalizedTime(const double tau) const {
     State::Vector6d omega = relativeMotionVectorAtNormalizedTime(tau);
-    return pose * Sophus::SE3d::exp(omega);
+    return pose * v2t(omega);
 }
 
 State::Vector6d State::velocityAtNormalizedTime(const double tau) const {

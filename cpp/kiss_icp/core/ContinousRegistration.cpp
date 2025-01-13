@@ -86,19 +86,15 @@ LinearSystem BuildLinearSystem(const Correspondences &correspondences,
         const auto &pose = x.poseAtNormalizedTime(alpha);
         const Eigen::Vector3d residual = pose * source - target;
         // Jacobian of T * p
-        const auto &R = pose.so3().matrix();
-        Eigen::Matrix3_6d J_transform;
-        J_transform.block<3, 3>(0, 0) = R;
-        J_transform.block<3, 3>(0, 3) = -R * Sophus::SO3d::hat(source);
-        // Jacobian of T = T0 * exp(dT)
-        const auto &omega = x.relativeMotionVectorAtNormalizedTime(alpha);
-        // const auto inverse_relative_pose = Sophus::SE3d::exp(omega).inverse();
-        // const auto Adj_inv_exp = inverse_relative_pose.Adj();
-        // const auto J_composition = Adj_inv_exp * Sophus::SE3d::leftJacobian(omega);
-        const auto J_composition = Sophus::SE3d::leftJacobian(omega);
-        // Jacobian of P(dx) = dx*tau^3 + b*tau^2 + c*tau
-        const auto J_polynomial = cube(alpha) * Eigen::Matrix6d::Identity();
-        const Eigen::Matrix3_6d J_icp = J_transform * J_composition * J_polynomial;
+        const Eigen::Matrix3d R0 = x.poseAtNormalizedTime(0.0).so3().matrix();
+        const auto &[a, b, c] = x.coefficients();
+        const Eigen::Vector3d theta_alpha_second_order =
+            b.tail<3>() * square(alpha) + c.tail<3>() * alpha;
+        const auto Jl = Sophus::SO3d::leftJacobian(theta_alpha_second_order);
+        const Eigen::Vector3d p_hat = Sophus::SO3d::exp(theta_alpha_second_order) * source;
+        Eigen::Matrix3_6d J_icp;
+        J_icp.block<3, 3>(0, 0) = R0 * cube(alpha);
+        J_icp.block<3, 3>(0, 3) = -R0 * Sophus::SO3d::hat(p_hat) * Jl * cube(alpha);
         return std::make_tuple(J_icp, residual);
     };
 
