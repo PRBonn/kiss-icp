@@ -108,8 +108,6 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
     // Get adaptive_threshold
     const double sigma = adaptive_threshold_.ComputeThreshold();
 
-    const auto previous_pose = state_.poseAtNormalizedTime(1.0);
-
     // Run ICP
     state_ = registration_.AlignPointsToMap(source,  // frame
                                             source_stamps,
@@ -120,7 +118,7 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
 
     // Compute the difference between the prediction and the actual estimate
     const auto new_pose = state_.poseAtNormalizedTime(1.0);
-    const auto model_deviation = previous_pose.inverse() * new_pose;
+    const auto model_deviation = last_pose_.inverse() * new_pose;
 
     // Update step: threshold, local map, delta, and the last pose
     adaptive_threshold_.UpdateModelDeviation(model_deviation);
