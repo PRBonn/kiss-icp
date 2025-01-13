@@ -13,7 +13,7 @@ struct State {
 
     const std::array<Vector6d, 3> &coefficients() const { return coefficients_; }
 
-    inline void updateCoefficients(const Vector6d &dx) { coefficients_.front() += dx; }
+    void updateCoefficients(const Vector6d &dx);
 
     void computeNextState();
 
