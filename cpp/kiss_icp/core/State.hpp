@@ -11,7 +11,9 @@ struct State {
     Vector6d velocityAtNormalizedTime(const double tau) const;
     Vector6d accelerationAtNormalizedTime(const double tau) const;
 
-    inline void updateCoefficients(const Vector6d &dx) { coefficients.front() += dx; }
+    const std::array<Vector6d, 3> &coefficients() const { return coefficients_; }
+
+    inline void updateCoefficients(const Vector6d &dx) { coefficients_.front() += dx; }
 
     void computeNextState();
 
@@ -21,8 +23,8 @@ struct State {
 
 protected:
     Sophus::SE3d pose;
-    std::array<Vector6d, 3> coefficients{Vector6d::Zero(),  //
-                                         Vector6d::Zero(),  //
-                                         Vector6d::Zero()};
+    std::array<Vector6d, 3> coefficients_{Vector6d::Zero(),  //
+                                          Vector6d::Zero(),  //
+                                          Vector6d::Zero()};
 };
 }  // namespace kiss_icp
