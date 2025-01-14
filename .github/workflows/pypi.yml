@@ -28,14 +28,14 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-22.04, windows-2022, macos-14]
+        os: [ubuntu-24.04, windows-2022, macos-15]
 
     steps:
       - uses: actions/checkout@v3
 
       - name: Build test wheels (only PRs)
         if: github.event_name != 'release'
-        uses: pypa/cibuildwheel@v2.16.5
+        uses: pypa/cibuildwheel@v2.22.0
         env: # build 1 build per platform just to make sure we can do it later when releasing
           CIBW_BUILD: "cp310-*"
         with:
@@ -43,7 +43,7 @@ jobs:
 
       - name: Build all wheels
         if: github.event_name == 'release'
-        uses: pypa/cibuildwheel@v2.16.5
+        uses: pypa/cibuildwheel@v2.22.0
         with:
           package-dir: ${{github.workspace}}/python/
 
