@@ -9,6 +9,8 @@ description = "Simple yet effective 3D LiDAR-Odometry registration pipeline"
 readme = "README.md"
 authors = [
     { name = "Ignacio Vizzo", email = "ignaciovizzo@gmail.com" },
+    { name = "Tiziano Guadagnino", email = "frevo93@gmail.com" },
+    { name = "Benedikt Mersch", email = "benedikt.mersch@gmail.com" },
 ]
 requires-python = ">=3.8"
 keywords = [

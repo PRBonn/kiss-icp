@@ -28,6 +28,8 @@
   <version>1.2.1</version>
   <description>KISS-ICP ROS 2 Wrapper</description>
   <maintainer email="ignaciovizzo@gmail.com">ivizzo</maintainer>
+  <maintainer email="frevo93@gmail.com">frevo</maintainer>
+  <maintainer email="benedikt.mersch@gmail.com">benedikt</maintainer>
   <license>MIT</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
