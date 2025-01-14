@@ -71,7 +71,8 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
             "points"_a, "pose"_a)
         .def("_add_points", &VoxelHashMap::AddPoints, "points"_a)
         .def("_remove_far_away_points", &VoxelHashMap::RemovePointsFarFromLocation, "origin"_a)
-        .def("_point_cloud", &VoxelHashMap::Pointcloud);
+        .def("_point_cloud", &VoxelHashMap::Pointcloud)
+        .def("_get_voxels", &VoxelHashMap::GetVoxels);
 
     py::class_<Preprocessor> internal_preprocessor(m, "_Preprocessor", "Don't use this");
     internal_preprocessor
@@ -103,7 +104,8 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
                     .matrix();
             },
             "points"_a, "voxel_map"_a, "initial_guess"_a, "max_correspondance_distance"_a,
-            "kernel"_a);
+            "kernel"_a)
+        .def("_get_correspondences", [](Registration &self) { return self.last_correspondences_; });
 
     // AdaptiveThreshold bindings
     py::class_<AdaptiveThreshold> adaptive_threshold(m, "_AdaptiveThreshold", "Don't use this");

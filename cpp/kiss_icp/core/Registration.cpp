@@ -150,9 +150,9 @@ Sophus::SE3d Registration::AlignPointsToMap(const std::vector<Eigen::Vector3d> &
     Sophus::SE3d T_icp = Sophus::SE3d();
     for (int j = 0; j < max_num_iterations_; ++j) {
         // Equation (10)
-        const auto correspondences = DataAssociation(source, voxel_map, max_distance);
+        last_correspondences_ = DataAssociation(source, voxel_map, max_distance);
         // Equation (11)
-        const auto &[JTJ, JTr] = BuildLinearSystem(correspondences, kernel_scale);
+        const auto &[JTJ, JTr] = BuildLinearSystem(last_correspondences_, kernel_scale);
         const Eigen::Vector6d dx = JTJ.ldlt().solve(-JTr);
         const Sophus::SE3d estimation = Sophus::SE3d::exp(dx);
         // Equation (12)

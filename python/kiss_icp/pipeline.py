@@ -80,7 +80,9 @@ class OdometryPipeline:
         self._vis_infos = {
             "max_range": self.config.data.max_range,
             "min_range": self.config.data.min_range,
+            "voxel_size": self.config.mapping.voxel_size,
         }
+        self.visualizer.set_voxel_size(self.config.mapping.voxel_size)
         if hasattr(self._dataset, "use_global_visualizer"):
             self.visualizer._global_view = self._dataset.use_global_visualizer
 
@@ -109,8 +111,7 @@ class OdometryPipeline:
             self.visualizer.update(
                 source,
                 keypoints,
-                self.odometry.local_map,
-                self.odometry.last_pose,
+                self.odometry,
                 self._vis_infos,
             )
 
