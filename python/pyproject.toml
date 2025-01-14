@@ -10,7 +10,7 @@ readme = "README.md"
 authors = [
     { name = "Ignacio Vizzo", email = "ignaciovizzo@gmail.com" },
 ]
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 keywords = [
     "LiDAR",
     "Localization",
@@ -28,11 +28,12 @@ classifiers = [
     "Operating System :: Unix",
     "Programming Language :: C++",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
     "natsort",
