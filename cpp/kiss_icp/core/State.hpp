@@ -16,9 +16,9 @@ struct State {
 
     inline void computeNextState() {
         pose = pose * Sophus::SE3d::exp(coefficients_[0]);
-        std::swap(coefficients_[0], coefficients_[1]);
-        std::swap(coefficients_[1], coefficients_[2]);
-        coefficients_[2] = Vector6d::Zero();
+        coefficients_[0] = coefficients_[1];
+        coefficients_[1] = coefficients_[2];
+        // coefficients_[2] = Vector6d::Zero();
     }
 
     inline Eigen::Vector3d transformPoint(const Eigen::Vector3d &point, const double tau) const {

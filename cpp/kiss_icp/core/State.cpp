@@ -24,9 +24,9 @@ void State::update(const State::Vector6d &dx) {
 }
 Sophus::SE3d State::poseAtNormalizedTime(const double tau) const {
     const auto splines = BSplines(tau);
-    const Sophus::SE3d a0 = Sophus::SE3d::exp(coefficients_[0] * splines[0]);
-    const Sophus::SE3d a1 = Sophus::SE3d::exp(coefficients_[1] * splines[1]);
-    const Sophus::SE3d a2 = Sophus::SE3d::exp(coefficients_[2] * splines[2]);
-    return pose * a0 * a1 * a2;
+    const Sophus::SE3d A0 = Sophus::SE3d::exp(coefficients_[0] * splines[0]);
+    const Sophus::SE3d A1 = Sophus::SE3d::exp(coefficients_[1] * splines[1]);
+    const Sophus::SE3d A2 = Sophus::SE3d::exp(coefficients_[2] * splines[2]);
+    return pose * A0 * A1 * A2;
 }
 }  // namespace kiss_icp
