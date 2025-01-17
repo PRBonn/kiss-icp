@@ -17,7 +17,11 @@ inline Eigen::Vector3d BSplines(const double tau) {
 }  // namespace
 
 namespace kiss_icp {
-
+void State::update(const State::Vector6d &dx) {
+    const auto &tau = coefficients_[2];
+    const auto Jr_inverse = Sophus::SE3d::leftJacobianInverse(-tau);
+    coefficients_[2] += Jr_inverse * dx;
+}
 Sophus::SE3d State::poseAtNormalizedTime(const double tau) const {
     const auto splines = BSplines(tau);
     const Sophus::SE3d a0 = Sophus::SE3d::exp(coefficients_[0] * splines[0]);

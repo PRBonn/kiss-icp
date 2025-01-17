@@ -104,6 +104,11 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
                    config_.deskew);
 
     const auto &[source, source_stamps] = pcd_source;
+    std::cerr << "New Iteration" << std::endl;
+    std::cerr << "Last Pose\n" << last_pose_.matrix() << std::endl;
+    std::cerr << "Initial Pose new iteration\n"
+              << state_.poseAtNormalizedTime(0.0).matrix() << std::endl;
+    std::cerr << "\n" << state_.poseAtNormalizedTime(1.0).matrix() << std::endl;
 
     // Get adaptive_threshold
     const double sigma = adaptive_threshold_.ComputeThreshold();
@@ -115,11 +120,17 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
                                             state_,        // initial_guess
                                             3.0 * sigma,   // max_correspondence_dist
                                             sigma / 3.0);  // kernel
+    const auto &[a, b, c] = state_.coefficients();
+    std::cerr << "Coefficients\n";
+    std::cerr << a.transpose() << std::endl;
+    std::cerr << b.transpose() << std::endl;
+    std::cerr << c.transpose() << std::endl;
 
     const auto &frame_downsampled = DeskewScan(pcd_downsampled, state_);
 
     // Compute the difference between the prediction and the actual estimate
     const auto new_pose = state_.poseAtNormalizedTime(1.0);
+    std::cerr << "\n" << new_pose.matrix() << std::endl;
     const auto model_deviation = last_pose_.inverse() * new_pose;
 
     // Update step: threshold, local map, delta, and the last pose

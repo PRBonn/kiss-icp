@@ -12,10 +12,10 @@ struct State {
 
     inline const auto &coefficients() const { return coefficients_; }
 
-    inline void update(const Vector6d &dx) { coefficients_[2] += dx; }
+    void update(const Vector6d &dx);
 
     inline void computeNextState() {
-        pose = poseAtNormalizedTime(1.0);
+        pose = pose * Sophus::SE3d::exp(coefficients_[0]);
         std::swap(coefficients_[0], coefficients_[1]);
         std::swap(coefficients_[1], coefficients_[2]);
         coefficients_[2] = Vector6d::Zero();
