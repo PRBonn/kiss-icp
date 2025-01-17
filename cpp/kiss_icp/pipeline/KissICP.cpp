@@ -71,10 +71,10 @@ std::tuple<StampedPointCloud, StampedPointCloud> Preprocess(
     const double min_range,
     const bool deskew) {
     const std::vector<double> &stamps = std::invoke([&]() {
+        return std::vector<double>(frame.size(), 1.0);
         if (timestamps.empty() || !deskew) {
-            return std::vector<double>(frame.size(), 1.0);
+            return timestamps;
         }
-        return timestamps;
     });
     const auto &[pts_downsampled, stamps_downsampled] =
         Downsample(frame, stamps, 0.5 * voxel_size, max_range, min_range);
@@ -108,7 +108,6 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
     // Get adaptive_threshold
     const double sigma = adaptive_threshold_.ComputeThreshold();
 
-    std::cerr << "State before: " << state_.coefficient().transpose() << std::endl;
     // Run ICP
     state_ = registration_.AlignPointsToMap(source,  // frame
                                             source_stamps,
@@ -116,8 +115,6 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
                                             state_,        // initial_guess
                                             3.0 * sigma,   // max_correspondence_dist
                                             sigma / 3.0);  // kernel
-
-    std::cerr << "State after: " << state_.coefficient().transpose() << std::endl;
 
     const auto &frame_downsampled = DeskewScan(pcd_downsampled, state_);
 

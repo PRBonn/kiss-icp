@@ -53,6 +53,7 @@ using LinearSystem = std::pair<Eigen::Matrix6d, Eigen::Vector6d>;
 
 namespace {
 inline double square(const double x) { return x * x; }
+inline double cube(const double x) { return square(x) * x; }
 
 Correspondences DataAssociation(const std::vector<Eigen::Vector3d> &points,
                                 const std::vector<double> &stamps,
@@ -76,32 +77,20 @@ Correspondences DataAssociation(const std::vector<Eigen::Vector3d> &points,
         });
     return correspondences;
 }
-inline Eigen::Matrix3_6d numericalJacobian(const kiss_icp::State &x,
-                                           const Eigen::Vector3d &p,
-                                           const double tau,
-                                           const double eps = 1e-8) {
-    const Eigen::Vector3d e = x.transformPoint(p, tau);
-    Eigen::Matrix3_6d J = Eigen::Matrix3_6d::Zero();
-    Eigen::Vector6d dx = Eigen::Vector6d::Zero();
-    for (size_t i = 0; i < 6; ++i) {
-        dx.setZero();
-        kiss_icp::State xi_plus = x;
-        dx(i) = eps;
-        xi_plus.updateCoefficients(dx);
-        Eigen::Vector3d e_plus = xi_plus.transformPoint(p, tau);
-        J.col(i) = (e_plus - e) / eps;
-    }
-    return J;
-}
 
 LinearSystem BuildLinearSystem(const Correspondences &correspondences,
                                const kiss_icp::State &x,
                                const double kernel_scale) {
     auto compute_jacobian_and_residual = [&](const auto &correspondence) {
         const auto &[source, alpha, target] = correspondence;
-        const Eigen::Vector3d transformed_point = x.transformPoint(source, alpha);
-        const Eigen::Vector3d residual = transformed_point - target;
-        const Eigen::Matrix3_6d &J_icp = numericalJacobian(x, source, alpha);
+        const Sophus::SE3d &pose = x.poseAtNormalizedTime(alpha);
+        const Eigen::Vector3d &transformed_point = pose * source;
+        const Eigen::Vector3d &residual = transformed_point - target;
+        const Eigen::Matrix3d &R = pose.so3().matrix();
+        const double time = 1.0 / 6.0 * cube(alpha);
+        Eigen::Matrix3_6d J_icp;
+        J_icp.block<3, 3>(0, 0) = R * time;
+        J_icp.block<3, 3>(0, 3) = -R * Sophus::SO3d::hat(source) * time;
         return std::make_tuple(J_icp, residual);
     };
 
@@ -173,7 +162,7 @@ State ContinousRegistration::AlignPointsToMap(const std::vector<Eigen::Vector3d>
         // Equation (11)
         const auto &[JTJ, JTr] = BuildLinearSystem(correspondences, x, kernel_scale);
         const Eigen::Vector6d dx = JTJ.ldlt().solve(-JTr);
-        x.updateCoefficients(dx);
+        x.update(dx);
         // Termination criteria
         if (dx.norm() < convergence_criterion_) break;
     }

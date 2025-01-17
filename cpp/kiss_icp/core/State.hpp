@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Eigen/Core>
+#include <iostream>
 #include <sophus/se3.hpp>
 
 namespace kiss_icp {
@@ -8,11 +10,16 @@ struct State {
 
     Sophus::SE3d poseAtNormalizedTime(const double tau) const;
 
-    const Vector6d &coefficient() const { return coefficient_; }
+    inline const auto &coefficients() const { return coefficients_; }
 
-    void updateCoefficients(const Vector6d &dx);
+    inline void update(const Vector6d &dx) { coefficients_[2] += dx; }
 
-    void computeNextState();
+    inline void computeNextState() {
+        pose = poseAtNormalizedTime(1.0);
+        std::swap(coefficients_[0], coefficients_[1]);
+        std::swap(coefficients_[1], coefficients_[2]);
+        coefficients_[2] = Vector6d::Zero();
+    }
 
     inline Eigen::Vector3d transformPoint(const Eigen::Vector3d &point, const double tau) const {
         return poseAtNormalizedTime(tau) * point;
@@ -20,6 +27,6 @@ struct State {
 
 protected:
     Sophus::SE3d pose;
-    Vector6d coefficient_ = Vector6d::Zero();
+    std::array<Vector6d, 3> coefficients_{Vector6d::Zero(), Vector6d::Zero(), Vector6d::Zero()};
 };
 }  // namespace kiss_icp
