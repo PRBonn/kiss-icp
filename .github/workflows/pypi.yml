@@ -19,7 +19,7 @@ jobs:
       - name: Move sdist to dist
         run: mkdir -p dist && mv ${{github.workspace}}/python/dist/*.tar.gz dist/
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           path: dist/*.tar.gz
 
@@ -47,8 +47,9 @@ jobs:
         with:
           package-dir: ${{github.workspace}}/python/
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
+          name: artifact-${{ matrix.os }}
           path: ./wheelhouse/*.whl
 
   pypi:
@@ -56,10 +57,11 @@ jobs:
     needs: [cibuildwheel, build_sdist]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
-          name: artifact
+          pattern: artifact*
           path: dist
+          merge-multiple: true
 
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
