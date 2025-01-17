@@ -66,12 +66,13 @@ Correspondences DataAssociation(const std::vector<Eigen::Vector3d> &points,
         // Range
         tbb::blocked_range<size_t>{0, points.size()}, [&](const tbb::blocked_range<size_t> &r) {
             for (size_t idx = r.begin(); idx < r.end(); ++idx) {
-                const auto &point = points[idx];
+                const auto &source = points[idx];
                 const auto &stamp = stamps[idx];
+                const auto &transformed_point = x.transformPoint(source, stamp);
                 const auto &[closest_neighbor, distance] =
-                    voxel_map.GetClosestNeighbor(x.poseAtNormalizedTime(stamp) * point);
+                    voxel_map.GetClosestNeighbor(transformed_point);
                 if (distance < max_correspondance_distance) {
-                    correspondences.emplace_back(point, stamp, closest_neighbor);
+                    correspondences.emplace_back(source, stamp, closest_neighbor);
                 }
             }
         });
@@ -153,12 +154,10 @@ State ContinousRegistration::AlignPointsToMap(const std::vector<Eigen::Vector3d>
     if (voxel_map.Empty()) return initial_guess;
 
     // Equation (9)
-    std::vector<Eigen::Vector3d> source = frame;
     State x = initial_guess;
     for (int j = 0; j < max_num_iterations_; ++j) {
         // Equation (10)
-        const auto correspondences =
-            DataAssociation(source, timestamps, x, voxel_map, max_distance);
+        const auto correspondences = DataAssociation(frame, timestamps, x, voxel_map, max_distance);
         // Equation (11)
         const auto &[JTJ, JTr] = BuildLinearSystem(correspondences, x, kernel_scale);
         const Eigen::Vector6d dx = JTJ.ldlt().solve(-JTr);
