@@ -53,7 +53,6 @@ using LinearSystem = std::pair<Eigen::Matrix6d, Eigen::Vector6d>;
 
 namespace {
 inline double square(const double x) { return x * x; }
-inline double cube(const double x) { return square(x) * x; }
 
 Correspondences DataAssociation(const std::vector<Eigen::Vector3d> &points,
                                 const std::vector<double> &stamps,
@@ -88,10 +87,10 @@ LinearSystem BuildLinearSystem(const Correspondences &correspondences,
         const Eigen::Vector3d &transformed_point = pose * source;
         const Eigen::Vector3d &residual = transformed_point - target;
         const Eigen::Matrix3d &R = pose.so3().matrix();
-        const double time = 1.0 / 6.0 * cube(alpha);
+        const Eigen::Matrix3d dP_dx = square(alpha) * Eigen::Matrix3d::Identity();
         Eigen::Matrix3_6d J_icp;
-        J_icp.block<3, 3>(0, 0) = R * time;
-        J_icp.block<3, 3>(0, 3) = -R * Sophus::SO3d::hat(source) * time;
+        J_icp.block<3, 3>(0, 0) = R * dP_dx;
+        J_icp.block<3, 3>(0, 3) = -R * Sophus::SO3d::hat(source) * dP_dx;
         return std::make_tuple(J_icp, residual);
     };
 

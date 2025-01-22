@@ -5,28 +5,25 @@
 namespace {
 
 inline double square(const double x) { return x * x; }
-inline double cube(const double x) { return square(x) * x; }
 
-// From https://bmva-archive.org.uk/bmvc/2013/Papers/paper0093/paper0093.pdf
-static const Eigen::Matrix<double, 3, 4> C{{5, 3, -3, 1}, {1, 3, 3, -2}, {0, 0, 0, 1}};
-
-inline Eigen::Vector3d BSplines(const double tau) {
-    const Eigen::Matrix<double, 4, 1> u(1, tau, square(tau), cube(tau));
-    return 1.0 / 6.0 * C * u;
-}
 }  // namespace
 
 namespace kiss_icp {
 void State::update(const State::Vector6d &dx) {
-    const auto &tau = coefficients_[2];
+    const auto &tau = coefficients_[1];
     const auto Jr_inverse = Sophus::SE3d::leftJacobianInverse(-tau);
-    coefficients_[2] += Jr_inverse * dx;
+    coefficients_[1] += Jr_inverse * dx;
 }
+void State::computeNextState() {
+    pose = poseAtNormalizedTime(1.0);
+    const Sophus::SE3d A0_inv = Sophus::SE3d::exp(coefficients_[1]).inverse();
+    coefficients_[0] = 2 * coefficients_[1] + A0_inv.Adj() * coefficients_[0];
+    coefficients_[1].setZero();
+}
+
 Sophus::SE3d State::poseAtNormalizedTime(const double tau) const {
-    const auto splines = BSplines(tau);
-    const Sophus::SE3d A0 = Sophus::SE3d::exp(coefficients_[0] * splines[0]);
-    const Sophus::SE3d A1 = Sophus::SE3d::exp(coefficients_[1] * splines[1]);
-    const Sophus::SE3d A2 = Sophus::SE3d::exp(coefficients_[2] * splines[2]);
-    return pose * A0 * A1 * A2;
+    const Sophus::SE3d B = Sophus::SE3d::exp(coefficients_[0] * tau);
+    const Sophus::SE3d A = Sophus::SE3d::exp(coefficients_[1] * square(tau));
+    return pose * B * A;
 }
 }  // namespace kiss_icp
