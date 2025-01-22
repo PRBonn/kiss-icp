@@ -40,7 +40,6 @@ classifiers = [
 dependencies = [
     "natsort",
     "numpy",
-    "plyfile",
     "pydantic>=2",
     "pydantic-settings",
     "pyquaternion",

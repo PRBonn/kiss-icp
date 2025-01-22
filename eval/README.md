@@ -35,7 +35,6 @@ includes:
 - ncd
 - nclt
 - nuscenes
-- paris_luco
 - rosbag
 - rosbag2
 - generic folders containing files with extensions:
