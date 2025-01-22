@@ -154,11 +154,12 @@ State ContinousRegistration::AlignPointsToMap(const std::vector<Eigen::Vector3d>
 
     // Equation (9)
     State x = initial_guess;
-    for (int j = 0; j < max_num_iterations_; ++j) {
+    for (int j = 0; j < 1; ++j) {
         // Equation (10)
         const auto correspondences = DataAssociation(frame, timestamps, x, voxel_map, max_distance);
         // Equation (11)
         const auto &[JTJ, JTr] = BuildLinearSystem(correspondences, x, kernel_scale);
+        std::cerr << JTJ << std::endl;
         const Eigen::Vector6d dx = JTJ.ldlt().solve(-JTr);
         x.update(dx);
         // Termination criteria
