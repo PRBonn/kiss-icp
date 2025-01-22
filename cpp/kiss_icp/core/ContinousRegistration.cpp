@@ -88,10 +88,13 @@ LinearSystem BuildLinearSystem(const Correspondences &correspondences,
         const Eigen::Vector3d &residual = transformed_point - target;
         const Eigen::Matrix3d &R = pose.so3().matrix();
         const Eigen::Matrix3d dP_dx = square(alpha) * Eigen::Matrix3d::Identity();
+        const auto &[b, a] = x.coefficients();
+        const Eigen::Matrix6d &Jr = Sophus::SE3d::leftJacobian(-a * square(alpha));
         Eigen::Matrix3_6d J_icp;
         J_icp.block<3, 3>(0, 0) = R * dP_dx;
         J_icp.block<3, 3>(0, 3) = -R * Sophus::SO3d::hat(source) * dP_dx;
-        return std::make_tuple(J_icp, residual);
+        const Eigen::Matrix3_6d J = J_icp * Jr;
+        return std::make_tuple(J, residual);
     };
 
     auto sum_linear_systems = [](LinearSystem a, const LinearSystem &b) {
@@ -154,7 +157,7 @@ State ContinousRegistration::AlignPointsToMap(const std::vector<Eigen::Vector3d>
 
     // Equation (9)
     State x = initial_guess;
-    for (int j = 0; j < 1; ++j) {
+    for (int j = 0; j < max_num_iterations_; ++j) {
         // Equation (10)
         const auto correspondences = DataAssociation(frame, timestamps, x, voxel_map, max_distance);
         // Equation (11)

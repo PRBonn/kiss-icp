@@ -1,5 +1,6 @@
 #include "State.hpp"
 
+#include <iostream>
 #include <sophus/so3.hpp>
 
 namespace {
@@ -9,15 +10,14 @@ inline double square(const double x) { return x * x; }
 }  // namespace
 
 namespace kiss_icp {
-void State::update(const State::Vector6d &dx) {
-    const auto &tau = coefficients_[1];
-    const auto Jr_inverse = Sophus::SE3d::leftJacobianInverse(-tau);
-    coefficients_[1] += Jr_inverse * dx;
-}
+void State::update(const State::Vector6d &dx) { coefficients_[1] += dx; }
 void State::computeNextState() {
     pose = poseAtNormalizedTime(1.0);
-    const Sophus::SE3d A0_inv = Sophus::SE3d::exp(coefficients_[1]).inverse();
-    coefficients_[0] = 2 * coefficients_[1] + A0_inv.Adj() * coefficients_[0];
+    const auto &[b0, a0] = coefficients();
+    const Sophus::SE3d &A0 = Sophus::SE3d::exp(a0);
+    const Sophus::SE3d &A0_inv = A0.inverse();
+    const auto &Adj = A0_inv.Adj();
+    coefficients_[0] = 2 * a0 + Adj * b0;
     coefficients_[1].setZero();
 }
 
