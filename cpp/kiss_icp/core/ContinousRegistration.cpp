@@ -87,13 +87,14 @@ LinearSystem BuildLinearSystem(const Correspondences &correspondences,
         const Eigen::Vector3d &transformed_point = pose * source;
         const Eigen::Vector3d &residual = transformed_point - target;
         const Eigen::Matrix3d &R = pose.so3().matrix();
-        const Eigen::Matrix3d dP_dx = square(alpha) * Eigen::Matrix3d::Identity();
         const auto &[b, a] = x.coefficients();
-        const Eigen::Matrix6d &Jr = Sophus::SE3d::leftJacobian(-a * square(alpha));
+        const auto& a_tau_square = a * square(alpha);
+        const Eigen::Matrix6d &Jr = Sophus::SE3d::leftJacobian(-a_tau_square);
+        const Eigen::Matrix6d dP_da = square(alpha) * Eigen::Matrix6d::Identity();
         Eigen::Matrix3_6d J_icp;
-        J_icp.block<3, 3>(0, 0) = R * dP_dx;
-        J_icp.block<3, 3>(0, 3) = -R * Sophus::SO3d::hat(source) * dP_dx;
-        const Eigen::Matrix3_6d J = J_icp * Jr;
+        J_icp.block<3, 3>(0, 0) = R ;
+        J_icp.block<3, 3>(0, 3) = -R * Sophus::SO3d::hat(source) ;
+        const Eigen::Matrix3_6d J = J_icp * Jr * dP_da;
         return std::make_tuple(J, residual);
     };
 
