@@ -75,12 +75,9 @@ class GenericDataset:
         # This is easy, the old KITTI format
         if self.file_extension == "bin":
             print("[WARNING] Reading .bin files, the only format supported is the KITTI format")
-
-            class ReadKitti:
-                def __call__(self, file):
-                    return np.fromfile(file, dtype=np.float32).reshape((-1, 4))[:, :3], np.array([])
-
-            return ReadKitti()
+            return lambda file: np.fromfile(file, dtype=np.float32).reshape((-1, 4))[
+                :, :3
+            ], np.array([])
 
         print('Trying to guess how to read your data: `pip install "kiss-icp[all]"` is required')
         first_scan_file = self.scan_files[0]
@@ -104,7 +101,7 @@ class GenericDataset:
                 def __init__(self, time_field):
                     self.time_field = time_field
                     if self.time_field is None:
-                        self.get_timestamps = lambda pcd: np.array([])
+                        self.get_timestamps = lambda _: np.array([])
                     else:
                         self.get_timestamps = lambda pcd: self.min_max_normalize(
                             pcd.point[self.time_field].numpy().ravel()
@@ -126,12 +123,7 @@ class GenericDataset:
             import trimesh
 
             trimesh.load(first_scan_file)
-
-            class ReadTriMesh:
-                def __call__(self, file):
-                    return np.asarray(trimesh.load(file).vertices), np.array([])
-
-            return ReadTriMesh()
+            return lambda file: np.asarray(trimesh.load(file).vertices), np.array([])
         except:
             pass
 
@@ -139,15 +131,9 @@ class GenericDataset:
             from pyntcloud import PyntCloud
 
             PyntCloud.from_file(first_scan_file)
-
-            class ReadPyntCloud:
-                def __call__(self, file):
-                    return PyntCloud.from_file(file).points[["x", "y", "z"]].to_numpy(), np.array(
-                        []
-                    )
-
-            return ReadPyntCloud()
-
+            return lambda file: PyntCloud.from_file(file).points[
+                ["x", "y", "z"]
+            ].to_numpy(), np.array([])
         except:
             print("[ERROR], File format not supported")
             sys.exit(1)
