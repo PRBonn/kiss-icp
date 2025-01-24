@@ -93,4 +93,4 @@ class TUMDataset:
                 self.o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault
             ),
         )
-        return np.array(pcd.points, dtype=np.float64)
+        return np.array(pcd.points, dtype=np.float64), np.array([])

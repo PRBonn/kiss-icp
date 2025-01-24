@@ -76,7 +76,7 @@ class NuScenesDataset:
         return len(self.lidar_tokens)
 
     def __getitem__(self, idx):
-        return self.read_point_cloud(self.lidar_tokens[idx])
+        return self.read_point_cloud(self.lidar_tokens[idx]), np.array([])
 
     def read_point_cloud(self, token: str):
         filename = self.nusc.get("sample_data", token)["filename"]
