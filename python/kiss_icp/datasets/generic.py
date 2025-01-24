@@ -77,9 +77,6 @@ class GenericDataset:
             print("[WARNING] Reading .bin files, the only format supported is the KITTI format")
 
             class ReadKitti:
-                def __init__(self):
-                    pass
-
                 def __call__(self, file):
                     return np.fromfile(file, dtype=np.float32).reshape((-1, 4))[:, :3], np.array([])
 
@@ -131,9 +128,6 @@ class GenericDataset:
             trimesh.load(first_scan_file)
 
             class ReadTriMesh:
-                def __init__(self):
-                    pass
-
                 def __call__(self, file):
                     return np.asarray(trimesh.load(file).vertices), np.array([])
 
@@ -147,9 +141,6 @@ class GenericDataset:
             PyntCloud.from_file(first_scan_file)
 
             class ReadPyntCloud:
-                def __init__(self):
-                    pass
-
                 def __call__(self, file):
                     return PyntCloud.from_file(file).points[["x", "y", "z"]].to_numpy(), np.array(
                         []
