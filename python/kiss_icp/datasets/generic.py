@@ -120,17 +120,18 @@ class GenericDataset:
         except:
             pass
 
-
         try:
             import trimesh
 
             trimesh.load(first_scan_file)
+
             class ReadTriMesh:
                 def __init__(self):
                     pass
 
                 def __call__(self, file):
                     return np.asarray(trimesh.load(file).vertices), np.array([])
+
             return ReadTriMesh()
         except:
             pass
@@ -139,14 +140,16 @@ class GenericDataset:
             from pyntcloud import PyntCloud
 
             PyntCloud.from_file(first_scan_file)
+
             class ReadPyntCloud:
                 def __init__(self):
                     pass
 
                 def __call__(self, file):
-                    return PyntCloud.from_file(file).points[
-                        ["x", "y", "z"]
-                    ].to_numpy(), np.array([])
+                    return PyntCloud.from_file(file).points[["x", "y", "z"]].to_numpy(), np.array(
+                        []
+                    )
+
             return ReadPyntCloud()
 
         except:
