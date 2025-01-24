@@ -23,6 +23,8 @@
 import os
 import sys
 
+import numpy as np
+
 
 class McapDataloader:
     def __init__(self, data_dir: str, topic: str, *_, **__):
@@ -58,7 +60,7 @@ class McapDataloader:
     def __getitem__(self, idx):
         msg = next(self.msgs).ros_msg
         self.timestamps.append(self.stamp_to_sec(msg.header.stamp))
-        return self.read_point_cloud(msg)
+        return self.read_point_cloud(msg), np.array([])
 
     def __len__(self):
         return self.n_scans
