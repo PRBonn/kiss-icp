@@ -93,10 +93,10 @@ class GenericDataset:
 
             try_pcd = o3d.t.io.read_point_cloud(first_scan_file)
             stamps_keys = ["t", "stamps", "timestamps", "time"]
-            stamp_field = ""
+            stamp_field = None
             for key in stamps_keys:
                 try:
-                    _ = try_pcd.point[key].numpy().ravel()
+                    try_pcd.point[key]
                     stamp_field = key
                     print("Generic Dataloader| found timestamps")
                     break
@@ -105,19 +105,19 @@ class GenericDataset:
 
             class ReadOpen3d:
                 def __init__(self, time_field):
-                    self.time_field = time_field
+                  self.time_field = time_field  
+                  if self.time_field is None:
+                      self.get_timestamps = lambda pcd: np.array([])
+                  else:
+                      self.get_timestamps = lambda pcd: self.min_max_normalize(pcd.point[self.time_field].numpy().ravel()) 
+
+                def min_max_normalize(self, data):
+                    return (data - np.min(data)) / (np.max(data) - np.min(data))
 
                 def __call__(self, file):
                     pcd = o3d.t.io.read_point_cloud(file)
                     points = pcd.point.positions.numpy()
-                    try:
-                        timestamps = pcd.point[self.time_field].numpy().ravel()
-                        min_timestamp = np.min(timestamps)
-                        max_timestamp = np.max(timestamps)
-                        timestamps = (timestamps - min_timestamp) / (max_timestamp - min_timestamp)
-                        return points, timestamps
-                    except:
-                        return points, np.array([])
+                    return points, self.get_timestamps(pcd)
 
             return ReadOpen3d(stamp_field)
         except:
