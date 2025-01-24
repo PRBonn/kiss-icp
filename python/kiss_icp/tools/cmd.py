@@ -155,7 +155,7 @@ def kiss_icp_pipeline(
         is_flag=True,
         help="[Optional] Whether or not to deskew the scan or not",
     ),
-    # Aditional Options ---------------------------------------------------------------------------
+    # Additional Options ---------------------------------------------------------------------------
     visualize: bool = typer.Option(
         False,
         "--visualize",
@@ -224,8 +224,14 @@ def kiss_icp_pipeline(
     if jump != 0 and dataloader not in jumpable_dataloaders():
         print(f"[WARNING] '{dataloader}' does not support '--jump', starting from first frame")
         jump = 0
+    if deskew:
+        print(
+            f"[WARNING] The option '--deskew' is deprecated and might be removed in future versions. KISS-ICP now deskew the scans by default."
+        )
+        print(
+            f"[WARNING] If you want to change this behaviour create and edit a configuration file using 'kiss_icp_dump_config'. Run then using --config <your_config>."
+        )
 
-    # Lazy-loading for faster CLI
     from kiss_icp.datasets import dataset_factory
     from kiss_icp.pipeline import OdometryPipeline
 
@@ -239,7 +245,6 @@ def kiss_icp_pipeline(
             meta=meta,
         ),
         config=config,
-        deskew=deskew,
         max_range=max_range,
         visualize=visualize,
         n_scans=n_scans,
