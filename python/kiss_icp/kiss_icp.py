@@ -75,6 +75,10 @@ class KissICP:
         return frame, source
 
     def voxelize(self, iframe):
-        frame_downsample = voxel_down_sample(iframe, self.config.mapping.voxel_size * 0.5)
-        source = voxel_down_sample(frame_downsample, self.config.mapping.voxel_size * 1.5)
+        frame_downsample = voxel_down_sample(
+            iframe, self.config.mapping.voxel_size * 0.5
+        )
+        source = voxel_down_sample(
+            frame_downsample, self.config.mapping.voxel_size * 1.5
+        )
         return source, frame_downsample

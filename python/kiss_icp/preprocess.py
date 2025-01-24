@@ -41,7 +41,9 @@ class Preprocessor:
             max_range, min_range, deskew, max_num_threads
         )
 
-    def preprocess(self, frame: np.ndarray, timestamps: np.ndarray, relative_motion: np.ndarray):
+    def preprocess(
+        self, frame: np.ndarray, timestamps: np.ndarray, relative_motion: np.ndarray
+    ):
         return np.asarray(
             self._preprocessor._preprocess(
                 kiss_icp_pybind._Vector3dVector(frame),

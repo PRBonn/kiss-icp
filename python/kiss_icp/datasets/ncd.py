@@ -38,7 +38,9 @@ class NewerCollegeDataset:
 
         self.data_source = os.path.join(data_dir, "")
         self.scan_folder = os.path.join(self.data_source, "raw_format/ouster_scan")
-        self.pose_file = os.path.join(self.data_source, "ground_truth/registered_poses.csv")
+        self.pose_file = os.path.join(
+            self.data_source, "ground_truth/registered_poses.csv"
+        )
         self.sequence_id = os.path.basename(data_dir)
 
         # Load scan files and poses

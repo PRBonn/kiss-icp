@@ -66,7 +66,9 @@ def version_callback(value: bool):
             from kiss_icp.pybind import kiss_icp_pybind
         except ImportError as e:
             print(80 * "*")
-            print(f"[ERRROR] Python bindings not properly built! Please open a issue on github")
+            print(
+                f"[ERRROR] Python bindings not properly built! Please open a issue on github"
+            )
             print(f"[ERRROR] '{e}'")
             print(80 * "*")
             raise typer.Exit(1)
@@ -222,7 +224,9 @@ def kiss_icp_pipeline(
         raise typer.Exit(code=1)
 
     if jump != 0 and dataloader not in jumpable_dataloaders():
-        print(f"[WARNING] '{dataloader}' does not support '--jump', starting from first frame")
+        print(
+            f"[WARNING] '{dataloader}' does not support '--jump', starting from first frame"
+        )
         jump = 0
 
     # Lazy-loading for faster CLI

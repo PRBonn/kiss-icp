@@ -67,10 +67,14 @@ class OusterDataloader:
         try:
             from ouster.sdk import client, open_source
         except ImportError:
-            print(f'ouster-sdk is not installed on your system, run "pip install ouster-sdk"')
+            print(
+                f'ouster-sdk is not installed on your system, run "pip install ouster-sdk"'
+            )
             exit(1)
 
-        assert os.path.isfile(data_dir), "Ouster pcap dataloader expects an existing PCAP file"
+        assert os.path.isfile(
+            data_dir
+        ), "Ouster pcap dataloader expects an existing PCAP file"
 
         # we expect `data_dir` param to be a path to the .pcap file, so rename for clarity
         pcap_file = data_dir
@@ -93,7 +97,9 @@ class OusterDataloader:
         print(f"Ouster pcap total scans number:  {self._scans_num}")
 
         # frame timestamps array
-        self._timestamps = np.linspace(0, self._scans_num, self._scans_num, endpoint=False)
+        self._timestamps = np.linspace(
+            0, self._scans_num, self._scans_num, endpoint=False
+        )
 
         self._source = source
 

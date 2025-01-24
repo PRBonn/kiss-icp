@@ -46,7 +46,9 @@ class GenericDataset:
             dtype=str,
         )
         if len(self.scan_files) == 0:
-            raise ValueError(f"Tried to read point cloud files in {self.scans_dir} but none found")
+            raise ValueError(
+                f"Tried to read point cloud files in {self.scans_dir} but none found"
+            )
         self.file_extension = self.scan_files[0].split(".")[-1]
         if self.file_extension not in supported_file_extensions():
             raise ValueError(f"Supported formats are: {supported_file_extensions()}")
@@ -74,18 +76,24 @@ class GenericDataset:
         """
         # This is easy, the old KITTI format
         if self.file_extension == "bin":
-            print("[WARNING] Reading .bin files, the only format supported is the KITTI format")
+            print(
+                "[WARNING] Reading .bin files, the only format supported is the KITTI format"
+            )
 
             class ReadKitti:
                 def __init__(self):
                     pass
 
                 def __call__(self, file):
-                    return np.fromfile(file, dtype=np.float32).reshape((-1, 4))[:, :3], np.array([])
+                    return np.fromfile(file, dtype=np.float32).reshape((-1, 4))[
+                        :, :3
+                    ], np.array([])
 
             return ReadKitti()
 
-        print('Trying to guess how to read your data: `pip install "kiss-icp[all]"` is required')
+        print(
+            'Trying to guess how to read your data: `pip install "kiss-icp[all]"` is required'
+        )
         first_scan_file = self.scan_files[0]
         # first try open3d
         try:
@@ -105,11 +113,13 @@ class GenericDataset:
 
             class ReadOpen3d:
                 def __init__(self, time_field):
-                  self.time_field = time_field  
-                  if self.time_field is None:
-                      self.get_timestamps = lambda pcd: np.array([])
-                  else:
-                      self.get_timestamps = lambda pcd: self.min_max_normalize(pcd.point[self.time_field].numpy().ravel()) 
+                    self.time_field = time_field
+                    if self.time_field is None:
+                        self.get_timestamps = lambda pcd: np.array([])
+                    else:
+                        self.get_timestamps = lambda pcd: self.min_max_normalize(
+                            pcd.point[self.time_field].numpy().ravel()
+                        )
 
                 def min_max_normalize(self, data):
                     return (data - np.min(data)) / (np.max(data) - np.min(data))
@@ -149,9 +159,9 @@ class GenericDataset:
                     pass
 
                 def __call__(self, file):
-                    return PyntCloud.from_file(file).points[["x", "y", "z"]].to_numpy(), np.array(
-                        []
-                    )
+                    return PyntCloud.from_file(file).points[
+                        ["x", "y", "z"]
+                    ].to_numpy(), np.array([])
 
             return ReadPyntCloud()
 

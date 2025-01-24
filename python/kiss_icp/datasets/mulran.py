@@ -34,8 +34,12 @@ class MulranDataset:
         self.velodyne_dir = os.path.join(self.sequence_dir, "Ouster/")
 
         self.scan_files = sorted(glob.glob(self.velodyne_dir + "*.bin"))
-        self.scan_timestamps = [int(os.path.basename(t).split(".")[0]) for t in self.scan_files]
-        self.gt_poses = self.load_gt_poses(os.path.join(self.sequence_dir, "global_pose.csv"))
+        self.scan_timestamps = [
+            int(os.path.basename(t).split(".")[0]) for t in self.scan_files
+        ]
+        self.gt_poses = self.load_gt_poses(
+            os.path.join(self.sequence_dir, "global_pose.csv")
+        )
 
     def __len__(self):
         return len(self.scan_files)
@@ -66,7 +70,11 @@ class MulranDataset:
             poses = poses[:, 1:]
             n = poses.shape[0]
             poses = np.concatenate(
-                (poses, np.zeros((n, 3), dtype=np.float32), np.ones((n, 1), dtype=np.float32)),
+                (
+                    poses,
+                    np.zeros((n, 3), dtype=np.float32),
+                    np.ones((n, 1), dtype=np.float32),
+                ),
                 axis=1,
             )
             poses = poses.reshape((n, 4, 4))  # [N, 4, 4]

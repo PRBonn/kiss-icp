@@ -70,7 +70,9 @@ def generate_launch_description():
     bagfile = LaunchConfiguration("bagfile", default="")
 
     # tf tree configuration, these are the likely parameters to change and nothing else
-    base_frame = LaunchConfiguration("base_frame", default="")  # (base_link/base_footprint)
+    base_frame = LaunchConfiguration(
+        "base_frame", default=""
+    )  # (base_link/base_footprint)
     lidar_odom_frame = LaunchConfiguration("lidar_odom_frame", default="odom_lidar")
     publish_odom_tf = LaunchConfiguration("publish_odom_tf", default=True)
     invert_odom_tf = LaunchConfiguration("invert_odom_tf", default=True)
@@ -119,7 +121,9 @@ def generate_launch_description():
         output="screen",
         arguments=[
             "-d",
-            PathJoinSubstitution([FindPackageShare("kiss_icp"), "rviz", "kiss_icp.rviz"]),
+            PathJoinSubstitution(
+                [FindPackageShare("kiss_icp"), "rviz", "kiss_icp.rviz"]
+            ),
         ],
         condition=IfCondition(visualize),
     )

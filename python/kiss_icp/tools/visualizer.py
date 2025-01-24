@@ -64,7 +64,9 @@ class Kissualizer(StubVisualizer):
             self._ps = importlib.import_module("polyscope")
             self._gui = self._ps.imgui
         except ModuleNotFoundError as err:
-            print(f'polyscope is not installed on your system, run "pip install polyscope"')
+            print(
+                f'polyscope is not installed on your system, run "pip install polyscope"'
+            )
             exit(1)
 
         # Initialize GUI controls
@@ -167,22 +169,30 @@ class Kissualizer(StubVisualizer):
     # GUI Callbacks ---------------------------------------------------------------------------
     def _start_pause_callback(self):
         button_name = PAUSE_BUTTON if self._play_mode else START_BUTTON
-        if self._gui.Button(button_name) or self._gui.IsKeyPressed(self._gui.ImGuiKey_Space):
+        if self._gui.Button(button_name) or self._gui.IsKeyPressed(
+            self._gui.ImGuiKey_Space
+        ):
             self._play_mode = not self._play_mode
 
     def _next_frame_callback(self):
-        if self._gui.Button(NEXT_FRAME_BUTTON) or self._gui.IsKeyPressed(self._gui.ImGuiKey_N):
+        if self._gui.Button(NEXT_FRAME_BUTTON) or self._gui.IsKeyPressed(
+            self._gui.ImGuiKey_N
+        ):
             self._block_execution = not self._block_execution
 
     def _screenshot_callback(self):
-        if self._gui.Button(SCREENSHOT_BUTTON) or self._gui.IsKeyPressed(self._gui.ImGuiKey_S):
+        if self._gui.Button(SCREENSHOT_BUTTON) or self._gui.IsKeyPressed(
+            self._gui.ImGuiKey_S
+        ):
             image_filename = "kisshot_" + (
                 datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".jpg"
             )
             self._ps.screenshot(image_filename)
 
     def _vis_infos_callback(self):
-        if self._gui.TreeNodeEx("Odometry Information", self._gui.ImGuiTreeNodeFlags_DefaultOpen):
+        if self._gui.TreeNodeEx(
+            "Odometry Information", self._gui.ImGuiTreeNodeFlags_DefaultOpen
+        ):
             for key in self._vis_infos:
                 self._gui.TextUnformatted(f"{key}: {self._vis_infos[key]}")
             if not self._play_mode and self._global_view:
@@ -201,9 +211,13 @@ class Kissualizer(StubVisualizer):
             "##frame_size", self._frame_size, v_min=0.01, v_max=0.6
         )
         if changed:
-            self._ps.get_point_cloud("current_frame").set_radius(self._frame_size, relative=False)
+            self._ps.get_point_cloud("current_frame").set_radius(
+                self._frame_size, relative=False
+            )
         self._gui.SameLine()
-        changed, self._toggle_frame = self._gui.Checkbox("Frame Cloud", self._toggle_frame)
+        changed, self._toggle_frame = self._gui.Checkbox(
+            "Frame Cloud", self._toggle_frame
+        )
         if changed:
             self._ps.get_point_cloud("current_frame").set_enabled(self._toggle_frame)
 
@@ -212,9 +226,13 @@ class Kissualizer(StubVisualizer):
             "##keypoints_size", self._keypoints_size, v_min=0.01, v_max=0.6
         )
         if changed:
-            self._ps.get_point_cloud("keypoints").set_radius(self._keypoints_size, relative=False)
+            self._ps.get_point_cloud("keypoints").set_radius(
+                self._keypoints_size, relative=False
+            )
         self._gui.SameLine()
-        changed, self._toggle_keypoints = self._gui.Checkbox("Keypoints", self._toggle_keypoints)
+        changed, self._toggle_keypoints = self._gui.Checkbox(
+            "Keypoints", self._toggle_keypoints
+        )
         if changed:
             self._ps.get_point_cloud("keypoints").set_enabled(self._toggle_keypoints)
 
@@ -223,7 +241,9 @@ class Kissualizer(StubVisualizer):
             "##map_size", self._map_size, v_min=0.01, v_max=0.6
         )
         if changed:
-            self._ps.get_point_cloud("local_map").set_radius(self._map_size, relative=False)
+            self._ps.get_point_cloud("local_map").set_radius(
+                self._map_size, relative=False
+            )
         self._gui.SameLine()
         changed, self._toggle_map = self._gui.Checkbox("Local Map", self._toggle_map)
         if changed:
@@ -239,7 +259,9 @@ class Kissualizer(StubVisualizer):
 
     def _global_view_callback(self):
         button_name = LOCAL_VIEW_BUTTON if self._global_view else GLOBAL_VIEW_BUTTON
-        if self._gui.Button(button_name) or self._gui.IsKeyPressed(self._gui.ImGuiKey_G):
+        if self._gui.Button(button_name) or self._gui.IsKeyPressed(
+            self._gui.ImGuiKey_G
+        ):
             self._global_view = not self._global_view
             if self._global_view:
                 self._ps.get_point_cloud("current_frame").set_transform(self._last_pose)
@@ -249,7 +271,9 @@ class Kissualizer(StubVisualizer):
             else:
                 self._ps.get_point_cloud("current_frame").set_transform(np.eye(4))
                 self._ps.get_point_cloud("keypoints").set_transform(np.eye(4))
-                self._ps.get_point_cloud("local_map").set_transform(np.linalg.inv(self._last_pose))
+                self._ps.get_point_cloud("local_map").set_transform(
+                    np.linalg.inv(self._last_pose)
+                )
                 self._unregister_trajectory()
             self._ps.reset_camera_to_home_view()
 
@@ -271,7 +295,9 @@ class Kissualizer(StubVisualizer):
             name, idx = self._ps.get_selection()
             if name == "trajectory" and self._ps.has_point_cloud(name):
                 pose = self._trajectory[idx]
-                self._selected_pose = f"x: {pose[0]:7.3f}, y: {pose[1]:7.3f}, z: {pose[2]:7.3f}>"
+                self._selected_pose = (
+                    f"x: {pose[0]:7.3f}, y: {pose[1]:7.3f}, z: {pose[2]:7.3f}>"
+                )
             else:
                 self._selected_pose = ""
 

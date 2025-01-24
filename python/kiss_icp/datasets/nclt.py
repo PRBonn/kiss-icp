@@ -43,7 +43,9 @@ class NCLTDataset:
             )
         )
         gt_data = np.loadtxt(poses_file, delimiter=",")
-        self.timestamps, timestamp_filter = self.load_valid_timestamps(gt_data, scan_files)
+        self.timestamps, timestamp_filter = self.load_valid_timestamps(
+            gt_data, scan_files
+        )
         self.scan_files = scan_files[timestamp_filter]
         self.gt_poses = self.load_gt_poses(gt_data)
 
@@ -85,7 +87,8 @@ class NCLTDataset:
         gt_t = gt_data[:, 0]
         # Limit the sequence to timestamps for which a ground truth exists
         timestamps = np.array(
-            [os.path.basename(file).split(".")[0] for file in scan_files], dtype=np.int64
+            [os.path.basename(file).split(".")[0] for file in scan_files],
+            dtype=np.int64,
         )
         filter_ = (timestamps > np.min(gt_t)) * (timestamps < np.max(gt_t))
         return timestamps[filter_], filter_
@@ -98,7 +101,9 @@ class NCLTDataset:
             print('NCLT dataloader requires scipy: "pip install scipy"')
             sys.exit(1)
 
-        inter = interpolate.interp1d(gt_data[:, 0], gt_data[:, 1:], kind="nearest", axis=0)
+        inter = interpolate.interp1d(
+            gt_data[:, 0], gt_data[:, 1:], kind="nearest", axis=0
+        )
 
         # Limit the sequence to timestamps for which a ground truth exists
         gt = inter(self.timestamps)

@@ -115,6 +115,8 @@ class McapDataloader:
             print_available_topics_and_exit()
 
         if len(point_cloud_topics) == 0:
-            print("[ERROR] Your dataset does not contain any sensor_msgs/msg/PointCloud2 topic")
+            print(
+                "[ERROR] Your dataset does not contain any sensor_msgs/msg/PointCloud2 topic"
+            )
         if len(point_cloud_topics) == 1:
             return point_cloud_topics[0]

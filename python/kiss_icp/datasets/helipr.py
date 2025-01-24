@@ -54,10 +54,16 @@ class HeLiPRDataset:
 
         # Match number of scans with number of references poses available
         self.gt_poses = np.array(
-            [pose for time, pose in zip(pose_timestamps, poses) if time in scan_timestamps]
+            [
+                pose
+                for time, pose in zip(pose_timestamps, poses)
+                if time in scan_timestamps
+            ]
         ).reshape(-1, 4, 4)
 
-        scan_files = [file for file in scan_files if int(Path(file).stem) in pose_timestamps]
+        scan_files = [
+            file for file in scan_files if int(Path(file).stem) in pose_timestamps
+        ]
 
         self.scan_files = np.array(
             natsort.natsorted(
@@ -70,7 +76,9 @@ class HeLiPRDataset:
             dtype=str,
         )
         if len(self.scan_files) == 0:
-            raise ValueError(f"Tried to read point cloud files in {data_dir} but none found")
+            raise ValueError(
+                f"Tried to read point cloud files in {data_dir} but none found"
+            )
 
         # Obtain the pointcloud reader for the given data folder
         if self.sequence_id == "Avia":
@@ -120,7 +128,10 @@ class HeLiPRDataset:
         list_lines = []
 
         # Special case, see https://github.com/minwoo0611/HeLiPR-File-Player/blob/e8d95e390454ece1415ae9deb51515f63730c10a/src/ROSThread.cpp#L632
-        if self.sequence_id == "Aeva" and int(Path(file_path).stem) <= 1691936557946849179:
+        if (
+            self.sequence_id == "Aeva"
+            and int(Path(file_path).stem) <= 1691936557946849179
+        ):
             self.intensity_channel = None
             format_string = self.format_string_no_intensity
         else:
@@ -131,7 +142,9 @@ class HeLiPRDataset:
             binary = f.read()
             offset = 0
             while offset < len(binary) - chunk_size:
-                list_lines.append(struct.unpack_from(f"={format_string}", binary, offset))
+                list_lines.append(
+                    struct.unpack_from(f"={format_string}", binary, offset)
+                )
                 offset += chunk_size
         data = np.stack(list_lines)
         return data

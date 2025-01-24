@@ -33,7 +33,9 @@ class KITTIOdometryDataset:
         self.velodyne_dir = os.path.join(self.kitti_sequence_dir, "velodyne/")
 
         self.scan_files = sorted(glob.glob(self.velodyne_dir + "*.bin"))
-        self.calibration = self.read_calib_file(os.path.join(self.kitti_sequence_dir, "calib.txt"))
+        self.calibration = self.read_calib_file(
+            os.path.join(self.kitti_sequence_dir, "calib.txt")
+        )
 
         # Load GT Poses (if available)
         if int(sequence) < 11:
@@ -63,7 +65,11 @@ class KITTIOdometryDataset:
         return Tr @ poses @ np.linalg.inv(Tr)
 
     def read_point_cloud(self, scan_file: str):
-        points = np.fromfile(scan_file, dtype=np.float32).reshape((-1, 4))[:, :3].astype(np.float64)
+        points = (
+            np.fromfile(scan_file, dtype=np.float32)
+            .reshape((-1, 4))[:, :3]
+            .astype(np.float64)
+        )
         #  points = points[points[:, 2] > -2.9]  # Remove the annoying reflections
         points = self.correct_kitti_scan(points)
         return points
@@ -80,13 +86,20 @@ class KITTIOdometryDataset:
         poses = np.loadtxt(poses_file, delimiter=" ")
         n = poses.shape[0]
         poses = np.concatenate(
-            (poses, np.zeros((n, 3), dtype=np.float32), np.ones((n, 1), dtype=np.float32)), axis=1
+            (
+                poses,
+                np.zeros((n, 3), dtype=np.float32),
+                np.ones((n, 1), dtype=np.float32),
+            ),
+            axis=1,
         )
         poses = poses.reshape((n, 4, 4))  # [N, 4, 4]
         return _lidar_pose_gt(poses)
 
     def get_frames_timestamps(self) -> np.ndarray:
-        timestamps = np.loadtxt(os.path.join(self.kitti_sequence_dir, "times.txt")).reshape(-1, 1)
+        timestamps = np.loadtxt(
+            os.path.join(self.kitti_sequence_dir, "times.txt")
+        ).reshape(-1, 1)
         return timestamps
 
     @staticmethod
