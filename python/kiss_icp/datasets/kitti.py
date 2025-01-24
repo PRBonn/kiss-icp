@@ -54,7 +54,7 @@ class KITTIOdometryDataset:
         return len(self.scan_files)
 
     def scans(self, idx):
-        return self.read_point_cloud(self.scan_files[idx])
+        return self.read_point_cloud(self.scan_files[idx]), np.array([])
 
     def apply_calibration(self, poses: np.ndarray) -> np.ndarray:
         """Converts from Velodyne to Camera Frame"""
