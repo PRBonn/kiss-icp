@@ -61,8 +61,8 @@ class GenericDataset:
         return self.read_point_cloud(self.scan_files[idx])
 
     def read_point_cloud(self, file_path: str):
-        points = self._read_point_cloud(file_path)
-        return points.astype(np.float64)
+        points, timestamps = self._read_point_cloud(file_path)
+        return points.astype(np.float64), timestamps.astype(np.float64)
 
     def _get_point_cloud_reader(self):
         """Attempt to guess with try/catch blocks which is the best point cloud reader to use for
@@ -75,35 +75,65 @@ class GenericDataset:
         # This is easy, the old KITTI format
         if self.file_extension == "bin":
             print("[WARNING] Reading .bin files, the only format supported is the KITTI format")
-            return lambda file: np.fromfile(file, dtype=np.float32).reshape((-1, 4))[:, :3]
+            return lambda file: np.fromfile(file, dtype=np.float32).reshape((-1, 4))[
+                :, :3
+            ], np.array([])
 
         print('Trying to guess how to read your data: `pip install "kiss-icp[all]"` is required')
         first_scan_file = self.scan_files[0]
+        # first try open3d
+        try:
+            import open3d as o3d
 
-        # first try trimesh
+            try_pcd = o3d.t.io.read_point_cloud(first_scan_file)
+            stamps_keys = ["t", "timestamp", "timestamps", "time", "stamps"]
+            stamp_field = None
+            for key in stamps_keys:
+                try:
+                    try_pcd.point[key]
+                    stamp_field = key
+                    print("Generic Dataloader| found timestamps")
+                    break
+                except:
+                    continue
+
+            class ReadOpen3d:
+                def __init__(self, time_field):
+                    self.time_field = time_field
+                    if self.time_field is None:
+                        self.get_timestamps = lambda _: np.array([])
+                    else:
+                        self.get_timestamps = lambda pcd: self.min_max_normalize(
+                            pcd.point[self.time_field].numpy().ravel()
+                        )
+
+                def min_max_normalize(self, data):
+                    return (data - np.min(data)) / (np.max(data) - np.min(data))
+
+                def __call__(self, file):
+                    pcd = o3d.t.io.read_point_cloud(file)
+                    points = pcd.point.positions.numpy()
+                    return points, self.get_timestamps(pcd)
+
+            return ReadOpen3d(stamp_field)
+        except:
+            pass
+
         try:
             import trimesh
 
             trimesh.load(first_scan_file)
-            return lambda file: np.asarray(trimesh.load(file).vertices)
+            return lambda file: np.asarray(trimesh.load(file).vertices), np.array([])
         except:
             pass
 
-        # then try pyntcloud
         try:
             from pyntcloud import PyntCloud
 
             PyntCloud.from_file(first_scan_file)
-            return lambda file: PyntCloud.from_file(file).points[["x", "y", "z"]].to_numpy()
-        except:
-            pass
-
-        # lastly with open3d
-        try:
-            import open3d as o3d
-
-            o3d.io.read_point_cloud(first_scan_file)
-            return lambda file: np.asarray(o3d.io.read_point_cloud(file).points, dtype=np.float64)
+            return lambda file: PyntCloud.from_file(file).points[
+                ["x", "y", "z"]
+            ].to_numpy(), np.array([])
         except:
             print("[ERROR], File format not supported")
             sys.exit(1)
