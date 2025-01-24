@@ -85,8 +85,7 @@ class NCLTDataset:
         gt_t = gt_data[:, 0]
         # Limit the sequence to timestamps for which a ground truth exists
         timestamps = np.array(
-            [os.path.basename(file).split(".")[0] for file in scan_files],
-            dtype=np.int64,
+            [os.path.basename(file).split(".")[0] for file in scan_files], dtype=np.int64
         )
         filter_ = (timestamps > np.min(gt_t)) * (timestamps < np.max(gt_t))
         return timestamps[filter_], filter_

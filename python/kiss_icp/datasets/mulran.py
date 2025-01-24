@@ -66,11 +66,7 @@ class MulranDataset:
             poses = poses[:, 1:]
             n = poses.shape[0]
             poses = np.concatenate(
-                (
-                    poses,
-                    np.zeros((n, 3), dtype=np.float32),
-                    np.ones((n, 1), dtype=np.float32),
-                ),
+                (poses, np.zeros((n, 3), dtype=np.float32), np.ones((n, 1), dtype=np.float32)),
                 axis=1,
             )
             poses = poses.reshape((n, 4, 4))  # [N, 4, 4]
