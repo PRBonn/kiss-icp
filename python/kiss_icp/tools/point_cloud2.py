@@ -40,9 +40,7 @@ try:
     from rosbags.typesys.types import sensor_msgs__msg__PointCloud2 as PointCloud2
     from rosbags.typesys.types import sensor_msgs__msg__PointField as PointField
 except ImportError as e:
-    raise ImportError(
-        'rosbags library not installed, run "pip install -U rosbags"'
-    ) from e
+    raise ImportError('rosbags library not installed, run "pip install -U rosbags"') from e
 
 
 _DATATYPES = {}
@@ -142,9 +140,7 @@ def read_points(
     return points
 
 
-def dtype_from_fields(
-    fields: Iterable[PointField], point_step: Optional[int] = None
-) -> np.dtype:
+def dtype_from_fields(fields: Iterable[PointField], point_step: Optional[int] = None) -> np.dtype:
     """
     Convert a Iterable of sensor_msgs.msg.PointField messages to a np.dtype.
     :param fields: The point cloud fields.
@@ -174,9 +170,7 @@ def dtype_from_fields(
                 subfield_name = f"{name}_{a}"
             else:
                 subfield_name = name
-            assert (
-                subfield_name not in field_names
-            ), "Duplicate field names are not allowed!"
+            assert subfield_name not in field_names, "Duplicate field names are not allowed!"
             field_names.append(subfield_name)
             # Create new offset that includes subfields
             field_offsets.append(field.offset + a * datatype.itemsize)

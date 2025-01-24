@@ -51,9 +51,7 @@ class OdometryPipeline:
     ):
         self._dataset = dataset
         self._n_scans = (
-            len(self._dataset) - jump
-            if n_scans == -1
-            else min(len(self._dataset) - jump, n_scans)
+            len(self._dataset) - jump if n_scans == -1 else min(len(self._dataset) - jump, n_scans)
         )
         self._jump = jump
         self._first = jump
@@ -69,9 +67,7 @@ class OdometryPipeline:
         self.times = np.zeros(self._n_scans)
         self.poses = np.zeros((self._n_scans, 4, 4))
         self.has_gt = hasattr(self._dataset, "gt_poses")
-        self.gt_poses = (
-            self._dataset.gt_poses[self._first : self._last] if self.has_gt else None
-        )
+        self.gt_poses = self._dataset.gt_poses[self._first : self._last] if self.has_gt else None
         self.dataset_name = self._dataset.__class__.__name__
         self.dataset_sequence = (
             self._dataset.sequence_id
@@ -143,15 +139,11 @@ class OdometryPipeline:
                 for idx in range(len(poses)):
                     tx, ty, tz = poses[idx, :3, -1].flatten()
                     qw, qx, qy, qz = Quaternion(matrix=poses[idx], atol=0.01).elements
-                    tum_data[idx] = np.r_[
-                        float(timestamps[idx]), tx, ty, tz, qx, qy, qz, qw
-                    ]
+                    tum_data[idx] = np.r_[float(timestamps[idx]), tx, ty, tz, qx, qy, qz, qw]
                 tum_data.flatten()
                 return tum_data.astype(np.float64)
 
-        np.savetxt(
-            fname=f"{filename}_tum.txt", X=_to_tum_format(poses, timestamps), fmt="%.4f"
-        )
+        np.savetxt(fname=f"{filename}_tum.txt", X=_to_tum_format(poses, timestamps), fmt="%.4f")
 
     def _calibrate_poses(self, poses):
         return (
@@ -198,30 +190,18 @@ class OdometryPipeline:
         if self.has_gt:
             avg_tra, avg_rot = sequence_error(self.gt_poses, self.poses)
             ate_rot, ate_trans = absolute_trajectory_error(self.gt_poses, self.poses)
-            self.results.append(
-                desc="Average Translation Error", units="%", value=avg_tra
-            )
-            self.results.append(
-                desc="Average Rotational Error", units="deg/m", value=avg_rot
-            )
-            self.results.append(
-                desc="Absolute Trajectory Error (ATE)", units="m", value=ate_trans
-            )
-            self.results.append(
-                desc="Absolute Rotational Error (ARE)", units="rad", value=ate_rot
-            )
+            self.results.append(desc="Average Translation Error", units="%", value=avg_tra)
+            self.results.append(desc="Average Rotational Error", units="deg/m", value=avg_rot)
+            self.results.append(desc="Absolute Trajectory Error (ATE)", units="m", value=ate_trans)
+            self.results.append(desc="Absolute Rotational Error (ARE)", units="rad", value=ate_rot)
 
         # Run timing metrics evaluation, always
         fps = self._get_fps()
         avg_fps = int(np.floor(fps))
         avg_ms = int(np.ceil(1e3 / fps)) if fps > 0 else 0
         if avg_fps > 0:
-            self.results.append(
-                desc="Average Frequency", units="Hz", value=avg_fps, trunc=True
-            )
-            self.results.append(
-                desc="Average Runtime", units="ms", value=avg_ms, trunc=True
-            )
+            self.results.append(desc="Average Frequency", units="Hz", value=avg_fps, trunc=True)
+            self.results.append(desc="Average Runtime", units="ms", value=avg_ms, trunc=True)
 
     def _write_log(self):
         if not self.results.empty():

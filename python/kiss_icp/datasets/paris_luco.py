@@ -35,9 +35,7 @@ class ParisLucoDataset:
         self.sequence_dir = os.path.realpath(data_dir)
         self.velodyne_dir = os.path.join(self.sequence_dir, "frames/")
         self.scan_files = sorted(glob.glob(self.velodyne_dir + "*.ply"))
-        self.gt_poses = self.load_gt_poses(
-            os.path.join(self.sequence_dir, "gt_traj_lidar.txt")
-        )
+        self.gt_poses = self.load_gt_poses(os.path.join(self.sequence_dir, "gt_traj_lidar.txt"))
 
     def __len__(self):
         return len(self.scan_files)

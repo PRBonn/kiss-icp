@@ -118,9 +118,7 @@ class NuScenesDataset:
         :param split_logs: A list of the log names in this split.
         :return: The list of samples.
         """
-        scene_tokens = [
-            s["token"] for s in self.nusc.scene if s["name"] == self.scene_name
-        ][0]
+        scene_tokens = [s["token"] for s in self.nusc.scene if s["name"] == self.scene_name][0]
         scene = self.nusc.get("scene", scene_tokens)
         log = self.nusc.get("log", scene["log_token"])
         return scene["token"] if log["logfile"] in split_logs else ""

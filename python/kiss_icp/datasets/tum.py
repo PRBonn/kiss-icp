@@ -43,9 +43,7 @@ class TUMDataset:
         self.depth_frames = np.loadtxt(fname=self.data_dir / "depth.txt", dtype=str)
 
         # rgb single frame
-        rgb_path = os.path.join(
-            self.data_dir, "rgb", os.listdir(self.data_dir / "rgb")[0]
-        )
+        rgb_path = os.path.join(self.data_dir, "rgb", os.listdir(self.data_dir / "rgb")[0])
         self.rgb_default_frame = self.o3d.io.read_image(rgb_path)
 
         # Load GT poses

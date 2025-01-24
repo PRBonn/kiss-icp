@@ -44,9 +44,7 @@ __raw_to_odometry_mapping__ = {
 class KITTIRawDataset:
     def __init__(self, data_dir: Path, sequence: str, *_, **__):
         self.sequence_id = str(sequence).zfill(2)
-        self.root_dir = os.path.realpath(
-            data_dir / __raw_to_odometry_mapping__[self.sequence_id]
-        )
+        self.root_dir = os.path.realpath(data_dir / __raw_to_odometry_mapping__[self.sequence_id])
         self.date_id = self.root_dir.split("/")[-2]
         self.valid_idx = self.get_benchmark_indices(self.sequence_id)
 
@@ -79,11 +77,7 @@ class KITTIRawDataset:
         return self.read_point_cloud(self.scan_files[idx])
 
     def read_point_cloud(self, scan_file: str):
-        points = (
-            np.fromfile(scan_file, dtype=np.float32)
-            .reshape((-1, 4))[:, :3]
-            .astype(np.float64)
-        )
+        points = np.fromfile(scan_file, dtype=np.float32).reshape((-1, 4))[:, :3].astype(np.float64)
         #  points = points[points[:, 2] > -2.9]  # Remove the annoying reflections
         points = self.correct_kitti_scan(points)
         return points, self.get_timestamps(points)
@@ -246,9 +240,7 @@ class KITTIRawDataset:
         data["T_velo_imu"] = self._load_calib_rigid("calib_imu_to_velo.txt")
 
         # Load the camera intrinsics and extrinsics
-        data.update(
-            self._load_calib_cam_to_cam("calib_velo_to_cam.txt", "calib_cam_to_cam.txt")
-        )
+        data.update(self._load_calib_cam_to_cam("calib_velo_to_cam.txt", "calib_cam_to_cam.txt"))
 
         # Pre-compute the IMU to rectified camera coordinate transforms
         data["T_cam0_imu"] = data["T_cam0_velo"].dot(data["T_velo_imu"])

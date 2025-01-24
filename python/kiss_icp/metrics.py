@@ -27,9 +27,7 @@ import numpy as np
 from kiss_icp.pybind import kiss_icp_pybind
 
 
-def sequence_error(
-    gt_poses: np.ndarray, results_poses: np.ndarray
-) -> Tuple[float, float]:
+def sequence_error(gt_poses: np.ndarray, results_poses: np.ndarray) -> Tuple[float, float]:
     """Sptis the sequence error for a given trajectory in camera coordinate frames."""
     return kiss_icp_pybind._kitti_seq_error(gt_poses, results_poses)
 
