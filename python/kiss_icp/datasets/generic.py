@@ -112,6 +112,9 @@ class GenericDataset:
                     points = pcd.point.positions.numpy()
                     try:
                         timestamps = pcd.point[self.time_field].numpy().ravel()
+                        min_timestamp = np.min(timestamps)
+                        max_timestamp = np.max(timestamps)
+                        timestamps = (timestamps - min_timestamp) / (max_timestamp - min_timestamp)
                         return points, timestamps
                     except:
                         return points, np.array([])
