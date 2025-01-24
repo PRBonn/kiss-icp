@@ -60,7 +60,6 @@ std::vector<Eigen::Vector3d> Preprocessor::Preprocess(const std::vector<Eigen::V
             return frame;
         } else {
             const auto &omega = relative_motion.log();
-            const Sophus::SE3d &inverse_motion = relative_motion.inverse();
             std::vector<Eigen::Vector3d> deskewed_frame(frame.size());
             tbb::parallel_for(
                 // Index Range
@@ -70,7 +69,7 @@ std::vector<Eigen::Vector3d> Preprocessor::Preprocess(const std::vector<Eigen::V
                     for (size_t idx = r.begin(); idx < r.end(); ++idx) {
                         const auto &point = frame.at(idx);
                         const auto &stamp = timestamps.at(idx);
-                        const auto pose = inverse_motion * Sophus::SE3d::exp(stamp * omega);
+                        const auto pose = Sophus::SE3d::exp((stamp - 1.0) * omega);
                         deskewed_frame.at(idx) = pose * point;
                     };
                 });
