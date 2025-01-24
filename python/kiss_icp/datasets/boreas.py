@@ -75,19 +75,11 @@ class BoreasDataset:
             dtype=np.float64,
         )
         R_pitch = np.array(
-            [
-                [np.cos(pitch), 0, -np.sin(pitch)],
-                [0, 1, 0],
-                [np.sin(pitch), 0, np.cos(pitch)],
-            ],
+            [[np.cos(pitch), 0, -np.sin(pitch)], [0, 1, 0], [np.sin(pitch), 0, np.cos(pitch)]],
             dtype=np.float64,
         )
         R_roll = np.array(
-            [
-                [1, 0, 0],
-                [0, np.cos(roll), np.sin(roll)],
-                [0, -np.sin(roll), np.cos(roll)],
-            ],
+            [[1, 0, 0], [0, np.cos(roll), np.sin(roll)], [0, -np.sin(roll), np.cos(roll)]],
             dtype=np.float64,
         )
         C_enu_sensor = R_roll @ R_pitch @ R_yaw
