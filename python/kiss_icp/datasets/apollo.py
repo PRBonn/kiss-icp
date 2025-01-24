@@ -49,7 +49,7 @@ class ApolloDataset:
         return len(self.scan_files)
 
     def __getitem__(self, idx):
-        return self.get_scan(self.scan_files[idx])
+        return self.get_scan(self.scan_files[idx]), np.array([])
 
     def get_scan(self, scan_file: str):
         points = np.asarray(self.o3d.io.read_point_cloud(scan_file).points, dtype=np.float64)

@@ -98,7 +98,7 @@ class OdometryPipeline:
     # Private interface  ------
     def _run_pipeline(self):
         for idx in get_progress_bar(self._first, self._last):
-            raw_frame, timestamps = self._next(idx)
+            raw_frame, timestamps = self._dataset[idx]
             start_time = time.perf_counter_ns()
             source, keypoints = self.odometry.register_frame(raw_frame, timestamps)
             self.poses[idx - self._first] = self.odometry.last_pose
@@ -113,16 +113,6 @@ class OdometryPipeline:
                 self.odometry.last_pose,
                 self._vis_infos,
             )
-
-    def _next(self, idx):
-        """TODO: re-arrange this logic"""
-        dataframe = self._dataset[idx]
-        try:
-            frame, timestamps = dataframe
-        except ValueError:
-            frame = dataframe
-            timestamps = np.array([])
-        return frame, timestamps
 
     @staticmethod
     def save_poses_kitti_format(filename: str, poses: np.ndarray):
