@@ -96,7 +96,7 @@ class GenericDataset:
             stamp_field = ""
             for key in stamps_keys:
                 try:
-                    timestamps = try_pcd.point[key].numpy().ravel()
+                    _ = try_pcd.point[key].numpy().ravel()
                     stamp_field = key
                     print("Generic Dataloader| found timestamps")
                     break
