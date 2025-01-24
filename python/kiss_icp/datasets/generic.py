@@ -92,7 +92,7 @@ class GenericDataset:
             import open3d as o3d
 
             try_pcd = o3d.t.io.read_point_cloud(first_scan_file)
-            stamps_keys = ["t", "stamps", "timestamps", "time"]
+            stamps_keys = ["t", "timestamp", "timestamps", "time", "stamps"]
             stamp_field = None
             for key in stamps_keys:
                 try:
