@@ -27,8 +27,8 @@ from pydantic import BaseModel
 
 class DataConfig(BaseModel):
     max_range: float = 100.0
-    min_range: float = 5.0
-    deskew: bool = False
+    min_range: float = 0.0
+    deskew: bool = True
 
 
 class MappingConfig(BaseModel):
