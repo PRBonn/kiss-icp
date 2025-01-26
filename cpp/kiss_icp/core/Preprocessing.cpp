@@ -59,8 +59,8 @@ std::vector<Eigen::Vector3d> Preprocessor::Preprocess(const std::vector<Eigen::V
         if (!deskew_ || timestamps.empty()) {
             return frame;
         } else {
-            const auto&[min,max] = std::minmax_element(timestamps.cbegin(),timestamps.cend());
-            const auto normalize = [&](const double t){return (t-*min)/(*max-*min);};
+            const auto &[min, max] = std::minmax_element(timestamps.cbegin(), timestamps.cend());
+            const auto normalize = [&](const double t) { return (t - *min) / (*max - *min); };
             const auto &omega = relative_motion.log();
             std::vector<Eigen::Vector3d> deskewed_frame(frame.size());
             tbb::parallel_for(
