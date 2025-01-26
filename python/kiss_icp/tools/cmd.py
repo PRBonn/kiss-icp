@@ -226,10 +226,10 @@ def kiss_icp_pipeline(
         jump = 0
     if deskew:
         print(
-            f"[WARNING] The option '--deskew' is deprecated and might be removed in future versions. KISS-ICP now deskew the scans by default."
+            f"[WARNING] The option '--deskew' is deprecated and might be removed in future versions."
         )
         print(
-            f"[WARNING] If you want to change this behaviour create and edit a configuration file using 'kiss_icp_dump_config'. Run then using --config <your_config>."
+            f"[WARNING] KISS-ICP now deskew the scans by default. If you want to change this behaviour create and edit a configuration file using 'kiss_icp_dump_config'. Run then using --config <your_config>."
         )
 
     from kiss_icp.datasets import dataset_factory
