@@ -224,12 +224,12 @@ def kiss_icp_pipeline(
     if jump != 0 and dataloader not in jumpable_dataloaders():
         print(f"[WARNING] '{dataloader}' does not support '--jump', starting from first frame")
         jump = 0
+    print(
+        f"[WARNING] KISS-ICP now deskew the scans by default. If you want to change this behaviour create and edit a configuration file using 'kiss_icp_dump_config'. Run then using --config <your_config>."
+    )
     if deskew:
         print(
             f"[WARNING] The option '--deskew' is deprecated and might be removed in future versions."
-        )
-        print(
-            f"[WARNING] KISS-ICP now deskew the scans by default. If you want to change this behaviour create and edit a configuration file using 'kiss_icp_dump_config'. Run then using --config <your_config>."
         )
 
     from kiss_icp.datasets import dataset_factory
