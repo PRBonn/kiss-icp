@@ -81,10 +81,10 @@ def read_point_cloud(msg: PointCloud2) -> Tuple[np.ndarray, np.ndarray]:
     points = points[~np.any(np.isnan(points), axis=1)]
 
     if t_field:
-        timestamps = points_structured[t_field]
+        timestamps = points_structured[t_field].astype(np.float64)
     else:
         timestamps = np.array([])
-    return points.astype(np.float64), timestamps.astype(np.float64)
+    return points.astype(np.float64), timestamps
 
 
 def read_points(
