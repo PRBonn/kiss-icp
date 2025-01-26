@@ -37,7 +37,7 @@ struct KISSConfig {
     // map params
     double voxel_size = 1.0;
     double max_range = 100.0;
-    double min_range = 5.0;
+    double min_range = 0.0;
     int max_points_per_voxel = 20;
 
     // th parms
@@ -50,7 +50,7 @@ struct KISSConfig {
     int max_num_threads = 0;
 
     // Motion compensation
-    bool deskew = false;
+    bool deskew = true;
 };
 
 class KissICP {
