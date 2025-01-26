@@ -65,7 +65,6 @@ def _yaml_source(config_file: Optional[Path]) -> Dict[str, Any]:
 
 
 def load_config(config_file: Optional[Path], max_range: Optional[float]) -> KISSConfig:
-
     config = KISSConfig(**_yaml_source(config_file))
 
     # Override defaults from command line
