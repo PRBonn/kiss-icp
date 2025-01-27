@@ -101,7 +101,7 @@ class GenericDataset:
                 def __init__(self, time_field):
                     self.time_field = time_field
                     if self.time_field is None:
-                        self.get_timestamps = lambda pcd: np.array([])
+                        self.get_timestamps = lambda _: np.array([])
                     else:
                         self.get_timestamps = lambda pcd: pcd.point[self.time_field].numpy().ravel()
 
