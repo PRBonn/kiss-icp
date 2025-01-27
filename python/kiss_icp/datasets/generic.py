@@ -103,12 +103,7 @@ class GenericDataset:
                     if self.time_field is None:
                         self.get_timestamps = lambda _: np.array([])
                     else:
-                        self.get_timestamps = lambda pcd: self.min_max_normalize(
-                            pcd.point[self.time_field].numpy().ravel()
-                        )
-
-                def min_max_normalize(self, data):
-                    return (data - np.min(data)) / (np.max(data) - np.min(data))
+                        self.get_timestamps = lambda pcd: pcd.point[self.time_field].numpy().ravel()
 
                 def __call__(self, file):
                     pcd = o3d.t.io.read_point_cloud(file)
