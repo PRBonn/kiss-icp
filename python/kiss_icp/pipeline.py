@@ -43,7 +43,6 @@ class OdometryPipeline:
         self,
         dataset,
         config: Optional[Path] = None,
-        deskew: Optional[bool] = False,
         max_range: Optional[float] = None,
         visualize: bool = False,
         n_scans: int = -1,
@@ -58,7 +57,7 @@ class OdometryPipeline:
         self._last = self._jump + self._n_scans
 
         # Config and output dir
-        self.config = load_config(config, deskew=deskew, max_range=max_range)
+        self.config = load_config(config, max_range=max_range)
         self.results_dir = None
 
         # Pipeline

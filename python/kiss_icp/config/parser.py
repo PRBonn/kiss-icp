@@ -64,17 +64,10 @@ def _yaml_source(config_file: Optional[Path]) -> Dict[str, Any]:
     return data or {}
 
 
-def load_config(
-    config_file: Optional[Path], deskew: Optional[bool], max_range: Optional[float]
-) -> KISSConfig:
-    """Load configuration from an Optional yaml file. Additionally, deskew and max_range can be
-    also specified from the CLI interface"""
-
+def load_config(config_file: Optional[Path], max_range: Optional[float]) -> KISSConfig:
     config = KISSConfig(**_yaml_source(config_file))
 
     # Override defaults from command line
-    if deskew is not None:
-        config.data.deskew = deskew
     if max_range is not None:
         config.data.max_range = max_range
 
