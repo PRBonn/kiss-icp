@@ -60,8 +60,10 @@ std::vector<Eigen::Vector3d> Preprocessor::Preprocess(const std::vector<Eigen::V
             return frame;
         } else {
             const auto &[min, max] = std::minmax_element(timestamps.cbegin(), timestamps.cend());
-            const auto normalize = [&min, &max](const double t) {
-                return (t - *min) / (*max - *min);
+            const double min_time = *min;
+            const double max_time = *max;
+            const auto normalize = [&](const double t) {
+                return (t - min_time) / (max_time - min_time);
             };
             const auto &omega = relative_motion.log();
             std::vector<Eigen::Vector3d> deskewed_frame(frame.size());
