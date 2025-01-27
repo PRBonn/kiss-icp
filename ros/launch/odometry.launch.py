@@ -38,8 +38,8 @@ from launch_ros.substitutions import FindPackageShare
 class config:
     # Preprocessing
     max_range: float = 100.0
-    min_range: float = 5.0
-    deskew: bool = False
+    min_range: float = 0.0
+    deskew: bool = True
 
     #  Mapping parameters
     voxel_size: float = max_range / 100.0
