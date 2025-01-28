@@ -77,7 +77,7 @@ Correspondences DataAssociation(const std::vector<Eigen::Vector3d> &points,
     return correspondences;
 }
 
-LinearSystem BuildLinearSystem(const Correspondences &correspondences, const double kernel_scale) {
+LinearSystem BuildLinearSystem(const Correspondences &correspondences) {
     auto compute_jacobian_and_residual = [](const auto &correspondence) {
         const auto &[source, target] = correspondence;
         const Eigen::Vector3d residual = source - target;
@@ -93,10 +93,6 @@ LinearSystem BuildLinearSystem(const Correspondences &correspondences, const dou
         return a;
     };
 
-    auto GM_weight = [&](const double &residual2) {
-        return square(kernel_scale) / square(kernel_scale + residual2);
-    };
-
     using correspondence_iterator = Correspondences::const_iterator;
     const auto &[JTJ, JTr] = tbb::parallel_reduce(
         // Range
@@ -109,9 +105,8 @@ LinearSystem BuildLinearSystem(const Correspondences &correspondences, const dou
             return std::transform_reduce(
                 r.begin(), r.end(), J, sum_linear_systems, [&](const auto &correspondence) {
                     const auto &[J_r, residual] = compute_jacobian_and_residual(correspondence);
-                    const double w = GM_weight(residual.squaredNorm());
-                    return LinearSystem(J_r.transpose() * w * J_r,        // JTJ
-                                        J_r.transpose() * w * residual);  // JTr
+                    return LinearSystem(J_r.transpose() * J_r,        // JTJ
+                                        J_r.transpose() * residual);  // JTr
                 });
         },
         // 2nd Lambda: Parallel reduction of the private Jacboians
@@ -138,8 +133,7 @@ Registration::Registration(int max_num_iteration, double convergence_criterion, 
 Sophus::SE3d Registration::AlignPointsToMap(const std::vector<Eigen::Vector3d> &frame,
                                             const VoxelHashMap &voxel_map,
                                             const Sophus::SE3d &initial_guess,
-                                            const double max_distance,
-                                            const double kernel_scale) {
+                                            const double max_distance) {
     if (voxel_map.Empty()) return initial_guess;
 
     // Equation (9)
@@ -152,7 +146,7 @@ Sophus::SE3d Registration::AlignPointsToMap(const std::vector<Eigen::Vector3d> &
         // Equation (10)
         const auto correspondences = DataAssociation(source, voxel_map, max_distance);
         // Equation (11)
-        const auto &[JTJ, JTr] = BuildLinearSystem(correspondences, kernel_scale);
+        const auto &[JTJ, JTr] = BuildLinearSystem(correspondences);
         const Eigen::Vector6d dx = JTJ.ldlt().solve(-JTr);
         const Sophus::SE3d estimation = Sophus::SE3d::exp(dx);
         // Equation (12)

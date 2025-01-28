@@ -95,15 +95,13 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
             "_align_points_to_map",
             [](Registration &self, const std::vector<Eigen::Vector3d> &points,
                const VoxelHashMap &voxel_map, const Eigen::Matrix4d &T_guess,
-               double max_correspondence_distance, double kernel) {
+               double max_correspondence_distance) {
                 Sophus::SE3d initial_guess(T_guess);
                 return self
-                    .AlignPointsToMap(points, voxel_map, initial_guess, max_correspondence_distance,
-                                      kernel)
+                    .AlignPointsToMap(points, voxel_map, initial_guess, max_correspondence_distance)
                     .matrix();
             },
-            "points"_a, "voxel_map"_a, "initial_guess"_a, "max_correspondance_distance"_a,
-            "kernel"_a);
+            "points"_a, "voxel_map"_a, "initial_guess"_a, "max_correspondance_distance"_a);
 
     // AdaptiveThreshold bindings
     py::class_<AdaptiveThreshold> adaptive_threshold(m, "_AdaptiveThreshold", "Don't use this");

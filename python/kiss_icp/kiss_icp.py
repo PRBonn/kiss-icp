@@ -59,7 +59,6 @@ class KissICP:
             voxel_map=self.local_map,
             initial_guess=initial_guess,
             max_correspondance_distance=3 * sigma,
-            kernel=sigma / 3,
         )
 
         # Compute the difference between the prediction and the actual estimate
