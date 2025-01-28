@@ -58,7 +58,7 @@ class KissICP:
             points=source,
             voxel_map=self.local_map,
             initial_guess=initial_guess,
-            max_correspondance_distance=3 * sigma,
+            max_correspondance_distance=sigma,
         )
 
         # Compute the difference between the prediction and the actual estimate
