@@ -51,7 +51,7 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
                                                          local_map_,     // voxel_map
                                                          initial_guess,  // initial_guess
                                                          3.0 * sigma,    // max_correspondence_dist
-                                                         sigma / 3.0);   // kernel
+                                                         sigma);         // kernel
 
     // Compute the difference between the prediction and the actual estimate
     const auto model_deviation = initial_guess.inverse() * new_pose;
