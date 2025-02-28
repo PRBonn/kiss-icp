@@ -75,9 +75,12 @@ class GenericDataset:
         # This is easy, the old KITTI format
         if self.file_extension == "bin":
             print("[WARNING] Reading .bin files, the only format supported is the KITTI format")
-            return lambda file: np.fromfile(file, dtype=np.float32).reshape((-1, 4))[
-                :, :3
-            ], np.array([])
+
+            class ReadKITTI:
+                def __call__(self, file):
+                    return np.fromfile(file, dtype=np.float32).reshape((-1, 4))[:, :3], np.array([])
+
+            return ReadKITTI()
 
         print('Trying to guess how to read your data: `pip install "kiss-icp[all]"` is required')
         first_scan_file = self.scan_files[0]
@@ -118,7 +121,12 @@ class GenericDataset:
             import trimesh
 
             trimesh.load(first_scan_file)
-            return lambda file: np.asarray(trimesh.load(file).vertices), np.array([])
+
+            class ReadTriMesh:
+                def __call__(self, file):
+                    return np.asarray(trimesh.load(file).vertices), np.array([])
+
+            return ReadTriMesh()
         except:
             pass
 
@@ -126,9 +134,14 @@ class GenericDataset:
             from pyntcloud import PyntCloud
 
             PyntCloud.from_file(first_scan_file)
-            return lambda file: PyntCloud.from_file(file).points[
-                ["x", "y", "z"]
-            ].to_numpy(), np.array([])
+
+            class ReadPynt:
+                def __call__(self, file):
+                    return PyntCloud.from_file(file).points[["x", "y", "z"]].to_numpy(), np.array(
+                        []
+                    )
+
+            return ReadPynt()
         except:
             print("[ERROR], File format not supported")
             sys.exit(1)
