@@ -89,6 +89,7 @@ class RosbagDataset:
         return self.read_point_cloud(msg)
 
     def reset(self):
+        self.timestamps = []
         self.bag.close()
         self.bag.open()
         self.msgs = self.bag.messages(connections=self.connections)

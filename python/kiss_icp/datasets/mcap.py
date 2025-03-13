@@ -76,6 +76,7 @@ class McapDataloader:
         )
 
     def reset(self):
+        self.timestamps = []
         self.bag = self.make_reader(open(self.mcap_file, "rb"))
         self.msgs = self.read_ros2_messages(self.mcap_file, topics=[self.topic])
 
