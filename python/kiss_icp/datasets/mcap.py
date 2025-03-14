@@ -42,15 +42,18 @@ class McapDataloader:
         # we expect `data_dir` param to be a path to the .mcap file, so rename for clarity
         assert os.path.isfile(data_dir), "mcap dataloader expects an existing MCAP file"
         self.sequence_id = os.path.basename(data_dir).split(".")[0]
-        mcap_file = str(data_dir)
+        self.mcap_file = str(data_dir)
 
-        self.bag = make_reader(open(mcap_file, "rb"))
+        self.make_reader = make_reader
+        self.read_ros2_messages = read_ros2_messages
+        self.read_point_cloud = read_point_cloud
+
+        self.bag = self.make_reader(open(self.mcap_file, "rb"))
         self.summary = self.bag.get_summary()
         self.topic = self.check_topic(topic)
         self.n_scans = self._get_n_scans()
-        self.msgs = read_ros2_messages(mcap_file, topics=[self.topic])
+        self.msgs = self.read_ros2_messages(self.mcap_file, topics=[self.topic])
         self.timestamps = []
-        self.read_point_cloud = read_point_cloud
         self.use_global_visualizer = True
 
     def __del__(self):
@@ -71,6 +74,11 @@ class McapDataloader:
             for (id, count) in self.summary.statistics.channel_message_counts.items()
             if self.summary.channels[id].topic == self.topic
         )
+
+    def reset(self):
+        self.timestamps = []
+        self.bag = self.make_reader(open(self.mcap_file, "rb"))
+        self.msgs = self.read_ros2_messages(self.mcap_file, topics=[self.topic])
 
     @staticmethod
     def stamp_to_sec(stamp):

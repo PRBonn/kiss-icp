@@ -68,8 +68,8 @@ class RosbagDataset:
         self.n_scans = self.bag.topics[self.topic].msgcount
 
         # limit connections to selected topic
-        connections = [x for x in self.bag.connections if x.topic == self.topic]
-        self.msgs = self.bag.messages(connections=connections)
+        self.connections = [x for x in self.bag.connections if x.topic == self.topic]
+        self.msgs = self.bag.messages(connections=self.connections)
         self.timestamps = []
 
         # Visualization Options
@@ -87,6 +87,12 @@ class RosbagDataset:
         self.timestamps.append(self.to_sec(timestamp))
         msg = self.bag.deserialize(rawdata, connection.msgtype)
         return self.read_point_cloud(msg)
+
+    def reset(self):
+        self.timestamps = []
+        self.bag.close()
+        self.bag.open()
+        self.msgs = self.bag.messages(connections=self.connections)
 
     @staticmethod
     def to_sec(nsec: int):
