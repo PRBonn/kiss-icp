@@ -87,9 +87,9 @@ class GenericDataset:
 
             try_pcd = o3d.t.io.read_point_cloud(first_scan_file)
             if try_pcd.is_empty():
-                #open3d binding does not raise an exception if file is unreadable or extension is not supported
+                # open3d binding does not raise an exception if file is unreadable or extension is not supported
                 raise Exception("Cloud is empty")
-            
+
             stamps_keys = ["t", "timestamp", "timestamps", "time", "stamps"]
             stamp_field = None
             for key in stamps_keys:
