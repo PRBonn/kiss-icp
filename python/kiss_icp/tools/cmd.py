@@ -142,12 +142,6 @@ def kiss_icp_pipeline(
         show_default=False,
         help="[Optional] Path to the configuration file",
     ),
-    max_range: Optional[float] = typer.Option(
-        None,
-        "--max_range",
-        show_default=False,
-        help="[Optional] Overrides the max_range from the default configuration",
-    ),
     deskew: bool = typer.Option(
         None,
         "--deskew",
