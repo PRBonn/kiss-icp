@@ -62,8 +62,8 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
     last_delta_ = last_pose_.inverse() * new_pose;
     last_pose_ = new_pose;
 
-    // Return the (deskew) input raw scan (frame) and the points used for registration (source)
-    return {frame, source};
+    // Return the (deskew) input raw scan (preprocessed_frame) and the points used for registration (source)
+    return {preprocessed_frame, source};
 }
 
 KissICP::Vector3dVectorTuple KissICP::Voxelize(const std::vector<Eigen::Vector3d> &frame) const {
