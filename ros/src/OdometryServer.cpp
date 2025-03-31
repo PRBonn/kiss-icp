@@ -80,6 +80,8 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
     publish_debug_clouds_ = declare_parameter<bool>("publish_debug_clouds", publish_debug_clouds_);
     position_covariance_ = declare_parameter<double>("position_covariance", 0.1);
     orientation_covariance_ = declare_parameter<double>("orientation_covariance", 0.1);
+    linear_velocity_covariance_ = declare_parameter<double>("linear_velocity_covariance", 0.1);
+    angular_velocity_covariance_ = declare_parameter<double>("angular_velocity_covariance", 0.1);
 
     kiss_icp::pipeline::KISSConfig config;
     config.max_range = declare_parameter<double>("max_range", config.max_range);
@@ -189,6 +191,55 @@ void OdometryServer::PublishOdometry(const Sophus::SE3d &kiss_pose,
     odom_msg.pose.covariance[21] = orientation_covariance_;
     odom_msg.pose.covariance[28] = orientation_covariance_;
     odom_msg.pose.covariance[35] = orientation_covariance_;
+
+    if (last_odom_msg_.has_value()) {
+        rclcpp::Duration duration = rclcpp::Time(header.stamp) - rclcpp::Time(last_odom_msg_->header.stamp);
+        double dt = duration.seconds();
+        if (dt <= 0) return;
+    
+        const auto &curr_pos = odom_msg.pose.pose.position;
+        const auto &last_pos = last_odom_msg_->pose.pose.position;
+    
+        tf2::Vector3 odom_frame_velocity(
+            (curr_pos.x - last_pos.x) / dt,
+            (curr_pos.y - last_pos.y) / dt,
+            (curr_pos.z - last_pos.z) / dt
+        );
+    
+        tf2::Quaternion q_curr, q_last;
+        tf2::fromMsg(odom_msg.pose.pose.orientation, q_curr);
+        tf2::fromMsg(last_odom_msg_->pose.pose.orientation, q_last);
+    
+        tf2::Vector3 body_velocity = tf2::quatRotate(q_curr.inverse(), odom_frame_velocity);
+        
+        odom_msg.twist.twist.linear.x = body_velocity.x();
+        odom_msg.twist.twist.linear.y = body_velocity.y();
+        odom_msg.twist.twist.linear.z = body_velocity.z();
+    
+        tf2::Quaternion q_diff = q_curr * q_last.inverse();
+        tf2::Matrix3x3 m(q_diff);
+        double roll, pitch, yaw;
+        m.getRPY(roll, pitch, yaw);
+        
+        tf2::Vector3 angular_velocity(roll, pitch, yaw);
+        angular_velocity *= 2.0 / dt;
+    
+        odom_msg.twist.twist.angular.x = angular_velocity.x();
+        odom_msg.twist.twist.angular.y = angular_velocity.y();
+        odom_msg.twist.twist.angular.z = angular_velocity.z();
+    
+        // Covariance
+        odom_msg.twist.covariance.fill(0.0);
+        odom_msg.twist.covariance[0] = linear_velocity_covariance_;
+        odom_msg.twist.covariance[7] = linear_velocity_covariance_;
+        odom_msg.twist.covariance[14] = linear_velocity_covariance_;        
+        odom_msg.twist.covariance[21] = angular_velocity_covariance_;
+        odom_msg.twist.covariance[28] = angular_velocity_covariance_;
+        odom_msg.twist.covariance[35] = angular_velocity_covariance_;
+    }
+    
+    last_odom_msg_ = odom_msg;
+
     odom_publisher_->publish(std::move(odom_msg));
 }
 
