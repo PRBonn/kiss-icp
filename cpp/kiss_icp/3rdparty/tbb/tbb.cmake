@@ -27,7 +27,7 @@ option(TBB_STRICT OFF)
 option(TBB_TEST OFF)
 
 include(FetchContent)
-FetchContent_Declare(tbb URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.8.0.tar.gz)
+FetchContent_Declare(tbb URL https://github.com/uxlfoundation/oneTBB/archive/refs/tags/v2022.1.0.tar.gz)
 FetchContent_GetProperties(tbb)
 if(NOT tbb_POPULATED)
   FetchContent_Populate(tbb)
