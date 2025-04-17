@@ -35,15 +35,6 @@ from kiss_icp.datasets import supported_file_extensions
 
 class HeLiPRDataset:
     def __init__(self, data_dir: Path, sequence: str, *_, **__):
-        try:
-            self.o3d = importlib.import_module("open3d")
-        except ModuleNotFoundError as e:
-            raise ModuleNotFoundError(
-                "Open3D is not installed on your system, to fix this either "
-                'run "pip install open3d" '
-                "or check https://www.open3d.org/docs/release/getting_started.html"
-            ) from e
-
         self.sequence_id = sequence
         self.sequence_dir = os.path.join(data_dir, "LiDAR", self.sequence_id)
         scan_files = os.listdir(self.sequence_dir)
