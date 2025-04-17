@@ -20,55 +20,25 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import importlib
+import glob
 import os
 import struct
 import sys
 from pathlib import Path
 
-import natsort
 import numpy as np
-from pyquaternion import Quaternion
-
-from kiss_icp.datasets import supported_file_extensions
 
 
 class HeLiPRDataset:
     def __init__(self, data_dir: Path, sequence: str, *_, **__):
-        try:
-            self.o3d = importlib.import_module("open3d")
-        except ModuleNotFoundError as e:
-            raise ModuleNotFoundError(
-                "Open3D is not installed on your system, to fix this either "
-                'run "pip install open3d" '
-                "or check https://www.open3d.org/docs/release/getting_started.html"
-            ) from e
-
         self.sequence_id = sequence
         self.sequence_dir = os.path.join(data_dir, "LiDAR", self.sequence_id)
-        scan_files = os.listdir(self.sequence_dir)
-        scan_timestamps = [int(Path(file).stem) for file in scan_files]
+        self.scan_files = sorted(glob.glob(self.sequence_dir + "/*.bin"))
+        self.scan_timestamps = [int(Path(file).stem) for file in self.scan_files]
 
-        pose_file = os.path.join(data_dir, "LiDAR_GT", f"{self.sequence_id}_gt.txt")
-        pose_timestamps, poses = self.read_poses(pose_file)
+        self.gt_file = os.path.join(data_dir, "LiDAR_GT", f"global_{self.sequence_id}_gt.txt")
+        self.gt_poses = self.load_poses(self.gt_file)
 
-        # Match number of scans with number of references poses available
-        self.gt_poses = np.array(
-            [pose for time, pose in zip(pose_timestamps, poses) if time in scan_timestamps]
-        ).reshape(-1, 4, 4)
-
-        scan_files = [file for file in scan_files if int(Path(file).stem) in pose_timestamps]
-
-        self.scan_files = np.array(
-            natsort.natsorted(
-                [
-                    os.path.join(self.sequence_dir, fn)
-                    for fn in os.listdir(self.sequence_dir)
-                    if any(fn.endswith(ext) for ext in supported_file_extensions())
-                ]
-            ),
-            dtype=str,
-        )
         if len(self.scan_files) == 0:
             raise ValueError(f"Tried to read point cloud files in {data_dir} but none found")
 
@@ -103,17 +73,20 @@ class HeLiPRDataset:
         timestamps = self.read_timestamps(data)
         return points, timestamps
 
-    def read_poses(self, pose_file: str):
-        gt = np.loadtxt(pose_file, delimiter=" ")
-        time = gt[:, 0]
-        xyz = gt[:, 1:4]
+    def load_poses(self, poses_file):
+        from pyquaternion import Quaternion
+
+        poses = np.loadtxt(poses_file, delimiter=" ")
+
+        xyz = poses[:, 1:4]
         rotations = np.array(
-            [Quaternion(x=x, y=y, z=z, w=w).rotation_matrix for x, y, z, w in gt[:, 4:]]
+            [Quaternion(x=x, y=y, z=z, w=w).rotation_matrix for x, y, z, w in poses[:, 4:]]
         )
-        poses = np.eye(4, dtype=np.float64).reshape(1, 4, 4).repeat(len(gt), axis=0)
+        poses = np.eye(4, dtype=np.float64).reshape(1, 4, 4).repeat(self.__len__(), axis=0)
         poses[:, :3, :3] = rotations
         poses[:, :3, 3] = xyz
-        return time, poses
+
+        return poses
 
     def get_data(self, idx: int):
         file_path = self.scan_files[idx]
