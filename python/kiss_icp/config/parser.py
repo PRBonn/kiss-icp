@@ -64,12 +64,10 @@ def _yaml_source(config_file: Optional[Path]) -> Dict[str, Any]:
     return data or {}
 
 
-def load_config(config_file: Optional[Path], max_range: Optional[float]) -> KISSConfig:
-    config = KISSConfig(**_yaml_source(config_file))
+def load_config(config_file: Optional[Path]) -> KISSConfig:
+    """Load configuration from an Optional yaml file."""
 
-    # Override defaults from command line
-    if max_range is not None:
-        config.data.max_range = max_range
+    config = KISSConfig(**_yaml_source(config_file))
 
     # Check if there is a possible mistake
     if config.data.max_range < config.data.min_range:
