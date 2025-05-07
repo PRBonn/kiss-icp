@@ -80,6 +80,9 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
     publish_debug_clouds_ = declare_parameter<bool>("publish_debug_clouds", publish_debug_clouds_);
     position_covariance_ = declare_parameter<double>("position_covariance", 0.1);
     orientation_covariance_ = declare_parameter<double>("orientation_covariance", 0.1);
+    timestamp_correction_offset_ = declare_parameter<double>("timestamp_correction_offset", 0.0);
+    timestamp_correction_delta_ratio_ =
+        declare_parameter<double>("timestamp_correction_delta_ratio", 0.0);
 
     kiss_icp::pipeline::KISSConfig config;
     config.max_range = declare_parameter<double>("max_range", config.max_range);
@@ -132,6 +135,18 @@ void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSha
     const auto cloud_frame_id = msg->header.frame_id;
     const auto points = PointCloud2ToEigen(msg);
     const auto timestamps = GetTimestamps(msg);
+    const auto stamp_delta = [&]() {
+        if (!last_stamp_) {
+            return rclcpp::Duration(0, 0);
+        }
+        return rclcpp::Time(msg->header.stamp) - last_stamp_.value();
+    }();
+    last_stamp_ = rclcpp::Time(msg->header.stamp);
+    std_msgs::msg::Header header;
+    header.frame_id = msg->header.frame_id;
+    header.stamp = rclcpp::Time(msg->header.stamp) +
+                   rclcpp::Duration::from_seconds(timestamp_correction_offset_) +
+                   stamp_delta * timestamp_correction_delta_ratio_;
 
     // Register frame, main entry point to KISS-ICP pipeline
     const auto &[frame, keypoints] = kiss_icp_->RegisterFrame(points, timestamps);
@@ -140,10 +155,10 @@ void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSha
     const Sophus::SE3d kiss_pose = kiss_icp_->pose();
 
     // Spit the current estimated pose to ROS msgs handling the desired target frame
-    PublishOdometry(kiss_pose, msg->header);
+    PublishOdometry(kiss_pose, header);
     // Publishing these clouds is a bit costly, so do it only if we are debugging
     if (publish_debug_clouds_) {
-        PublishClouds(frame, keypoints, msg->header);
+        PublishClouds(frame, keypoints, header);
     }
 }
 

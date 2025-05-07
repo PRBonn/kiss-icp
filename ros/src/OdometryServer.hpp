@@ -84,6 +84,12 @@ private:
     /// Covariance diagonal
     double position_covariance_;
     double orientation_covariance_;
+
+    /// Published messages timestamp correction parameters.
+    double timestamp_correction_offset_;
+    double timestamp_correction_delta_ratio_;
+
+    std::optional<rclcpp::Time> last_stamp_;
 };
 
 }  // namespace kiss_icp_ros
