@@ -45,7 +45,7 @@ dependencies = [
     "pyquaternion",
     "rich",
     "tqdm",
-    "click<=8.1",
+    "click<=8.1", # TODO: Remove
     "typer[all]>=0.6.0",
 ]
 
