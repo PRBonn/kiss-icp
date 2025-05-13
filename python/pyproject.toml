@@ -45,6 +45,7 @@ dependencies = [
     "pyquaternion",
     "rich",
     "tqdm",
+    "click<=8.1",
     "typer[all]>=0.6.0",
 ]
 
