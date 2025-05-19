@@ -45,6 +45,10 @@ public:
     explicit OdometryServer(const rclcpp::NodeOptions &options);
 
 private:
+    /// Declare ROS parameters and set the associated variables (in this class and in the provided
+    /// config object)
+    void initializeParameters(kiss_icp::pipeline::KISSConfig &config);
+
     /// Register new frame
     void RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msg);
 

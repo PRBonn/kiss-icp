@@ -73,34 +73,8 @@ using utils::PointCloud2ToEigen;
 
 OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
     : rclcpp::Node("kiss_icp_node", options) {
-    base_frame_ = declare_parameter<std::string>("base_frame", base_frame_);
-    lidar_odom_frame_ = declare_parameter<std::string>("lidar_odom_frame", lidar_odom_frame_);
-    publish_odom_tf_ = declare_parameter<bool>("publish_odom_tf", publish_odom_tf_);
-    invert_odom_tf_ = declare_parameter<bool>("invert_odom_tf", invert_odom_tf_);
-    publish_debug_clouds_ = declare_parameter<bool>("publish_debug_clouds", publish_debug_clouds_);
-    position_covariance_ = declare_parameter<double>("position_covariance", 0.1);
-    orientation_covariance_ = declare_parameter<double>("orientation_covariance", 0.1);
-
     kiss_icp::pipeline::KISSConfig config;
-    config.max_range = declare_parameter<double>("max_range", config.max_range);
-    config.min_range = declare_parameter<double>("min_range", config.min_range);
-    config.deskew = declare_parameter<bool>("deskew", config.deskew);
-    config.voxel_size = declare_parameter<double>("voxel_size", config.max_range / 100.0);
-    config.max_points_per_voxel =
-        declare_parameter<int>("max_points_per_voxel", config.max_points_per_voxel);
-    config.initial_threshold =
-        declare_parameter<double>("initial_threshold", config.initial_threshold);
-    config.min_motion_th = declare_parameter<double>("min_motion_th", config.min_motion_th);
-    config.max_num_iterations =
-        declare_parameter<int>("max_num_iterations", config.max_num_iterations);
-    config.convergence_criterion =
-        declare_parameter<double>("convergence_criterion", config.convergence_criterion);
-    config.max_num_threads = declare_parameter<int>("max_num_threads", config.max_num_threads);
-    if (config.max_range < config.min_range) {
-        RCLCPP_WARN(get_logger(),
-                    "[WARNING] max_range is smaller than min_range, settng min_range to 0.0");
-        config.min_range = 0.0;
-    }
+    initializeParameters(config);
 
     // Construct the main KISS-ICP odometry node
     kiss_icp_ = std::make_unique<kiss_icp::pipeline::KissICP>(config);
@@ -126,6 +100,57 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
     tf2_listener_ = std::make_unique<tf2_ros::TransformListener>(*tf2_buffer_);
 
     RCLCPP_INFO(this->get_logger(), "KISS-ICP ROS 2 odometry node initialized");
+}
+
+void OdometryServer::initializeParameters(kiss_icp::pipeline::KISSConfig &config) {
+    RCLCPP_INFO(this->get_logger(), "Initializing parameters");
+
+    base_frame_ = declare_parameter<std::string>("base_frame", base_frame_);
+    RCLCPP_INFO(this->get_logger(), "\tBase frame: %s", base_frame_.c_str());
+    lidar_odom_frame_ = declare_parameter<std::string>("lidar_odom_frame", lidar_odom_frame_);
+    RCLCPP_INFO(this->get_logger(), "\tLiDAR odometry frame: %s", lidar_odom_frame_.c_str());
+    publish_odom_tf_ = declare_parameter<bool>("publish_odom_tf", publish_odom_tf_);
+    RCLCPP_INFO(this->get_logger(), "\tPublish odometry transform: %d", publish_odom_tf_);
+    invert_odom_tf_ = declare_parameter<bool>("invert_odom_tf", invert_odom_tf_);
+    RCLCPP_INFO(this->get_logger(), "\tInvert odometry transform: %d", invert_odom_tf_);
+    publish_debug_clouds_ = declare_parameter<bool>("publish_debug_clouds", publish_debug_clouds_);
+    RCLCPP_INFO(this->get_logger(), "\tPublish debug clouds: %d", publish_debug_clouds_);
+    position_covariance_ = declare_parameter<double>("position_covariance", 0.1);
+    RCLCPP_INFO(this->get_logger(), "\tPosition covariance: %.2f", position_covariance_);
+    orientation_covariance_ = declare_parameter<double>("orientation_covariance", 0.1);
+    RCLCPP_INFO(this->get_logger(), "\tOrientation covariance: %.2f", orientation_covariance_);
+
+    config.max_range = declare_parameter<double>("data.max_range", config.max_range);
+    RCLCPP_INFO(this->get_logger(), "\tMax range: %.2f", config.max_range);
+    config.min_range = declare_parameter<double>("data.min_range", config.min_range);
+    RCLCPP_INFO(this->get_logger(), "\tMin range: %.2f", config.min_range);
+    config.deskew = declare_parameter<bool>("data.deskew", config.deskew);
+    RCLCPP_INFO(this->get_logger(), "\tDeskew: %d", config.deskew);
+    config.voxel_size = declare_parameter<double>("mapping.voxel_size", config.max_range / 100.0);
+    RCLCPP_INFO(this->get_logger(), "\tVoxel size: %.2f", config.voxel_size);
+    config.max_points_per_voxel =
+        declare_parameter<int>("mapping.max_points_per_voxel", config.max_points_per_voxel);
+    RCLCPP_INFO(this->get_logger(), "\tMax points per voxel: %d", config.max_points_per_voxel);
+    config.initial_threshold =
+        declare_parameter<double>("adaptive_threshold.initial_threshold", config.initial_threshold);
+    RCLCPP_INFO(this->get_logger(), "\tInitial threshold: %.2f", config.initial_threshold);
+    config.min_motion_th =
+        declare_parameter<double>("adaptive_threshold.min_motion_th", config.min_motion_th);
+    RCLCPP_INFO(this->get_logger(), "\tMin motion threshold: %.2f", config.min_motion_th);
+    config.max_num_iterations =
+        declare_parameter<int>("registration.max_num_iterations", config.max_num_iterations);
+    RCLCPP_INFO(this->get_logger(), "\tMax number of iterations: %d", config.max_num_iterations);
+    config.convergence_criterion = declare_parameter<double>("registration.convergence_criterion",
+                                                             config.convergence_criterion);
+    RCLCPP_INFO(this->get_logger(), "\tConvergence criterion: %.2f", config.convergence_criterion);
+    config.max_num_threads =
+        declare_parameter<int>("registration.max_num_threads", config.max_num_threads);
+    RCLCPP_INFO(this->get_logger(), "\tMax number of threads: %d", config.max_num_threads);
+    if (config.max_range < config.min_range) {
+        RCLCPP_WARN(get_logger(),
+                    "[WARNING] max_range is smaller than min_range, settng min_range to 0.0");
+        config.min_range = 0.0;
+    }
 }
 
 void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msg) {

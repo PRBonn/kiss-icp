@@ -20,6 +20,9 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import os
+
+from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import ExecuteProcess
 from launch.conditions import IfCondition
@@ -31,32 +34,11 @@ from launch.substitutions import (
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
+PACKAGE_NAME = "kiss_icp"
 
-# This configuration parameters are not exposed thorught the launch system, meaning you can't modify
-# those throw the ros launch CLI. If you need to change these values, you could write your own
-# launch file and modify the 'parameters=' block from the Node class.
-class config:
-    # Preprocessing
-    max_range: float = 100.0
-    min_range: float = 0.0
-    deskew: bool = True
-
-    #  Mapping parameters
-    voxel_size: float = max_range / 100.0
-    max_points_per_voxel: int = 20
-
-    # Adaptive threshold
-    initial_threshold: float = 2.0
-    min_motion_th: float = 0.1
-
-    # Registration
-    max_num_iterations: int = 500  #
-    convergence_criterion: float = 0.0001
-    max_num_threads: int = 0
-
-    # Covariance diagonal values
-    position_covariance: float = 0.1
-    orientation_covariance: float = 0.1
+default_config_file = os.path.join(
+    get_package_share_directory(PACKAGE_NAME), "config", "config.yaml"
+)
 
 
 def generate_launch_description():
@@ -75,9 +57,14 @@ def generate_launch_description():
     publish_odom_tf = LaunchConfiguration("publish_odom_tf", default=True)
     invert_odom_tf = LaunchConfiguration("invert_odom_tf", default=True)
 
+    position_covariance = LaunchConfiguration("position_covariance", default=0.1)
+    orientation_covariance = LaunchConfiguration("orientation_covariance", default=0.1)
+
+    config_file = LaunchConfiguration("config_file", default=default_config_file)
+
     # KISS-ICP node
     kiss_icp_node = Node(
-        package="kiss_icp",
+        package=PACKAGE_NAME,
         executable="kiss_icp_node",
         name="kiss_icp_node",
         output="screen",
@@ -91,26 +78,13 @@ def generate_launch_description():
                 "lidar_odom_frame": lidar_odom_frame,
                 "publish_odom_tf": publish_odom_tf,
                 "invert_odom_tf": invert_odom_tf,
-                # KISS-ICP configuration
-                "max_range": config.max_range,
-                "min_range": config.min_range,
-                "deskew": config.deskew,
-                "max_points_per_voxel": config.max_points_per_voxel,
-                "voxel_size": config.voxel_size,
-                # Adaptive threshold
-                "initial_threshold": config.initial_threshold,
-                "min_motion_th": config.min_motion_th,
-                # Registration
-                "max_num_iterations": config.max_num_iterations,
-                "convergence_criterion": config.convergence_criterion,
-                "max_num_threads": config.max_num_threads,
-                # Fixed covariances
-                "position_covariance": config.position_covariance,
-                "orientation_covariance": config.orientation_covariance,
                 # ROS CLI arguments
                 "publish_debug_clouds": visualize,
                 "use_sim_time": use_sim_time,
+                "position_covariance": position_covariance,
+                "orientation_covariance": orientation_covariance,
             },
+            config_file,
         ],
     )
     rviz_node = Node(
@@ -119,7 +93,7 @@ def generate_launch_description():
         output="screen",
         arguments=[
             "-d",
-            PathJoinSubstitution([FindPackageShare("kiss_icp"), "rviz", "kiss_icp.rviz"]),
+            PathJoinSubstitution([FindPackageShare(PACKAGE_NAME), "rviz", "kiss_icp.rviz"]),
         ],
         condition=IfCondition(visualize),
     )
