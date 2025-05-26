@@ -5,7 +5,7 @@ out_dir: "results"
 
 data:
   deskew: True
-  max_range: 100.0 # can be also changed in the CLI
+  max_range: 100.0
   min_range: 0.0
 
 mapping:

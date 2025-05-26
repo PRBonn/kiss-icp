@@ -43,7 +43,6 @@ class OdometryPipeline:
         self,
         dataset,
         config: Optional[Path] = None,
-        max_range: Optional[float] = None,
         visualize: bool = False,
         n_scans: int = -1,
         jump: int = 0,
@@ -57,7 +56,7 @@ class OdometryPipeline:
         self._last = self._jump + self._n_scans
 
         # Config and output dir
-        self.config = load_config(config, max_range=max_range)
+        self.config = load_config(config)
         self.results_dir = None
 
         # Pipeline
