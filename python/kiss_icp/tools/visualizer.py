@@ -268,12 +268,12 @@ class Kissualizer(StubVisualizer):
 
     def _trajectory_pick_callback(self):
         if self._gui.GetIO().MouseClicked[0]:
-            pick_selection = self._ps.get_selection()
             name = ""
             idx = 0
-            try:
+            pick_selection = self._ps.get_selection()
+            try:  # Compatile with old polyscope versions
                 name, idx = pick_selection
-            except TypeError:
+            except TypeError:  # Compatible with polyscope >= 2.4.0
                 if pick_selection.is_hit:
                     name = pick_selection.structure_name
                     idx = pick_selection.structure_data["index"]
