@@ -268,7 +268,9 @@ class Kissualizer(StubVisualizer):
 
     def _trajectory_pick_callback(self):
         if self._gui.GetIO().MouseClicked[0]:
-            name, idx = self._ps.get_selection()
+            selection = self._ps.get_selection()
+            name = selection.structure_name
+            idx = selection.local_index
             if name == "trajectory" and self._ps.has_point_cloud(name):
                 pose = self._trajectory[idx]
                 self._selected_pose = f"x: {pose[0]:7.3f}, y: {pose[1]:7.3f}, z: {pose[2]:7.3f}>"
