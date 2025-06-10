@@ -191,8 +191,8 @@ void OdometryServer::PublishOdometry(const Sophus::SE3d &kiss_pose,
     odom_publisher_->publish(std::move(odom_msg));
 }
 
-void OdometryServer::PublishClouds(const std::vector<Eigen::Vector3d> frame,
-                                   const std::vector<Eigen::Vector3d> keypoints,
+void OdometryServer::PublishClouds(const std::vector<Eigen::Vector3d> &frame,
+                                   const std::vector<Eigen::Vector3d> &keypoints,
                                    const std_msgs::msg::Header &header) {
     const auto kiss_map = kiss_icp_->LocalMap();
     const auto kiss_pose = kiss_icp_->pose().inverse();
