@@ -75,6 +75,12 @@ def generate_launch_description():
     publish_odom_tf = LaunchConfiguration("publish_odom_tf", default=True)
     invert_odom_tf = LaunchConfiguration("invert_odom_tf", default=True)
 
+    # Published clouds/odometry timestamp correction
+    timestamp_correction_offset = LaunchConfiguration("timestamp_correction_offset", default=0.0)
+    timestamp_correction_delta_ratio = LaunchConfiguration(
+        "timestamp_correction_delta_ratio", default=0.0
+    )
+
     # KISS-ICP node
     kiss_icp_node = Node(
         package="kiss_icp",
@@ -91,6 +97,8 @@ def generate_launch_description():
                 "lidar_odom_frame": lidar_odom_frame,
                 "publish_odom_tf": publish_odom_tf,
                 "invert_odom_tf": invert_odom_tf,
+                "timestamp_correction_offset": timestamp_correction_offset,
+                "timestamp_correction_delta_ratio": timestamp_correction_delta_ratio,
                 # KISS-ICP configuration
                 "max_range": config.max_range,
                 "min_range": config.min_range,
