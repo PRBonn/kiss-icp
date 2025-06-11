@@ -65,7 +65,8 @@ def _yaml_source(config_file: Optional[Path]) -> Dict[str, Any]:
 
 
 def load_config(config_file: Optional[Path]) -> KISSConfig:
-    """Load configuration from an Optional yaml file."""
+    """Load configuration from an optional yaml file."""
+
 
     config = KISSConfig(**_yaml_source(config_file))
 
