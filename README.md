@@ -43,7 +43,7 @@ kiss_icp_pipeline --help
 <details>
 <summary>This should print the following help message:</summary>
 
-![out](https://github.com/user-attachments/assets/b7e0628c-18d1-4359-8dc9-6de783c62b8f)
+![out](https://github.com/user-attachments/assets/0991b37d-114b-488a-a6b7-51063c1d9ff3)
 
 </details>
 
