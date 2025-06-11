@@ -240,7 +240,6 @@ def kiss_icp_pipeline(
             meta=meta,
         ),
         config=config,
-        max_range=max_range,
         visualize=visualize,
         n_scans=n_scans,
         jump=jump,
