@@ -45,7 +45,6 @@ kiss_icp_pipeline --help
 
 ![out](https://github.com/user-attachments/assets/7dea767f-d0e4-4f6b-a523-ba3be25bbfae)
 
-
 </details>
 
 For advanced instructions on the Python package please see [this README](python/README.md)
