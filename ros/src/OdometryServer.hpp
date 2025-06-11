@@ -34,7 +34,9 @@
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <std_msgs/msg/header.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <string>
+#include <optional>
 
 namespace kiss_icp_ros {
 
@@ -77,6 +79,9 @@ private:
     /// KISS-ICP
     std::unique_ptr<kiss_icp::pipeline::KissICP> kiss_icp_;
 
+    /// State History.
+    std::optional<nav_msgs::msg::Odometry> last_odom_msg_;
+
     /// Global/map coordinate frame.
     std::string lidar_odom_frame_{"odom_lidar"};
     std::string base_frame_{};
@@ -84,6 +89,8 @@ private:
     /// Covariance diagonal
     double position_covariance_;
     double orientation_covariance_;
+    double linear_velocity_covariance_;
+    double angular_velocity_covariance_;
 };
 
 }  // namespace kiss_icp_ros
