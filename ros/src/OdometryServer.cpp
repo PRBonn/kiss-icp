@@ -195,7 +195,6 @@ void OdometryServer::PublishClouds(const std::vector<Eigen::Vector3d> &frame,
                                    const std::vector<Eigen::Vector3d> &keypoints,
                                    const std_msgs::msg::Header &header) {
     const auto kiss_map = kiss_icp_->LocalMap();
-    const auto kiss_pose = kiss_icp_->pose().inverse();
 
     frame_publisher_->publish(std::move(EigenToPointCloud2(frame, header)));
     kpoints_publisher_->publish(std::move(EigenToPointCloud2(keypoints, header)));
