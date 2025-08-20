@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        release: [humble, iron, rolling]
+        release: [humble, jazzy, kilted, rolling]
     container: osrf/ros:${{ matrix.release }}-desktop
     steps:
       - name: Setup cmake
