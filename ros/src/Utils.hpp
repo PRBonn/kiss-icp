@@ -94,7 +94,8 @@ inline std::string FixFrameId(const std::string &frame_id) {
 inline std::optional<PointField> GetTimestampField(const PointCloud2::ConstSharedPtr msg) {
     PointField timestamp_field;
     for (const auto &field : msg->fields) {
-        if ((field.name == "t" || field.name == "timestamp" || field.name == "time" || field.name == "time_stamp")) {
+        if ((field.name == "t" || field.name == "timestamp" || field.name == "time" ||
+             field.name == "time_stamp")) {
             timestamp_field = field;
         }
     }
