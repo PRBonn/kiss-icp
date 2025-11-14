@@ -22,7 +22,7 @@ jobs:
       - name: source venv
         run: source cmake_venv/bin/activate
       - name: Setup cmake
-        run: python3 -m pip install "cmake>=3.25,<3.26"
+        run: python3 -m pip install "cmake>=3.25,<3.26" --break-system-packages
       - name: Configure CMake
         run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} ${{github.workspace}}/cpp/kiss_icp
       - name: Build
