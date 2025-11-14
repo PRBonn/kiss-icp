@@ -21,8 +21,16 @@ jobs:
         run: python3 -m venv cmake_venv
       - name: source venv
         run: source cmake_venv/bin/activate
-      - name: Setup cmake
-        run: python3 -m pip install "cmake>=3.25,<3.26" --break-system-packages
+      - name:  Setup CMake
+        run:   |
+               if [ "$RUNNER_OS" == "Linux" ]; then
+                    python3 -m pip install "cmake>=3.25,<3.26"
+               elif [ "$RUNNER_OS" == "Windows" ]; then
+                    python3 -m pip install "cmake>=3.25,<3.26"
+               else
+                    python3 -m pip install "cmake>=3.25,<3.26" --break-system-packages
+               fi
+        shell: bash
       - name: Configure CMake
         run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} ${{github.workspace}}/cpp/kiss_icp
       - name: Build
