@@ -17,6 +17,10 @@ jobs:
         os: [ubuntu-24.04, ubuntu-22.04, ubuntu-24.04-arm, ubuntu-22.04-arm, windows-2022, macos-14, macos-15]
     steps:
       - uses: actions/checkout@v3
+      - name: setup venv
+        run: python3 -m venv cmake_venv
+      - name: source venv
+        run: source cmake_venv/bin/activate
       - name: Setup cmake
         run: python3 -m pip install "cmake>=3.25,<3.26"
       - name: Configure CMake
