@@ -166,4 +166,52 @@ Sophus::SE3d Registration::AlignPointsToMap(const std::vector<Eigen::Vector3d> &
     return T_icp * initial_guess;
 }
 
+RegistrationResult Registration::AlignPointsToMapWithMetrics(
+                                    const std::vector<Eigen::Vector3d> &frame,
+                                    const VoxelHashMap &voxel_map,
+                                    const Sophus::SE3d &initial_guess,
+                                    const double max_distance,
+                                    const double kernel_scale) {
+    RegistrationResult result;
+    result.num_source_points = frame.size();
+    result.num_correspondences = 0;
+    
+    if (voxel_map.Empty()) {
+        result.pose = initial_guess;
+        return result;
+    }
+
+    // Equation (9)
+    std::vector<Eigen::Vector3d> source = frame;
+    TransformPoints(initial_guess, source);
+
+    // ICP-loop
+    Sophus::SE3d T_icp = Sophus::SE3d();
+    size_t last_correspondence_count = 0;
+    
+    for (int j = 0; j < max_num_iterations_; ++j) {
+        // Equation (10)
+        const auto correspondences = DataAssociation(source, voxel_map, max_distance);
+        last_correspondence_count = correspondences.size();  // Track correspondence count
+        
+        // Equation (11)
+        const auto &[JTJ, JTr] = BuildLinearSystem(correspondences, kernel_scale);
+        const Eigen::Vector6d dx = JTJ.ldlt().solve(-JTr);
+        const Sophus::SE3d estimation = Sophus::SE3d::exp(dx);
+        
+        // Equation (12)
+        TransformPoints(estimation, source);
+        
+        // Update iterations
+        T_icp = estimation * T_icp;
+        
+        // Termination criteria
+        if (dx.norm() < convergence_criterion_) break;
+    }
+    
+    result.pose = T_icp * initial_guess;
+    result.num_correspondences = last_correspondence_count;  // Store final correspondence count
+    return result;
+}
+
 }  // namespace kiss_icp

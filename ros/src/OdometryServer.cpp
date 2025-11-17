@@ -21,6 +21,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 #include <Eigen/Core>
+#include <algorithm>
 #include <memory>
 #include <sophus/se3.hpp>
 #include <utility>
@@ -78,7 +79,27 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
 
     // Construct the main KISS-ICP odometry node
     kiss_icp_ = std::make_unique<kiss_icp::pipeline::KissICP>(config);
+    
+    // Enable metrics collection if adaptive covariance is enabled OR metrics_only_mode is enabled
+    // (use_adaptive_covariance_ and metrics_only_mode_ were set in initializeParameters)
+    kiss_icp_->setUseRegistrationMetrics(use_adaptive_covariance_ || metrics_only_mode_);
+    
+    if (metrics_only_mode_) {
+        RCLCPP_INFO(get_logger(), "Registration metrics collection ENABLED (metrics-only mode - fixed covariance)");
+    } else if (use_adaptive_covariance_) {
+        RCLCPP_INFO(get_logger(), "Registration metrics collection ENABLED (adaptive covariance)");
+    } else {
+        RCLCPP_INFO(get_logger(), "Registration metrics collection DISABLED (using original method)");
+    }
+    
+    // Initialize metrics publisher if metrics collection is enabled
+    if (use_adaptive_covariance_ || metrics_only_mode_) {
+        rclcpp::QoS metrics_qos((rclcpp::SystemDefaultsQoS().keep_last(10).durability_volatile()));
+        metrics_pub_ = create_publisher<kiss_icp::msg::RegistrationMetrics>("kiss/metrics", metrics_qos);
+        RCLCPP_INFO(get_logger(), "Metrics publisher initialized: /kiss/metrics");
+    }
 
+    process_each_x_frame_ = declare_parameter<int>("process_each_x_frame", 1);
     // Initialize subscribers
     pointcloud_sub_ = create_subscription<sensor_msgs::msg::PointCloud2>(
         "pointcloud_topic", rclcpp::SensorDataQoS(),
@@ -123,6 +144,31 @@ void OdometryServer::initializeParameters(kiss_icp::pipeline::KISSConfig &config
     RCLCPP_INFO(this->get_logger(), "\tPosition covariance: %.2f", position_covariance_);
     orientation_covariance_ = declare_parameter<double>("orientation_covariance", 0.1);
     RCLCPP_INFO(this->get_logger(), "\tOrientation covariance: %.2f", orientation_covariance_);
+    
+    // Adaptive covariance parameters
+    use_adaptive_covariance_ = declare_parameter<bool>("adaptive_covariance.enable", false);
+    RCLCPP_INFO(this->get_logger(), "\tUse adaptive covariance: %d", use_adaptive_covariance_);
+    
+    metrics_only_mode_ = declare_parameter<bool>("adaptive_covariance.metrics_only_mode", false);
+    RCLCPP_INFO(this->get_logger(), "\tMetrics only mode: %d", metrics_only_mode_);
+    
+    // Only read other adaptive params if enabled or metrics_only_mode
+    if (use_adaptive_covariance_ || metrics_only_mode_) {
+        nominal_keypoint_count_ = declare_parameter<double>("adaptive_covariance.nominal_keypoints", 1000.0);
+        RCLCPP_INFO(this->get_logger(), "\tNominal keypoint count: %.0f", nominal_keypoint_count_);
+        
+        min_keypoint_ratio_ = declare_parameter<double>("adaptive_covariance.min_ratio", 0.5);
+        RCLCPP_INFO(this->get_logger(), "\tMin keypoint ratio: %.2f", min_keypoint_ratio_);
+        
+        max_covariance_multiplier_ = declare_parameter<double>("adaptive_covariance.max_multiplier", 10.0);
+        RCLCPP_INFO(this->get_logger(), "\tMax covariance multiplier: %.1fx", max_covariance_multiplier_);
+        
+        enable_covariance_smoothing_ = declare_parameter<bool>("adaptive_covariance.enable_smoothing", true);
+        RCLCPP_INFO(this->get_logger(), "\tEnable covariance smoothing: %d", enable_covariance_smoothing_);
+        
+        covariance_smoothing_alpha_ = declare_parameter<double>("adaptive_covariance.smoothing_alpha", 0.3);
+        RCLCPP_INFO(this->get_logger(), "\tCovariance smoothing alpha: %.2f", covariance_smoothing_alpha_);
+    }
 
     config.max_range = declare_parameter<double>("data.max_range", config.max_range);
     RCLCPP_INFO(this->get_logger(), "\tMax range: %.2f", config.max_range);
@@ -158,6 +204,9 @@ void OdometryServer::initializeParameters(kiss_icp::pipeline::KISSConfig &config
 }
 
 void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msg) {
+    if (frames_count_++ % process_each_x_frame_ != 0) {
+        return;
+    }
     const auto cloud_frame_id = msg->header.frame_id;
     const auto points = PointCloud2ToEigen(msg);
     const auto timestamps = GetTimestamps(msg);
@@ -204,20 +253,106 @@ void OdometryServer::PublishOdometry(const Sophus::SE3d &kiss_pose,
         tf_broadcaster_->sendTransform(transform_msg);
     }
 
-    // publish odometry msg
+    // Get registration quality metrics (only if enabled)
+    size_t num_correspondences = 0;
+    size_t num_source_points = 0;
+    double cov_multiplier = 1.0;
+    
+    if (use_adaptive_covariance_ || metrics_only_mode_) {
+        num_correspondences = kiss_icp_->num_correspondences();
+        num_source_points = kiss_icp_->num_source_points();
+        
+        // Publish metrics for statistical analysis
+        if (metrics_pub_) {
+            kiss_icp::msg::RegistrationMetrics metrics_msg;
+            metrics_msg.num_correspondences = num_correspondences;
+            metrics_msg.num_source_points = num_source_points;
+            metrics_pub_->publish(metrics_msg);
+        }
+        
+        // Compute multiplier (will be 1.0 if metrics_only_mode is true)
+        cov_multiplier = computeCovarianceMultiplier(num_correspondences, num_source_points);
+    }
+    
+    // Publish odometry msg with adaptive covariance
     nav_msgs::msg::Odometry odom_msg;
     odom_msg.header.stamp = header.stamp;
     odom_msg.header.frame_id = lidar_odom_frame_;
     odom_msg.child_frame_id = moving_frame;
     odom_msg.pose.pose = tf2::sophusToPose(pose);
     odom_msg.pose.covariance.fill(0.0);
-    odom_msg.pose.covariance[0] = position_covariance_;
-    odom_msg.pose.covariance[7] = position_covariance_;
-    odom_msg.pose.covariance[14] = position_covariance_;
-    odom_msg.pose.covariance[21] = orientation_covariance_;
-    odom_msg.pose.covariance[28] = orientation_covariance_;
-    odom_msg.pose.covariance[35] = orientation_covariance_;
+    
+    // Apply multiplier (will be 1.0 if disabled)
+    double adaptive_pos_cov = position_covariance_ * cov_multiplier;
+    double adaptive_orient_cov = orientation_covariance_ * cov_multiplier;
+    
+    odom_msg.pose.covariance[0] = adaptive_pos_cov;    // x
+    odom_msg.pose.covariance[7] = adaptive_pos_cov;     // y
+    odom_msg.pose.covariance[14] = adaptive_pos_cov;    // z
+    odom_msg.pose.covariance[21] = adaptive_orient_cov; // roll
+    odom_msg.pose.covariance[28] = adaptive_orient_cov; // pitch
+    odom_msg.pose.covariance[35] = adaptive_orient_cov; // yaw
+    
+    // Optional logging for debugging (only when enabled)
+    if (use_adaptive_covariance_ || metrics_only_mode_) {
+        RCLCPP_DEBUG(get_logger(), 
+                     "Metrics: corr=%zu/%zu (%.1f%%), mult=%.2fx, pos_cov=%.3f, orient_cov=%.3f%s",
+                     num_correspondences, num_source_points,
+                     100.0 * num_correspondences / std::max(size_t(1), num_source_points),
+                     cov_multiplier, adaptive_pos_cov, adaptive_orient_cov,
+                     metrics_only_mode_ ? " [METRICS-ONLY]" : "");
+    }
+    
     odom_publisher_->publish(std::move(odom_msg));
+}
+
+double OdometryServer::computeCovarianceMultiplier(size_t num_correspondences, 
+                                                    size_t num_source_points) {
+    // If metrics_only_mode is enabled, always return 1.0 (fixed covariance)
+    if (metrics_only_mode_) {
+        return 1.0;
+    }
+    
+    // If adaptive covariance is disabled, return 1.0 (no change)
+    // Note: use_adaptive_covariance_ controls both the ROS parameter and the internal metrics collection
+    if (!use_adaptive_covariance_) {
+        return 1.0;
+    }
+    
+    if (num_source_points == 0) {
+        return max_covariance_multiplier_;  // Worst case
+    }
+    
+    // Inlier ratio: how many source points actually matched, in [0, 1]
+    const double inlier_ratio = static_cast<double>(num_correspondences) /
+                                static_cast<double>(num_source_points);
+
+    // Absolute correspondences quality: how many inliers vs expected minimum
+    double correspondence_quality = static_cast<double>(num_correspondences) / nominal_keypoint_count_ * min_keypoint_ratio_;
+
+    // Clamp to [0, 1]
+    correspondence_quality = std::clamp(correspondence_quality, 0.0, 1.0);
+
+    // 4. Combine inlier ratio + absolute quality into a single quality factor
+    //    Simple product: both have to be good to get a high score.
+    double quality_factor = correspondence_quality * inlier_ratio;
+
+    // Safety clamp
+    quality_factor = std::clamp(quality_factor, 0.0, 1.0);
+
+    // 5. Map quality [0,1] -> multiplier [1, max_covariance_multiplier_]
+    //    Qubic mapping.
+    const double error = 1.0 - quality_factor;      // in [0, 1]
+    double multiplier = 1.0 + (max_covariance_multiplier_ - 1.0) * std::pow(error, 3);
+
+    // 6. Optional exponential smoothing to reduce jitter frame-to-frame
+    if (enable_covariance_smoothing_) {
+        smoothed_covariance_multiplier_ = covariance_smoothing_alpha_ * multiplier +
+            (1.0 - covariance_smoothing_alpha_) * smoothed_covariance_multiplier_;
+        multiplier = smoothed_covariance_multiplier_;
+    }
+
+    return multiplier;
 }
 
 void OdometryServer::PublishClouds(const std::vector<Eigen::Vector3d> &frame,

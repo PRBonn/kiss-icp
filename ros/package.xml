@@ -33,8 +33,12 @@
   <license>MIT</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>rosidl_default_generators</buildtool_depend>
+
+  <build_depend>message_generation</build_depend>
 
   <depend>geometry_msgs</depend>
+  <exec_depend>rosidl_default_runtime</exec_depend>
   <depend>nav_msgs</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
@@ -50,6 +54,8 @@
   <depend>robin-map-dev</depend>
 
   <exec_depend>ros2launch</exec_depend>
+
+  <member_of_group>rosidl_interface_packages</member_of_group>
 
   <export>
     <build_type>ament_cmake</build_type>

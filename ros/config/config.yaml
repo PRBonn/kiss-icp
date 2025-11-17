@@ -13,6 +13,18 @@ kiss_icp_node:
     # position_covariance: 0.1
     # orientation_covariance: 0.1
 
+    ####    Adaptive Covariance Parameters    ####
+    # Set enable: true to activate adaptive covariance based on registration quality
+    # Set metrics_only_mode: true to collect metrics but publish fixed covariance (for calibration)
+    adaptive_covariance:
+      enable: false  # DEFAULT: DISABLED (backward compatible)
+      metrics_only_mode: false  # Collect metrics but use fixed covariance (for finding nominal_keypoints)
+      nominal_keypoints: 1000.0    # Expected keypoints in feature-rich environment
+      min_ratio: 0.5               # Start increasing covariance below 50% of nominal
+      max_multiplier: 10.0         # Maximum 10x covariance inflation
+      enable_smoothing: true       # Smooth covariance changes over time
+      smoothing_alpha: 0.3         # Higher = less smoothing (0.0-1.0)
+
     ####    Core KISS-ICP parameters    ####
 
     data:

@@ -35,6 +35,7 @@
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <std_msgs/msg/header.hpp>
 #include <std_srvs/srv/empty.hpp>
+#include <kiss_icp/msg/registration_metrics.hpp>
 #include <string>
 
 namespace kiss_icp_ros {
@@ -74,12 +75,17 @@ private:
 
     /// Data subscribers.
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_sub_;
+    size_t frames_count_ {};
+    int process_each_x_frame_ = 1;
 
     /// Data publishers.
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_publisher_;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr frame_publisher_;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr kpoints_publisher_;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr map_publisher_;
+    
+    /// Metrics publisher (for statistical analysis)
+    rclcpp::Publisher<kiss_icp::msg::RegistrationMetrics>::SharedPtr metrics_pub_;
 
     /// Service servers.
     rclcpp::Service<std_srvs::srv::Empty>::SharedPtr reset_service_;
@@ -94,6 +100,21 @@ private:
     /// Covariance diagonal
     double position_covariance_;
     double orientation_covariance_;
+    
+    /// Adaptive covariance parameters
+    bool use_adaptive_covariance_;
+    bool metrics_only_mode_;             // Collect metrics but publish fixed covariance
+    double nominal_keypoint_count_;      // Expected keypoints in good conditions
+    double min_keypoint_ratio_;          // Below this ratio, start increasing covariance
+    double max_covariance_multiplier_;   // Maximum inflation factor
+    bool enable_covariance_smoothing_;
+    double covariance_smoothing_alpha_;  // Exponential smoothing factor
+    
+    /// State for smoothing
+    double smoothed_covariance_multiplier_{1.0};
+    
+    /// Helper method to compute adaptive covariance multiplier
+    double computeCovarianceMultiplier(size_t num_correspondences, size_t num_source_points);
 };
 
 }  // namespace kiss_icp_ros

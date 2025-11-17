@@ -46,12 +46,35 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
     // Compute initial_guess for ICP
     const auto initial_guess = last_pose_ * last_delta_;
 
-    // Run ICP
-    const auto new_pose = registration_.AlignPointsToMap(source,         // frame
+    // Conditional execution based on metrics toggle
+    Sophus::SE3d new_pose;
+    
+    if (use_registration_metrics_) {
+        // NEW PATH: Use metrics-enabled method
+        const auto result = registration_.AlignPointsToMapWithMetrics(
+                                                         source,         // frame
                                                          local_map_,     // voxel_map
                                                          initial_guess,  // initial_guess
                                                          3.0 * sigma,    // max_correspondence_dist
                                                          sigma);         // kernel
+        
+        new_pose = result.pose;
+        
+        // Store registration quality metrics
+        last_num_correspondences_ = result.num_correspondences;
+        last_num_source_points_ = result.num_source_points;
+    } else {
+        // OLD PATH: Use original method (backward compatible)
+        new_pose = registration_.AlignPointsToMap(source,         // frame
+                                                  local_map_,     // voxel_map
+                                                  initial_guess,  // initial_guess
+                                                  3.0 * sigma,    // max_correspondence_dist
+                                                  sigma);         // kernel
+        
+        // Reset metrics to zero when not using metrics path
+        last_num_correspondences_ = 0;
+        last_num_source_points_ = 0;
+    }
 
     // Compute the difference between the prediction and the actual estimate
     const auto model_deviation = initial_guess.inverse() * new_pose;

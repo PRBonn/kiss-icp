@@ -84,9 +84,24 @@ public:
     Sophus::SE3d &delta() { return last_delta_; }
     void Reset();
 
+    // Get registration quality metrics (for adaptive covariance)
+    size_t num_correspondences() const { return last_num_correspondences_; }
+    size_t num_source_points() const { return last_num_source_points_; }
+    
+    // Setter/getter to enable/disable metrics collection
+    void setUseRegistrationMetrics(bool enable) { use_registration_metrics_ = enable; }
+    bool useRegistrationMetrics() const { return use_registration_metrics_; }
+
 private:
     Sophus::SE3d last_pose_;
     Sophus::SE3d last_delta_;
+    
+    // Registration quality metrics
+    size_t last_num_correspondences_ = 0;
+    size_t last_num_source_points_ = 0;
+    
+    // Toggle for metrics collection (default: OFF for backward compatibility)
+    bool use_registration_metrics_ = false;
 
     // KISS-ICP pipeline modules
     KISSConfig config_;
