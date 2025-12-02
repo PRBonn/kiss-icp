@@ -36,27 +36,23 @@ from typing import Iterable, List, Optional, Tuple
 
 import numpy as np
 
-try:
-    from rosbags.typesys.types import sensor_msgs__msg__PointCloud2 as PointCloud2
-    from rosbags.typesys.types import sensor_msgs__msg__PointField as PointField
-except ImportError as e:
-    raise ImportError('rosbags library not installed, run "pip install -U rosbags"') from e
+__TIMESTAMP_ATTRIBUTE_NAMES__ = ["time", "timestamps", "timestamp", "t"]
 
-
-_DATATYPES = {}
-_DATATYPES[PointField.INT8] = np.dtype(np.int8)
-_DATATYPES[PointField.UINT8] = np.dtype(np.uint8)
-_DATATYPES[PointField.INT16] = np.dtype(np.int16)
-_DATATYPES[PointField.UINT16] = np.dtype(np.uint16)
-_DATATYPES[PointField.INT32] = np.dtype(np.int32)
-_DATATYPES[PointField.UINT32] = np.dtype(np.uint32)
-_DATATYPES[PointField.FLOAT32] = np.dtype(np.float32)
-_DATATYPES[PointField.FLOAT64] = np.dtype(np.float64)
+_DATATYPES = {
+    "int8": np.dtype(np.int8),
+    "uint8": np.dtype(np.uint8),
+    "int16": np.dtype(np.int16),
+    "uint16": np.dtype(np.uint16),
+    "int32": np.dtype(np.int32),
+    "uint32": np.dtype(np.uint32),
+    "float32": np.dtype(np.float32),
+    "float64": np.dtype(np.float64),
+}
 
 DUMMY_FIELD_PREFIX = "unnamed_field"
 
 
-def read_point_cloud(msg: PointCloud2) -> Tuple[np.ndarray, np.ndarray]:
+def read_point_cloud(msg) -> Tuple[np.ndarray, np.ndarray | None]:
     """
     Extract poitns and timestamps from a PointCloud2 message.
 
@@ -88,7 +84,7 @@ def read_point_cloud(msg: PointCloud2) -> Tuple[np.ndarray, np.ndarray]:
 
 
 def read_points(
-    cloud: PointCloud2,
+    cloud,
     field_names: Optional[List[str]] = None,
     uvs: Optional[Iterable] = None,
     reshape_organized_cloud: bool = False,
@@ -137,7 +133,15 @@ def read_points(
     return points
 
 
-def dtype_from_fields(fields: Iterable[PointField], point_step: Optional[int] = None) -> np.dtype:
+def get_datatype_name(field) -> str:
+    for attr_name, attr_value in vars(field).items():
+        key_lower = attr_name.lower()
+        if key_lower in _DATATYPES and attr_value == field.datatype:
+            return key_lower
+    raise ValueError(f"Unknown datatype code {field.datatype} for field {vars(field)}")
+
+
+def dtype_from_fields(fields: Iterable, point_step: Optional[int] = None) -> np.dtype:
     """
     Convert a Iterable of sensor_msgs.msg.PointField messages to a np.dtype.
     :param fields: The point cloud fields.
@@ -152,7 +156,7 @@ def dtype_from_fields(fields: Iterable[PointField], point_step: Optional[int] = 
     field_datatypes = []
     for i, field in enumerate(fields):
         # Datatype as numpy datatype
-        datatype = _DATATYPES[field.datatype]
+        datatype = _DATATYPES[get_datatype_name(field)]
         # Name field
         if field.name == "":
             name = f"{DUMMY_FIELD_PREFIX}_{i}"
