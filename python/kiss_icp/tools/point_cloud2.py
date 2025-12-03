@@ -32,7 +32,7 @@ All rights reserved to the original authors: Tim Field and Florian Vahl.
 """
 
 import sys
-from typing import Iterable, List, Optional, Tuple
+from typing import Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -52,7 +52,7 @@ _DATATYPES = {
 DUMMY_FIELD_PREFIX = "unnamed_field"
 
 
-def read_point_cloud(msg) -> Tuple[np.ndarray, np.ndarray | None]:
+def read_point_cloud(msg) -> Tuple[np.ndarray, Union[np.ndarray, None]]:
     """
     Extract poitns and timestamps from a PointCloud2 message.
 
