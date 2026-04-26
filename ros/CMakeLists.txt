@@ -53,18 +53,18 @@ find_package(std_srvs REQUIRED)
 add_library(odometry_component SHARED src/OdometryServer.cpp)
 target_compile_features(odometry_component PUBLIC cxx_std_20)
 target_include_directories(odometry_component PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_link_libraries(odometry_component kiss_icp_pipeline)
-ament_target_dependencies(
+target_link_libraries(
   odometry_component
-  geometry_msgs
-  nav_msgs
-  rclcpp
-  rclcpp_components
-  rcutils
-  sensor_msgs
-  std_msgs
-  std_srvs
-  tf2_ros)
+  PRIVATE kiss_icp_pipeline
+          rclcpp::rclcpp
+          rclcpp_components::component
+          rcutils::rcutils
+          tf2_ros::tf2_ros
+          ${geometry_msgs_TARGETS}
+          ${nav_msgs_TARGETS}
+          ${sensor_msgs_TARGETS}
+          ${std_msgs_TARGETS}
+          ${std_srvs_TARGETS})
 
 rclcpp_components_register_node(odometry_component PLUGIN "kiss_icp_ros::OdometryServer" EXECUTABLE kiss_icp_node)
 
