@@ -98,7 +98,7 @@ LinearSystem BuildLinearSystem(const Correspondences &correspondences, const dou
     };
 
     using correspondence_iterator = Correspondences::const_iterator;
-    const auto &[JTJ, JTr] = tbb::parallel_reduce(
+    const auto linear_system = tbb::parallel_reduce(
         // Range
         tbb::blocked_range<correspondence_iterator>{correspondences.cbegin(),
                                                     correspondences.cend()},
@@ -117,7 +117,7 @@ LinearSystem BuildLinearSystem(const Correspondences &correspondences, const dou
         // 2nd Lambda: Parallel reduction of the private Jacboians
         sum_linear_systems);
 
-    return {JTJ, JTr};
+    return linear_system;
 }
 }  // namespace
 
