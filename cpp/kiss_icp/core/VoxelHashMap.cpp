@@ -109,6 +109,7 @@ void VoxelHashMap::Update(const std::vector<Eigen::Vector3d> &points, const Soph
             map_.emplace(voxel, std::move(voxel_points));
         }
     });
+    RemovePointsFarFromLocation(pose.translation());
 }
 
 void VoxelHashMap::AddPoints(const std::vector<Eigen::Vector3d> &points) {
