@@ -65,7 +65,7 @@ class OusterDataloader:
         """
 
         try:
-            from ouster.sdk import client, open_source
+            from ouster.sdk import core, open_source
         except ImportError:
             print(f'ouster-sdk is not installed on your system, run "pip install ouster-sdk"')
             exit(1)
@@ -80,12 +80,12 @@ class OusterDataloader:
 
         # since we import ouster-sdk's client module locally, we keep reference
         # to it locally as well
-        self._client = client
+        self._client = core.client
 
         self.data_dir = os.path.dirname(data_dir)
 
         # lookup table for 2D range image projection to a 3D point cloud
-        self._xyz_lut = client.XYZLut(source.metadata)
+        self._xyz_lut = core.XYZLut(source.metadata)
 
         self._pcap_file = str(data_dir)
 
