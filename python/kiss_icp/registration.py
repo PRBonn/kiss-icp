@@ -55,11 +55,12 @@ class Registration:
         initial_guess: np.ndarray,
         max_correspondance_distance: float,
         kernel: float,
-    ) -> np.ndarray:
-        return self._registration._align_points_to_map(
+    ) -> tuple[np.ndarray, np.ndarray]:
+        pose, covariance = self._registration._align_points_to_map(
             points=kiss_icp_pybind._Vector3dVector(points),
             voxel_map=voxel_map._internal_map,
             initial_guess=initial_guess,
             max_correspondance_distance=max_correspondance_distance,
             kernel=kernel,
         )
+        return pose, covariance

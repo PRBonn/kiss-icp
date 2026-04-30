@@ -54,7 +54,7 @@ class KissICP:
         initial_guess = self.last_pose @ self.last_delta
 
         # Run ICP
-        new_pose = self.registration.align_points_to_map(
+        new_pose, hessian = self.registration.align_points_to_map(
             points=source,
             voxel_map=self.local_map,
             initial_guess=initial_guess,
@@ -72,7 +72,7 @@ class KissICP:
         self.last_pose = new_pose
 
         # Return the (deskew) input raw scan (frame) and the points used for registration (source)
-        return frame, source
+        return frame, source, hessian
 
     def voxelize(self, iframe):
         frame_downsample = voxel_down_sample(iframe, self.config.mapping.voxel_size * 0.5)

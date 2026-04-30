@@ -97,10 +97,8 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
                const VoxelHashMap &voxel_map, const Eigen::Matrix4d &T_guess,
                double max_correspondence_distance, double kernel) {
                 Sophus::SE3d initial_guess(T_guess);
-                return self
-                    .AlignPointsToMap(points, voxel_map, initial_guess, max_correspondence_distance,
-                                      kernel)
-                    .matrix();
+                auto [pose, covariance] = self.AlignPointsToMap(points, voxel_map, initial_guess, max_correspondence_distance, kernel);
+                return std::make_pair(pose.matrix(), covariance);
             },
             "points"_a, "voxel_map"_a, "initial_guess"_a, "max_correspondance_distance"_a,
             "kernel"_a);

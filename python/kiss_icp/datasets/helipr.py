@@ -33,7 +33,7 @@ class HeLiPRDataset:
     def __init__(self, data_dir: Path, sequence: str, *_, **__):
         self.sequence_id = sequence
         self.sequence_dir = os.path.join(data_dir, "LiDAR", self.sequence_id)
-        self.scan_files = sorted(glob.glob(self.sequence_dir + "/*.bin"))
+        self.scan_files = sorted(glob.glob(self.sequence_dir + "/*.ply"))
         self.scan_timestamps = [int(Path(file).stem) for file in self.scan_files]
 
         self.gt_file = os.path.join(data_dir, "LiDAR_GT", f"global_{self.sequence_id}_gt.txt")
@@ -42,35 +42,19 @@ class HeLiPRDataset:
         if len(self.scan_files) == 0:
             raise ValueError(f"Tried to read point cloud files in {data_dir} but none found")
 
-        # Obtain the pointcloud reader for the given data folder
-        if self.sequence_id == "Avia":
-            self.format_string = "fffBBBL"
-            self.intensity_channel = None
-            self.time_channel = 6
-        elif self.sequence_id == "Aeva":
-            self.format_string = "ffffflBf"
-            self.format_string_no_intensity = "ffffflB"
-            self.intensity_channel = 7
-            self.time_channel = 5
-        elif self.sequence_id == "Ouster":
-            self.format_string = "ffffIHHH"
-            self.intensity_channel = 3
-            self.time_channel = 4
-        elif self.sequence_id == "Velodyne":
-            self.format_string = "ffffHf"
-            self.intensity_channel = 3
-            self.time_channel = 5
-        else:
-            print("[ERROR] Unsupported LiDAR Type")
-            sys.exit()
-
     def __len__(self):
         return len(self.scan_files)
 
     def __getitem__(self, idx):
-        data = self.get_data(idx)
-        points = self.read_point_cloud(data)
-        timestamps = self.read_timestamps(data)
+        import open3d as o3d
+
+        file_path = self.scan_files[idx]
+        pcd = o3d.t.io.read_point_cloud(file_path)
+        points = pcd.point.positions.numpy()
+        try:
+            timestamps = pcd.point.timestamps.numpy()
+        except KeyError:
+            timestamps = np.array([])
         return points, timestamps
 
     def load_poses(self, poses_file):
