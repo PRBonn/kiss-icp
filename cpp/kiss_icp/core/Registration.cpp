@@ -83,25 +83,42 @@ Eigen::Matrix<double, num_samples, 6> LatinHypercubeSampling() {
     return unit_samples;
 }
 
-std::pair<Eigen::Array<double, num_samples, num_samples>, double> GetRBFSystem(
+constexpr double sq_kernel_scale = 0.01;
+
+Eigen::Array<double, num_samples, num_samples> GetRBFSystem(
     const Eigen::Matrix<double, num_samples, 6> &unit_samples) {
     Eigen::Array<double, num_samples, num_samples> K;
     std::vector<double> dists(num_samples * num_samples, 0.0);
     for (int i = 0; i < num_samples; ++i) {
-        for (int j = 0; j < num_samples; ++j) {
-            K(i, j) = (unit_samples.row(i) - unit_samples.row(j)).squaredNorm();
-            dists[i * num_samples + j] = K(i, j);
+        K(i, i) = 1e-6;
+        for (int j = 0; j < i; ++j) {
+            const auto r = (unit_samples.row(i) - unit_samples.row(j)).squaredNorm();
+            K(i, j) = r;
+            K(j, i) = r;
+            dists[i * num_samples + j] = r;
+            dists[j * num_samples + i] = r;
         }
     }
-    std::nth_element(dists.begin(), dists.begin() + dists.size() / 2, dists.end());
-    const double sq_kernel_scale = dists[dists.size() / 2];
-    K = (-0.5 * K / sq_kernel_scale);
-    K = K.exp();
-    return {K, sq_kernel_scale};
+    K = (-0.5 * K / sq_kernel_scale).exp();
+    return K;
 }
 
 const Eigen::Matrix<double, num_samples, 6> &lhs_samples = LatinHypercubeSampling();
-const auto &[rbf_system_K, sq_kernel_scale] = GetRBFSystem(lhs_samples);
+
+double EvaluateRBF(const Eigen::Matrix<double, num_samples, 1> &weights,
+                   const Eigen::Matrix<double, 1, 6> &query) {
+    Eigen::Matrix<double, num_samples, 1> k_query;
+    for (int i = 0; i < num_samples; ++i) {
+        k_query(i) = (query - lhs_samples.row(i)).squaredNorm();
+    }
+    k_query = (-0.5 * k_query / sq_kernel_scale).array().exp();
+    return weights.transpose() * k_query;
+}
+
+const Eigen::Matrix<double, num_samples, 6> &lhs_eval_samples = LatinHypercubeSampling();
+
+const auto &rbf_system_K = GetRBFSystem(lhs_samples);
+const auto &K_inv = rbf_system_K.matrix().ldlt();
 
 inline double square(double x) { return x * x; }
 
@@ -250,23 +267,44 @@ Eigen::Matrix<double, 6, 6> Registration::PerturbationAnalysis(
             return residual_perturb;
         });
 
-    const Eigen::Matrix<double, num_samples, 1> rbf_weights =
-        (rbf_system_K.matrix().ldlt().solve(residuals)).transpose();
-
+    double pred_error = 0.0;
+    const Eigen::Matrix<double, num_samples, 1> rbf_weights = (K_inv.solve(residuals)).transpose();
+    std::for_each(
+        lhs_eval_samples.rowwise().begin(), lhs_eval_samples.rowwise().end(),
+        [&](const auto &lhs_sample) {
+            const Sophus::SE3d perturbation(
+                Sophus::SO3d::exp(Eigen::Vector3d(lhs_sample(3), lhs_sample(4), lhs_sample(5))),
+                Eigen::Vector3d(lhs_sample(0), lhs_sample(1), lhs_sample(2)));
+            std::transform(frame.cbegin(), frame.cend(), frame_perturbed.begin(),
+                           [&](const auto &point) { return pose * perturbation * point; });
+            const Correspondences correspondences_perturbed =
+                DataAssociation(frame_perturbed, voxel_map, max_distance);
+            const double residual_perturb =
+                std::accumulate(correspondences_perturbed.cbegin(),
+                                correspondences_perturbed.cend(), 0.0,
+                                [](double sum, const auto &correspondence) {
+                                    const auto &[source, target] = correspondence;
+                                    return sum + (source - target).squaredNorm();
+                                }) /
+                static_cast<double>(correspondences_perturbed.size());
+            pred_error += std::abs(EvaluateRBF(rbf_weights, lhs_sample) - residual_perturb);
+        });
+    std::cout << "Average prediction error at LHS eval samples: " << pred_error / num_samples
+              << std::endl;
     // Evaluate RBF hessian at the zero perturbation
     Eigen::Matrix<double, 6, 6> hessian = Eigen::Matrix<double, 6, 6>::Zero();
     for (int i = 0; i < num_samples; ++i) {
-        hessian += rbf_weights(i) *
-                   ((lhs_samples.row(i).transpose() * lhs_samples.row(i)) /
-                        (sq_kernel_scale * sq_kernel_scale) -
-                    Eigen::Matrix<double, 6, 6>::Identity() / sq_kernel_scale) *
-                   rbf_system_K(i, num_samples - 1);
+        hessian += rbf_weights(i) * rbf_system_K(i, num_samples - 1) *
+                   (((lhs_samples.row(i).transpose() * lhs_samples.row(i)) / sq_kernel_scale) -
+                    Eigen::Matrix<double, 6, 6>::Identity());
     }
+    hessian /= sq_kernel_scale;
     // Make Symmetric for Information gain Matrix
-    hessian = 0.5 * (hessian + hessian.transpose());
     const Eigen::SelfAdjointEigenSolver<Eigen::Matrix<double, 6, 6>> eigen_solver(hessian);
     auto eigvalues = eigen_solver.eigenvalues();
     auto eigvectors = eigen_solver.eigenvectors();
+    std::cout << "Raw Perturbation Analysis Hessian:\n" << hessian << std::endl;
+    std::cout << "Eigenvalues:\n" << eigvalues.transpose() << std::endl;
     // Clamp eigenvalues to avoid numerical issues in the information gain computation
     std::transform(eigvalues.begin(), eigvalues.end(), eigvalues.begin(), [](double x) {
         return std::clamp(x, 1e-6, std::numeric_limits<double>::max());
