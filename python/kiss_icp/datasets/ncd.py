@@ -72,7 +72,7 @@ class NewerCollegeDataset:
     @staticmethod
     def get_pcd_filenames(scans_folder):
         # cloud_1583836591_182590976.pcd
-        regex = re.compile("^cloud_(\d*_\d*)")
+        regex = re.compile(r"^cloud_(\d*_\d*)")
 
         def get_cloud_timestamp(pcd_filename):
             m = regex.search(pcd_filename)

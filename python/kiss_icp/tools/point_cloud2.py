@@ -38,27 +38,39 @@ import numpy as np
 
 __TIMESTAMP_ATTRIBUTE_NAMES__ = ["time", "timestamps", "timestamp", "t"]
 
-_DATATYPES = {
-    "int8": np.dtype(np.int8),
-    "uint8": np.dtype(np.uint8),
-    "int16": np.dtype(np.int16),
-    "uint16": np.dtype(np.uint16),
-    "int32": np.dtype(np.int32),
-    "uint32": np.dtype(np.uint32),
-    "float32": np.dtype(np.float32),
-    "float64": np.dtype(np.float64),
+# Mapping from the integer datatype codes defined in sensor_msgs/PointField to
+# their numpy equivalents.  The codes are part of the ROS2 message definition:
+#   INT8=1, UINT8=2, INT16=3, UINT16=4, INT32=5, UINT32=6, FLOAT32=7, FLOAT64=8
+#
+# We intentionally use a plain int→name dict instead of inspecting the
+# PointField class attributes at runtime.  The attribute-based approach breaks
+# when the field object comes from mcap_ros2._dynamic, whose classes use
+# __slots__ and therefore return an empty dict from vars().
+_DATATYPE_CODES: dict = {
+    1: "int8",
+    2: "uint8",
+    3: "int16",
+    4: "uint16",
+    5: "int32",
+    6: "uint32",
+    7: "float32",
+    8: "float64",
 }
+
+# Derive the numpy dtype map from the same source of truth so the two dicts
+# can never diverge.
+_DATATYPES: dict = {name: np.dtype(getattr(np, name)) for name in _DATATYPE_CODES.values()}
 
 DUMMY_FIELD_PREFIX = "unnamed_field"
 
 
 def read_point_cloud(msg) -> Tuple[np.ndarray, Union[np.ndarray, None]]:
     """
-    Extract poitns and timestamps from a PointCloud2 message.
+    Extract points and timestamps from a PointCloud2 message.
 
     :return: Tuple of [points, timestamps]
-        points: array of x, y z points, shape: (N, 3)
-        timestamps: array of per-pixel timestamps, shape: (N,)
+        points: array of x, y, z points, shape: (N, 3)
+        timestamps: array of per-point timestamps, shape: (N,)
     """
     field_names = ["x", "y", "z"]
     t_field = None
@@ -134,11 +146,18 @@ def read_points(
 
 
 def get_datatype_name(field) -> str:
-    for attr_name, attr_value in vars(field).items():
-        key_lower = attr_name.lower()
-        if key_lower in _DATATYPES and attr_value == field.datatype:
-            return key_lower
-    raise ValueError(f"Unknown datatype code {field.datatype} for field {vars(field)}")
+    """Return the lowercase numpy dtype name for a PointField datatype code.
+
+    sensor_msgs/PointField stores the datatype as an integer code (1–8).
+    We look it up directly in *_DATATYPE_CODES* instead of inspecting the
+    field object's attributes, because deserialised field objects from
+    mcap_ros2._dynamic use __slots__ and return an empty dict from vars(),
+    which would cause the original attribute-based lookup to always fail.
+    """
+    code = field.datatype
+    if code in _DATATYPE_CODES:
+        return _DATATYPE_CODES[code]
+    raise ValueError(f"Unknown datatype code {code} for field {vars(field)}")
 
 
 def dtype_from_fields(fields: Iterable, point_step: Optional[int] = None) -> np.dtype:
