@@ -60,61 +60,6 @@ namespace {
 auto duration_ms = [](auto start, auto end) {
     return std::chrono::duration<double, std::milli>(end - start).count();
 };
-constexpr int num_samples = 11;
-constexpr int num_unknowns = 3;
-constexpr int dof = 6;
-
-constexpr std::array<double, num_samples - 1> trans_perturb{-0.1, -0.08, -0.06, -0.04, -0.02,
-                                                            0.02, 0.04,  0.06,  0.08,  0.1};
-constexpr std::array<double, num_samples - 1> rot_perturb{-0.01, -0.008, -0.006, -0.004, -0.002,
-                                                          0.002, 0.004,  0.006,  0.008,  0.01};
-
-auto get_se3_perturbations = []() {
-    std::array<std::array<Sophus::SE3d, num_samples - 1>, dof> perturbations;
-    for (int i = 0; i < num_samples - 1; ++i) {
-        perturbations[0][i] =
-            Sophus::SE3d(Eigen::Matrix3d::Identity(), trans_perturb[i] * Eigen::Vector3d::UnitX());
-
-        perturbations[1][i] =
-            Sophus::SE3d(Eigen::Matrix3d::Identity(), trans_perturb[i] * Eigen::Vector3d::UnitY());
-
-        perturbations[2][i] =
-            Sophus::SE3d(Eigen::Matrix3d::Identity(), trans_perturb[i] * Eigen::Vector3d::UnitZ());
-
-        perturbations[3][i] =
-            Sophus::SE3d(Sophus::SO3d::rotX(rot_perturb[i]), Eigen::Vector3d::Zero());
-
-        perturbations[4][i] =
-            Sophus::SE3d(Sophus::SO3d::rotY(rot_perturb[i]), Eigen::Vector3d::Zero());
-
-        perturbations[5][i] =
-            Sophus::SE3d(Sophus::SO3d::rotZ(rot_perturb[i]), Eigen::Vector3d::Zero());
-    }
-    return perturbations;
-};
-
-const auto se3_perturbations = get_se3_perturbations();
-
-Eigen::Matrix<double, num_samples, num_unknowns> GetQuadraticSystem(
-    const std::array<double, num_samples - 1> &perturbations) {
-    Eigen::Matrix<double, num_samples, num_unknowns> A;
-    std::transform(perturbations.cbegin(), perturbations.cend(), A.rowwise().begin(),
-                   [](const auto &perturbation) {
-                       return Eigen::Matrix<double, 1, num_unknowns>{
-                           1.0, perturbation, 0.5 * perturbation * perturbation};
-                   });
-    A.row(num_samples - 1) = Eigen::Matrix<double, 1, num_unknowns>{1.0, 0.0, 0.0};
-    return A;
-}
-
-const auto A_trans = GetQuadraticSystem(trans_perturb);
-const auto N_trans = (A_trans.transpose() * A_trans).inverse() * A_trans.transpose();
-
-const auto A_rot = GetQuadraticSystem(rot_perturb);
-const auto N_rot = (A_rot.transpose() * A_rot).inverse() * A_rot.transpose();
-
-const std::array<Eigen::Matrix<double, num_unknowns, num_samples>, dof> N{N_trans, N_trans, N_trans,
-                                                                          N_rot,   N_rot,   N_rot};
 
 inline double square(double x) { return x * x; }
 
@@ -209,6 +154,61 @@ LinearSystem BuildLinearSystem(const Correspondences &correspondences, const dou
 
     return {JTJ, JTr};
 }
+
+constexpr int num_samples = 10;
+
+constexpr std::array<double, num_samples> trans_perturb{-0.1, -0.08, -0.06, -0.04, -0.02,
+                                                        0.02, 0.04,  0.06,  0.08,  0.1};
+constexpr std::array<double, num_samples> rot_perturb{-0.01, -0.008, -0.006, -0.004, -0.002,
+                                                      0.002, 0.004,  0.006,  0.008,  0.01};
+
+auto get_se3_perturbations = []() {
+    std::array<std::array<Sophus::SE3d, num_samples>, 6> perturbations;
+    for (int i = 0; i < num_samples; ++i) {
+        perturbations[0][i] =
+            Sophus::SE3d(Eigen::Matrix3d::Identity(), trans_perturb[i] * Eigen::Vector3d::UnitX());
+
+        perturbations[1][i] =
+            Sophus::SE3d(Eigen::Matrix3d::Identity(), trans_perturb[i] * Eigen::Vector3d::UnitY());
+
+        perturbations[2][i] =
+            Sophus::SE3d(Eigen::Matrix3d::Identity(), trans_perturb[i] * Eigen::Vector3d::UnitZ());
+
+        perturbations[3][i] =
+            Sophus::SE3d(Sophus::SO3d::rotX(rot_perturb[i]), Eigen::Vector3d::Zero());
+
+        perturbations[4][i] =
+            Sophus::SE3d(Sophus::SO3d::rotY(rot_perturb[i]), Eigen::Vector3d::Zero());
+
+        perturbations[5][i] =
+            Sophus::SE3d(Sophus::SO3d::rotZ(rot_perturb[i]), Eigen::Vector3d::Zero());
+    }
+    return perturbations;
+};
+
+const auto se3_perturbations = get_se3_perturbations();
+
+Eigen::Matrix<double, num_samples + 1, 3> GetQuadraticSystem(
+    const std::array<double, num_samples> &perturbations) {
+    Eigen::Matrix<double, num_samples + 1, 3> A;
+    std::transform(perturbations.cbegin(), perturbations.cend(), A.rowwise().begin(),
+                   [](const auto &perturbation) {
+                       return Eigen::Matrix<double, 1, 3>{1.0, perturbation,
+                                                          0.5 * square(perturbation)};
+                   });
+    A.row(num_samples) = Eigen::Matrix<double, 1, 3>{1.0, 0.0, 0.0};
+    return A;
+}
+
+const auto A_trans = GetQuadraticSystem(trans_perturb);
+const auto N_trans = (A_trans.transpose() * A_trans).inverse() * A_trans.transpose();
+
+const auto A_rot = GetQuadraticSystem(rot_perturb);
+const auto N_rot = (A_rot.transpose() * A_rot).inverse() * A_rot.transpose();
+
+const std::array<Eigen::Matrix<double, 1, num_samples + 1>, 6> N{
+    N_trans.row(2), N_trans.row(2), N_trans.row(2), N_rot.row(2), N_rot.row(2), N_rot.row(2)};
+
 }  // namespace
 
 namespace kiss_icp {
@@ -225,13 +225,13 @@ Registration::Registration(int max_num_iteration, double convergence_criterion, 
         tbb::global_control::max_allowed_parallelism, static_cast<size_t>(max_num_threads_));
 }
 
-std::pair<Sophus::SE3d, Eigen::Matrix<double, 6, 6>> Registration::AlignPointsToMap(
+std::pair<Sophus::SE3d, Eigen::Matrix6d> Registration::AlignPointsToMap(
     const std::vector<Eigen::Vector3d> &frame,
     const VoxelHashMap &voxel_map,
     const Sophus::SE3d &initial_guess,
     const double max_distance,
     const double kernel_scale) {
-    if (voxel_map.Empty()) return {initial_guess, Eigen::Matrix<double, 6, 6>::Identity()};
+    if (voxel_map.Empty()) return {initial_guess, Eigen::Matrix6d::Identity()};
 
     // Equation (9)
     std::vector<Eigen::Vector3d> source = frame;
@@ -253,18 +253,17 @@ std::pair<Sophus::SE3d, Eigen::Matrix<double, 6, 6>> Registration::AlignPointsTo
         // Termination criteria
         if (dx.norm() < convergence_criterion_) break;
     }
-    const auto hessian =
+    const Eigen::Matrix6d hessian =
         PerturbationAnalysis(frame, voxel_map, T_icp * initial_guess, max_distance);
     // Spit the final transformation
     return {T_icp * initial_guess, hessian};
 }
 
 // perturbation analysis
-Eigen::Matrix<double, 6, 6> Registration::PerturbationAnalysis(
-    const std::vector<Eigen::Vector3d> &frame,
-    const VoxelHashMap &voxel_map,
-    const Sophus::SE3d &pose,
-    const double max_distance) {
+Eigen::Matrix6d Registration::PerturbationAnalysis(const std::vector<Eigen::Vector3d> &frame,
+                                                   const VoxelHashMap &voxel_map,
+                                                   const Sophus::SE3d &pose,
+                                                   const double max_distance) {
     auto t_start = std::chrono::high_resolution_clock::now();
 
     std::vector<Eigen::Vector3d> frame_perturbed(frame.size());
@@ -272,42 +271,34 @@ Eigen::Matrix<double, 6, 6> Registration::PerturbationAnalysis(
                    [&](const auto &point) { return pose * point; });
 
     const double optimal_residual = PointToPointResidual(frame_perturbed, voxel_map, max_distance);
-    Eigen::Matrix<double, dof, num_unknowns> parameters =
-        Eigen::Matrix<double, dof, num_unknowns>::Zero();
 
     auto t_perturb_start = std::chrono::high_resolution_clock::now();
 
-    Eigen::Matrix<double, num_samples, dof> residuals;
-    residuals.row(num_samples - 1) = Eigen::Matrix<double, 1, dof>::Constant(optimal_residual);
-    tbb::parallel_for(tbb::blocked_range<int>{0, dof}, [&](const tbb::blocked_range<int> &r1) {
+    Eigen::Matrix<double, num_samples + 1, 6> residuals;
+    residuals.row(num_samples) = Eigen::Matrix<double, 1, 6>::Constant(optimal_residual);
+    tbb::parallel_for(tbb::blocked_range<int>{0, 6}, [&](const tbb::blocked_range<int> &r1) {
         for (int d = r1.begin(); d < r1.end(); ++d) {
             const auto &perturbations = se3_perturbations[d];
             tbb::parallel_for(
-                tbb::blocked_range<int>{0, num_samples - 1},
-                [&](const tbb::blocked_range<int> &r2) {
+                tbb::blocked_range<int>{0, num_samples}, [&](const tbb::blocked_range<int> &r2) {
                     for (int i = r2.begin(); i < r2.end(); ++i) {
                         const Sophus::SE3d perturbed_pose = pose * perturbations[i];
                         std::vector<Eigen::Vector3d> frame_perturbed_local(frame.size());
                         std::transform(frame.cbegin(), frame.cend(), frame_perturbed_local.begin(),
                                        [&](const auto &point) { return perturbed_pose * point; });
-                        const double residual =
+                        residuals(i, d) =
                             PointToPointResidual(frame_perturbed_local, voxel_map, max_distance);
-                        residuals(i, d) = residual;
                     }
                 });
         }
     });
-
-    std::transform(
-        N.cebgin(), N.cend(), residuals.colwise().cbegin(), parameters.rowwise().begin(),
-        [&](const auto &N_d, const auto &residuals_d) { return (N_d * residuals_d).transpose(); });
     auto t_perturb_end = std::chrono::high_resolution_clock::now();
 
-    Eigen::Vector6d quadratic_term = parameters.block<dof, 1>(0, 2);
-
-    std::transform(
-        quadratic_term.begin(), quadratic_term.end(), quadratic_term.begin(),
-        [](double x) { return std::clamp(x, 1e-6, std::numeric_limits<double>::max()); });
+    Eigen::Vector6d hessian;
+    for (int d = 0; d < 6; ++d) {
+        hessian(d) = std::clamp(static_cast<double>(N[d] * residuals.col(d)), 1e-6,
+                                std::numeric_limits<double>::max());
+    }
 
     auto t_end = std::chrono::high_resolution_clock::now();
 
@@ -318,6 +309,6 @@ Eigen::Matrix<double, 6, 6> Registration::PerturbationAnalysis(
     std::cout << "Total:                " << duration_ms(t_start, t_end) << " ms\n";
     std::cout << "=========================================\n\n";
 
-    return quadratic_term.asDiagonal();
+    return hessian.asDiagonal();
 }
 }  // namespace kiss_icp
