@@ -47,12 +47,13 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
     const auto initial_guess = last_pose_ * last_delta_;
 
     // Run ICP
-    const auto &[new_pose, covariance] =
-        registration_.AlignPointsToMap(source,         // frame
-                                       local_map_,     // voxel_map
-                                       initial_guess,  // initial_guess
-                                       3.0 * sigma,    // max_correspondence_dist
-                                       sigma);         // kernel
+    const auto new_pose = registration_.AlignPointsToMap(source,         // frame
+                                                         local_map_,     // voxel_map
+                                                         initial_guess,  // initial_guess
+                                                         3.0 * sigma,    // max_correspondence_dist
+                                                         sigma);         // kernel
+
+    const auto hessian = registration_.GetHessian(source, local_map_, new_pose, 3.0 * sigma);
 
     // Compute the difference between the prediction and the actual estimate
     const auto model_deviation = initial_guess.inverse() * new_pose;
@@ -62,6 +63,7 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
     local_map_.Update(frame_downsample, new_pose);
     last_delta_ = last_pose_.inverse() * new_pose;
     last_pose_ = new_pose;
+    last_hessian_ = hessian;
 
     // Return the (deskew) input raw scan (preprocessed_frame) and the points used for registration
     // (source)

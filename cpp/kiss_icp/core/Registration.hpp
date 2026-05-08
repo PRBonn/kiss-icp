@@ -33,15 +33,15 @@ namespace kiss_icp {
 struct Registration {
     explicit Registration(int max_num_iteration, double convergence_criterion, int max_num_threads);
 
-    std::pair<Sophus::SE3d, Eigen::Matrix<double, 6, 6>> AlignPointsToMap(const std::vector<Eigen::Vector3d> &frame,
+    Sophus::SE3d AlignPointsToMap(const std::vector<Eigen::Vector3d> &frame,
                                   const VoxelHashMap &voxel_map,
                                   const Sophus::SE3d &initial_guess,
                                   const double max_correspondence_distance,
                                   const double kernel_scale);
-    Eigen::Matrix<double, 6, 6> PerturbationAnalysis(const std::vector<Eigen::Vector3d> &frame,
-                          const VoxelHashMap &voxel_map,
-                          const Sophus::SE3d &pose,
-                          const double max_distance);
+    Eigen::Matrix<double, 6, 6> GetHessian(const std::vector<Eigen::Vector3d> &frame,
+                                           const VoxelHashMap &voxel_map,
+                                           const Sophus::SE3d &pose,
+                                           const double max_distance);
     int max_num_iterations_;
     double convergence_criterion_;
     int max_num_threads_;

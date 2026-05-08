@@ -34,6 +34,7 @@ class KissICP:
     def __init__(self, config: KISSConfig):
         self.last_pose = np.eye(4)
         self.last_delta = np.eye(4)
+        self.last_hessian = np.eye(6)
         self.config = config
         self.adaptive_threshold = get_threshold_estimator(self.config)
         self.preprocessor = get_preprocessor(self.config)
@@ -54,12 +55,19 @@ class KissICP:
         initial_guess = self.last_pose @ self.last_delta
 
         # Run ICP
-        new_pose, hessian = self.registration.align_points_to_map(
+        new_pose = self.registration.align_points_to_map(
             points=source,
             voxel_map=self.local_map,
             initial_guess=initial_guess,
             max_correspondance_distance=3 * sigma,
             kernel=sigma,
+        )
+
+        hessian = self.registration.get_hessian(
+            points=source,
+            voxel_map=self.local_map,
+            pose=new_pose,
+            max_correspondance_distance=3 * sigma,
         )
 
         # Compute the difference between the prediction and the actual estimate
@@ -70,9 +78,10 @@ class KissICP:
         self.local_map.update(frame_downsample, new_pose)
         self.last_delta = np.linalg.inv(self.last_pose) @ new_pose
         self.last_pose = new_pose
+        self.last_hessian = hessian
 
         # Return the (deskew) input raw scan (frame) and the points used for registration (source)
-        return frame, source, hessian
+        return frame, source
 
     def voxelize(self, iframe):
         frame_downsample = voxel_down_sample(iframe, self.config.mapping.voxel_size * 0.5)
