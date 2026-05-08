@@ -161,12 +161,10 @@ LinearSystem BuildLinearSystem(const Correspondences &correspondences, const dou
     return {JTJ, JTr};
 }
 
-constexpr int num_samples = 10;
+constexpr int num_samples = 6;
 
-constexpr std::array<double, num_samples> trans_perturb{-0.1, -0.08, -0.06, -0.04, -0.02,
-                                                        0.02, 0.04,  0.06,  0.08,  0.1};
-constexpr std::array<double, num_samples> rot_perturb{-0.01, -0.008, -0.006, -0.004, -0.002,
-                                                      0.002, 0.004,  0.006,  0.008,  0.01};
+constexpr std::array<double, num_samples> trans_perturb{-0.1, -0.06, -0.02, 0.02, 0.06, 0.1};
+constexpr std::array<double, num_samples> rot_perturb{-0.01, -0.006, -0.002, 0.002, 0.006, 0.01};
 
 auto get_se3_perturbations = []() {
     std::array<std::array<Sophus::SE3d, num_samples>, 6> perturbations;
@@ -263,7 +261,10 @@ Eigen::Matrix6d Registration::GetHessian(const std::vector<Eigen::Vector3d> &fra
                                          const VoxelHashMap &voxel_map,
                                          const Sophus::SE3d &pose,
                                          const double max_distance) {
-    const double optimal_residual = PointToPointResidual(frame, pose, voxel_map, max_distance);
+    const std::vector<Eigen::Vector3d> frame_downsampled =
+        VoxelDownsample(frame, voxel_map.voxel_size_ * 3.0);
+    const double optimal_residual =
+        PointToPointResidual(frame_downsampled, pose, voxel_map, max_distance);
 
     Eigen::Matrix<double, num_samples + 1, 6> residuals;
     residuals.row(num_samples) = Eigen::Matrix<double, 1, 6>::Constant(optimal_residual);
@@ -272,8 +273,8 @@ Eigen::Matrix6d Registration::GetHessian(const std::vector<Eigen::Vector3d> &fra
             for (int d = r.rows().begin(); d < r.rows().end(); ++d) {
                 for (int i = r.cols().begin(); i < r.cols().end(); ++i) {
                     const Sophus::SE3d perturbed_pose = pose * se3_perturbations[d][i];
-                    residuals(i, d) =
-                        PointToPointResidual(frame, perturbed_pose, voxel_map, max_distance);
+                    residuals(i, d) = PointToPointResidual(frame_downsampled, perturbed_pose,
+                                                           voxel_map, max_distance);
                 }
             }
         });
