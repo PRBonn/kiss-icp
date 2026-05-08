@@ -23,6 +23,7 @@
 #include "Registration.hpp"
 
 #include <tbb/blocked_range.h>
+#include <tbb/blocked_range2d.h>
 #include <tbb/concurrent_vector.h>
 #include <tbb/global_control.h>
 #include <tbb/info.h>
@@ -34,16 +35,14 @@
 #include <Eigen/Eigenvalues>
 #include <algorithm>
 #include <array>
-#include <cmath>
-#include <filesystem>
-#include <fstream>
-#include <iomanip>
+#include <chrono>
+#include <execution>
 #include <iostream>
 #include <numeric>
-#include <random>
 #include <sophus/se3.hpp>
 #include <sophus/so3.hpp>
 #include <tuple>
+#include <vector>
 
 #include "VoxelHashMap.hpp"
 #include "VoxelUtils.hpp"
@@ -58,27 +57,46 @@ using Correspondences = tbb::concurrent_vector<std::pair<Eigen::Vector3d, Eigen:
 using LinearSystem = std::pair<Eigen::Matrix6d, Eigen::Vector6d>;
 
 namespace {
+auto duration_ms = [](auto start, auto end) {
+    return std::chrono::duration<double, std::milli>(end - start).count();
+};
+constexpr int num_samples = 11;
+constexpr int num_unknowns = 3;
+constexpr int dof = 6;
 
-constexpr bool debug = false;
-constexpr std::array<double, 10> translational_perturbations{-0.1, -0.08, -0.06, -0.04, -0.02,
-                                                             0.02, 0.04,  0.06,  0.08,  0.1};
-constexpr std::array<double, 10> rotational_perturbations{-0.01, -0.008, -0.006, -0.004, -0.002,
+constexpr std::array<double, num_samples - 1> trans_perturb{-0.1, -0.08, -0.06, -0.04, -0.02,
+                                                            0.02, 0.04,  0.06,  0.08,  0.1};
+constexpr std::array<double, num_samples - 1> rot_perturb{-0.01, -0.008, -0.006, -0.004, -0.002,
                                                           0.002, 0.004,  0.006,  0.008,  0.01};
 
-auto generate_test_perturbations = [](const double min, const double max) {
-    std::array<double, 100> perturbations;
-    for (int i = 0; i < 100; ++i) {
-        perturbations[i] = min + i * (max - min) / 99;  // 100 equally spaced samples
+auto get_se3_perturbations = []() {
+    std::array<std::array<Sophus::SE3d, num_samples - 1>, dof> perturbations;
+    for (int i = 0; i < num_samples - 1; ++i) {
+        perturbations[0][i] =
+            Sophus::SE3d(Eigen::Matrix3d::Identity(), trans_perturb[i] * Eigen::Vector3d::UnitX());
+
+        perturbations[1][i] =
+            Sophus::SE3d(Eigen::Matrix3d::Identity(), trans_perturb[i] * Eigen::Vector3d::UnitY());
+
+        perturbations[2][i] =
+            Sophus::SE3d(Eigen::Matrix3d::Identity(), trans_perturb[i] * Eigen::Vector3d::UnitZ());
+
+        perturbations[3][i] =
+            Sophus::SE3d(Sophus::SO3d::rotX(rot_perturb[i]), Eigen::Vector3d::Zero());
+
+        perturbations[4][i] =
+            Sophus::SE3d(Sophus::SO3d::rotY(rot_perturb[i]), Eigen::Vector3d::Zero());
+
+        perturbations[5][i] =
+            Sophus::SE3d(Sophus::SO3d::rotZ(rot_perturb[i]), Eigen::Vector3d::Zero());
     }
     return perturbations;
 };
-const std::array<double, 100> test_perturbations_trans = generate_test_perturbations(-0.1, 0.1);
-const std::array<double, 100> test_perturbations_rot = generate_test_perturbations(-0.01, 0.01);
 
-constexpr int num_samples = 11;
-constexpr int num_unknowns = 3;
+const auto se3_perturbations = get_se3_perturbations();
+
 Eigen::Matrix<double, num_samples, num_unknowns> GetQuadraticSystem(
-    const std::array<double, 10> &perturbations) {
+    const std::array<double, num_samples - 1> &perturbations) {
     Eigen::Matrix<double, num_samples, num_unknowns> A;
     std::transform(perturbations.cbegin(), perturbations.cend(), A.rowwise().begin(),
                    [](const auto &perturbation) {
@@ -89,147 +107,44 @@ Eigen::Matrix<double, num_samples, num_unknowns> GetQuadraticSystem(
     return A;
 }
 
-const auto &A_trans = GetQuadraticSystem(translational_perturbations);
-const auto &A_trans_inv = (A_trans.transpose() * A_trans).ldlt();
+const auto A_trans = GetQuadraticSystem(trans_perturb);
+const auto N_trans = (A_trans.transpose() * A_trans).inverse() * A_trans.transpose();
 
-const auto &A_rot = GetQuadraticSystem(rotational_perturbations);
-const auto &A_rot_inv = (A_rot.transpose() * A_rot).ldlt();
+const auto A_rot = GetQuadraticSystem(rot_perturb);
+const auto N_rot = (A_rot.transpose() * A_rot).inverse() * A_rot.transpose();
+
+const std::array<Eigen::Matrix<double, num_unknowns, num_samples>, dof> N{N_trans, N_trans, N_trans,
+                                                                          N_rot,   N_rot,   N_rot};
 
 inline double square(double x) { return x * x; }
-
-void WriteResidualPlotSVG(const std::filesystem::path &file_path,
-                          const std::array<double, num_samples - 1> &perturbations,
-                          const Eigen::Matrix<double, num_samples, 1> &residuals,
-                          const std::array<double, 100> &test_perturbations,
-                          const Eigen::Matrix<double, 100, 1> &estimated_residuals,
-                          const std::string &title) {
-    constexpr int width = 900;
-    constexpr int height = 600;
-    constexpr double margin_left = 90.0;
-    constexpr double margin_right = 30.0;
-    constexpr double margin_top = 60.0;
-    constexpr double margin_bottom = 80.0;
-
-    const auto [x_min_it, x_max_it] =
-        std::minmax_element(perturbations.begin(), perturbations.end());
-    const auto [y_min_it, y_max_it] = std::minmax_element(residuals.begin(), residuals.end());
-
-    double x_min = *x_min_it;
-    double x_max = *x_max_it;
-    double y_min = *y_min_it;
-    double y_max = *y_max_it;
-
-    for (int i = 0; i < num_samples; ++i) {
-        y_min = std::min(y_min, (estimated_residuals)(i));
-        y_max = std::max(y_max, (estimated_residuals)(i));
-    }
-
-    const double plot_width = width - margin_left - margin_right;
-    const double plot_height = height - margin_top - margin_bottom;
-    const auto scale_x = [&](double x) {
-        return margin_left + (x - x_min) * plot_width / (x_max - x_min);
-    };
-    const auto scale_y = [&](double y) {
-        return margin_top + plot_height - (y - y_min) * plot_height / (y_max - y_min);
-    };
-
-    std::filesystem::create_directories(file_path.parent_path());
-    std::ofstream out(file_path);
-    if (!out) {
-        std::cerr << "Could not open plot output file: " << file_path << '\n';
-        return;
-    }
-
-    out << std::fixed << std::setprecision(6);
-    out << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-    out << "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"" << width << "\" height=\"" << height
-        << "\" viewBox=\"0 0 " << width << ' ' << height << "\">\n";
-    out << "  <rect x=\"0\" y=\"0\" width=\"100%\" height=\"100%\" fill=\"white\"/>\n";
-    out << "  <text x=\"" << width / 2 << "\" y=\"32\" text-anchor=\"middle\""
-        << " font-family=\"times\" font-size=\"24\" fill=\"#111\">" << title << "</text>\n";
-
-    // Axes
-    const double x_axis_y = scale_y(0.0);
-    const double y_axis_x = scale_x(0.0);
-    out << "  <line x1=\"" << margin_left << "\" y1=\"" << x_axis_y << "\" x2=\""
-        << width - margin_right << "\" y2=\"" << x_axis_y
-        << "\" stroke=\"#333\" stroke-width=\"1.5\"/>\n";
-    out << "  <line x1=\"" << y_axis_x << "\" y1=\"" << margin_top << "\" x2=\"" << y_axis_x
-        << "\" y2=\"" << height - margin_bottom << "\" stroke=\"#333\" stroke-width=\"1.5\"/>\n";
-
-    // Grid and tick labels
-    constexpr int ticks = 5;
-    for (int i = 0; i <= ticks; ++i) {
-        const double t = static_cast<double>(i) / ticks;
-        const double x = x_min + t * (x_max - x_min);
-        const double sx = scale_x(x);
-        out << "  <line x1=\"" << sx << "\" y1=\"" << margin_top << "\" x2=\"" << sx << "\" y2=\""
-            << height - margin_bottom << "\" stroke=\"#eee\" stroke-width=\"1\"/>\n";
-        out << "  <text x=\"" << sx << "\" y=\"" << height - 40
-            << "\" text-anchor=\"middle\" font-family=\"times\" font-size=\"12\" "
-               "fill=\"#444\">"
-            << x << "</text>\n";
-
-        const double y = y_min + t * (y_max - y_min);
-        const double sy = scale_y(y);
-        out << "  <line x1=\"" << margin_left << "\" y1=\"" << sy << "\" x2=\""
-            << width - margin_right << "\" y2=\"" << sy
-            << "\" stroke=\"#eee\" stroke-width=\"1\"/>\n";
-        out << "  <text x=\"" << margin_left - 12 << "\" y=\"" << sy + 4
-            << "\" text-anchor=\"end\" font-family=\"times\" font-size=\"12\" fill=\"#444\">" << y
-            << "</text>\n";
-    }
-
-    out << "  <text x=\"" << width / 2 << "\" y=\"" << height - 20
-        << "\" text-anchor=\"middle\" font-family=\"times\" font-size=\"16\" fill=\"#111\">"
-        << "Perturbation" << "</text>\n";
-    out << "  <text x=\"24\" y=\"" << height / 2
-        << "\" text-anchor=\"middle\" font-family=\"times\" font-size=\"16\" fill=\"#111\" "
-           "transform=\"rotate(-90 24 "
-        << height / 2 << ")\">Residual</text>\n";
-
-    // Estimated residuals from the fitted model
-    out << "  <polyline fill=\"none\" stroke=\"#ff7f0e\" stroke-width=\"2.5\" "
-           "stroke-dasharray=\"8,6\" points=\"";
-    for (int i = 0; i < 100; ++i) {
-        out << scale_x(test_perturbations[i]) << ',' << scale_y((estimated_residuals)(i)) << ' ';
-    }
-    out << "\"/>\n";
-
-    // Sample markers
-    for (int i = 0; i < num_samples - 1; ++i) {
-        out << "  <circle cx=\"" << scale_x(perturbations[i]) << "\" cy=\"" << scale_y(residuals(i))
-            << "\" r=\"4.5\" fill=\"#d62728\" stroke=\"white\" stroke-width=\"1\"/>\n";
-    }
-    out << "  <circle cx=\"" << scale_x(0.0) << "\" cy=\"" << scale_y(residuals(num_samples - 1))
-        << "\" r=\"4.5\" fill=\"#27d633\" stroke=\"white\" stroke-width=\"1\"/>\n";
-
-    // Legend
-    const double legend_x = width - 255.0;
-    const double legend_y = margin_top + 18.0;
-    out << "  <rect x=\"" << legend_x << "\" y=\"" << legend_y - 24
-        << "\" width=\"220\" height=\"100\" rx=\"8\" fill=\"white\" stroke=\"#ddd\"/>\n";
-    out << "  <circle cx=\"" << legend_x + 34 << "\" cy=\"" << legend_y
-        << "\" r=\"4.5\" fill=\"#d62728\" stroke=\"white\" stroke-width=\"1\"/>\n";
-    out << "  <text x=\"" << legend_x + 64 << "\" y=\"" << legend_y + 4
-        << "\" font-family=\"times\" font-size=\"13\" fill=\"#111\">Train "
-           "samples</text>\n";
-    out << "  <circle cx=\"" << legend_x + 34 << "\" cy=\"" << legend_y + 26
-        << "\" r=\"4.5\" fill=\"#27d633\" stroke=\"white\" stroke-width=\"1\"/>\n";
-    out << "  <text x=\"" << legend_x + 64 << "\" y=\"" << legend_y + 30
-        << "\" font-family=\"times\" font-size=\"13\" fill=\"#111\">Optimized pose</text>\n";
-    out << "  <circle cx=\"" << legend_x + 34 << "\" cy=\"" << legend_y + 52
-        << "\" r=\"4.5\" fill=\"#ff7f0e\" stroke=\"white\" stroke-width=\"1\"/>\n";
-    out << "  <text x=\"" << legend_x + 64 << "\" y=\"" << legend_y + 56
-        << "\" font-family=\"times\" font-size=\"13\" fill=\"#111\">Fitted quadratic "
-           "model</text>\n";
-
-    out << "</svg>\n";
-}
 
 void TransformPoints(const Sophus::SE3d &T, std::vector<Eigen::Vector3d> &points) {
     std::transform(points.cbegin(), points.cend(), points.begin(),
                    [&](const auto &point) { return T * point; });
+}
+
+double PointToPointResidual(const std::vector<Eigen::Vector3d> &points,
+                            const kiss_icp::VoxelHashMap &voxel_map,
+                            const double max_correspondance_distance) {
+    using points_iterator = std::vector<Eigen::Vector3d>::const_iterator;
+    std::vector<double> residuals;
+    residuals.reserve(points.size());
+    tbb::parallel_for(
+        // Range
+        tbb::blocked_range<points_iterator>{points.cbegin(), points.cend()},
+        [&](const tbb::blocked_range<points_iterator> &r) {
+            std::for_each(r.begin(), r.end(), [&](const auto &point) {
+                const auto &[_, distance] = voxel_map.GetClosestNeighbor(point);
+                if (distance < max_correspondance_distance) {
+                    residuals.emplace_back(distance);
+                }
+            });
+        });
+
+    const double mean_residual = std::reduce(residuals.cbegin(), residuals.cend(), 0.0) /
+                                 static_cast<double>(residuals.size());
+
+    return mean_residual;
 }
 
 Correspondences DataAssociation(const std::vector<Eigen::Vector3d> &points,
@@ -338,7 +253,8 @@ std::pair<Sophus::SE3d, Eigen::Matrix<double, 6, 6>> Registration::AlignPointsTo
         // Termination criteria
         if (dx.norm() < convergence_criterion_) break;
     }
-    const auto hessian = PerturbationAnalysis(frame, voxel_map, T_icp * initial_guess, 5.0);
+    const auto hessian =
+        PerturbationAnalysis(frame, voxel_map, T_icp * initial_guess, max_distance);
     // Spit the final transformation
     return {T_icp * initial_guess, hessian};
 }
@@ -349,105 +265,59 @@ Eigen::Matrix<double, 6, 6> Registration::PerturbationAnalysis(
     const VoxelHashMap &voxel_map,
     const Sophus::SE3d &pose,
     const double max_distance) {
+    auto t_start = std::chrono::high_resolution_clock::now();
+
     std::vector<Eigen::Vector3d> frame_perturbed(frame.size());
     std::transform(frame.cbegin(), frame.cend(), frame_perturbed.begin(),
                    [&](const auto &point) { return pose * point; });
-    const Correspondences correspondences =
-        DataAssociation(frame_perturbed, voxel_map, max_distance);
-    const double optimal_residual =
-        std::accumulate(correspondences.cbegin(), correspondences.cend(), 0.0,
-                        [](double sum, const auto &correspondence) {
-                            const auto &[source, target] = correspondence;
-                            return sum + (source - target).squaredNorm();
-                        }) /
-        static_cast<double>(correspondences.size());
-    Eigen::Matrix<double, 6, num_unknowns> parameters =
-        Eigen::Matrix<double, 6, num_unknowns>::Zero();
 
-    for (int d = 0; d < 3; ++d) {
-        Eigen::Matrix<double, num_samples, 1> residuals;
-        std::transform(
-            translational_perturbations.cbegin(), translational_perturbations.cend(),
-            residuals.begin(), [&](const auto val) {
-                Eigen::Vector6d dx = Eigen::Vector6d::Zero();
-                dx(d) = val;
-                const Sophus::SE3d perturbation(Sophus::SO3d::exp(dx.tail<3>()), dx.head<3>());
-                std::transform(frame.cbegin(), frame.cend(), frame_perturbed.begin(),
-                               [&](const auto &point) { return pose * perturbation * point; });
-                const Correspondences correspondences =
-                    DataAssociation(frame_perturbed, voxel_map, max_distance);
-                const double residual =
-                    std::accumulate(correspondences.cbegin(), correspondences.cend(), 0.0,
-                                    [](double sum, const auto &correspondence) {
-                                        const auto &[source, target] = correspondence;
-                                        return sum + (source - target).squaredNorm();
-                                    }) /
-                    static_cast<double>(correspondences.size());
-                return residual;
-            });
-        residuals(num_samples - 1) = optimal_residual;
-        parameters.row(d) = A_trans_inv.solve(A_trans.transpose() * residuals).transpose();
-        if (debug) {
-            const std::filesystem::path plot_dir = "results/perturbation_analysis";
-            const std::filesystem::path plot_file =
-                plot_dir / ("residual_vs_perturbation_dim_" + std::to_string(d) + ".svg");
-            Eigen::Matrix<double, 100, 1> estimated_residuals;
-            std::transform(test_perturbations_trans.cbegin(), test_perturbations_trans.cend(),
-                           estimated_residuals.begin(), [&](const auto dx) {
-                               return parameters.row(d).dot(
-                                   Eigen::Matrix<double, num_unknowns, 1>{1.0, dx, 0.5 * dx * dx});
-                           });
-            WriteResidualPlotSVG(plot_file, translational_perturbations, residuals,
-                                 test_perturbations_trans, estimated_residuals,
-                                 "Residuals vs Perturbation (dimension " + std::to_string(d) + ")");
+    const double optimal_residual = PointToPointResidual(frame_perturbed, voxel_map, max_distance);
+    Eigen::Matrix<double, dof, num_unknowns> parameters =
+        Eigen::Matrix<double, dof, num_unknowns>::Zero();
+
+    auto t_perturb_start = std::chrono::high_resolution_clock::now();
+
+    Eigen::Matrix<double, num_samples, dof> residuals;
+    residuals.row(num_samples - 1) = Eigen::Matrix<double, 1, dof>::Constant(optimal_residual);
+    tbb::parallel_for(tbb::blocked_range<int>{0, dof}, [&](const tbb::blocked_range<int> &r1) {
+        for (int d = r1.begin(); d < r1.end(); ++d) {
+            const auto &perturbations = se3_perturbations[d];
+            tbb::parallel_for(
+                tbb::blocked_range<int>{0, num_samples - 1},
+                [&](const tbb::blocked_range<int> &r2) {
+                    for (int i = r2.begin(); i < r2.end(); ++i) {
+                        const Sophus::SE3d perturbed_pose = pose * perturbations[i];
+                        std::vector<Eigen::Vector3d> frame_perturbed_local(frame.size());
+                        std::transform(frame.cbegin(), frame.cend(), frame_perturbed_local.begin(),
+                                       [&](const auto &point) { return perturbed_pose * point; });
+                        const double residual =
+                            PointToPointResidual(frame_perturbed_local, voxel_map, max_distance);
+                        residuals(i, d) = residual;
+                    }
+                });
         }
-    }
-    for (int d = 3; d < 6; ++d) {
-        Eigen::Matrix<double, num_samples, 1> residuals;
-        std::transform(
-            rotational_perturbations.cbegin(), rotational_perturbations.cend(), residuals.begin(),
-            [&](const auto val) {
-                Eigen::Vector6d dx = Eigen::Vector6d::Zero();
-                dx(d) = val;
-                const Sophus::SE3d perturbation(Sophus::SO3d::exp(dx.tail<3>()), dx.head<3>());
-                std::transform(frame.cbegin(), frame.cend(), frame_perturbed.begin(),
-                               [&](const auto &point) { return pose * perturbation * point; });
-                const Correspondences correspondences =
-                    DataAssociation(frame_perturbed, voxel_map, max_distance);
-                const double residual =
-                    std::accumulate(correspondences.cbegin(), correspondences.cend(), 0.0,
-                                    [](double sum, const auto &correspondence) {
-                                        const auto &[source, target] = correspondence;
-                                        return sum + (source - target).squaredNorm();
-                                    }) /
-                    static_cast<double>(correspondences.size());
-                return residual;
-            });
-        residuals(num_samples - 1) = optimal_residual;
-        parameters.row(d) = A_rot_inv.solve(A_rot.transpose() * residuals).transpose();
+    });
 
-        if (debug) {
-            const std::filesystem::path plot_dir = "results/perturbation_analysis";
-            const std::filesystem::path plot_file =
-                plot_dir / ("residual_vs_perturbation_dim_" + std::to_string(d) + ".svg");
-            Eigen::Matrix<double, 100, 1> estimated_residuals;
-            std::transform(test_perturbations_rot.cbegin(), test_perturbations_rot.cend(),
-                           estimated_residuals.begin(), [&](const auto dx) {
-                               return parameters.row(d).dot(
-                                   Eigen::Matrix<double, num_unknowns, 1>{1.0, dx, 0.5 * dx * dx});
-                           });
+    std::transform(
+        N.cebgin(), N.cend(), residuals.colwise().cbegin(), parameters.rowwise().begin(),
+        [&](const auto &N_d, const auto &residuals_d) { return (N_d * residuals_d).transpose(); });
+    auto t_perturb_end = std::chrono::high_resolution_clock::now();
 
-            WriteResidualPlotSVG(plot_file, rotational_perturbations, residuals,
-                                 test_perturbations_rot, estimated_residuals,
-                                 "Residuals vs Perturbation (dimension " + std::to_string(d) + ")");
-        }
-    }
-    Eigen::Vector6d quadratic_term = parameters.block<6, 1>(0, 2);
+    Eigen::Vector6d quadratic_term = parameters.block<dof, 1>(0, 2);
 
     std::transform(
         quadratic_term.begin(), quadratic_term.end(), quadratic_term.begin(),
         [](double x) { return std::clamp(x, 1e-6, std::numeric_limits<double>::max()); });
-    if (debug) std::cout << "Quadratic Hessian Matrix:\n" << quadratic_term << std::endl;
+
+    auto t_end = std::chrono::high_resolution_clock::now();
+
+    // Print timing breakdown
+
+    std::cout << "\n=== PerturbationAnalysis Timing Breakdown ===\n";
+    std::cout << "Perturbation loop:    " << duration_ms(t_perturb_start, t_perturb_end) << " ms\n";
+    std::cout << "Total:                " << duration_ms(t_start, t_end) << " ms\n";
+    std::cout << "=========================================\n\n";
+
     return quadratic_term.asDiagonal();
 }
 }  // namespace kiss_icp
