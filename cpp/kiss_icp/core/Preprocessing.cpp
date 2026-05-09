@@ -62,6 +62,9 @@ std::vector<Eigen::Vector3d> Preprocessor::Preprocess(const std::vector<Eigen::V
             const auto &[min, max] = std::minmax_element(timestamps.cbegin(), timestamps.cend());
             const double min_time = *min;
             const double max_time = *max;
+            if (max_time == min_time) {
+                return frame;
+            }
             const auto normalize = [&](const double t) {
                 return (t - min_time) / (max_time - min_time);
             };

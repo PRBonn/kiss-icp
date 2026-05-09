@@ -113,6 +113,10 @@ inline auto NormalizeTimestamps(const std::vector<double> &timestamps) {
     const double max_timestamp = *max_it;
 
     std::vector<double> timestamps_normalized(timestamps.size());
+    if (max_timestamp == min_timestamp) {
+        std::fill(timestamps_normalized.begin(), timestamps_normalized.end(), 1.0);
+        return timestamps_normalized;
+    }
     std::transform(timestamps.cbegin(), timestamps.cend(), timestamps_normalized.begin(),
                    [&](const auto &timestamp) {
                        return (timestamp - min_timestamp) / (max_timestamp - min_timestamp);
