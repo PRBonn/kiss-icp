@@ -48,6 +48,10 @@ class Registration:
             max_num_threads=max_num_threads,
         )
 
+    @property
+    def fitness(self) -> float:
+        return self._registration.fitness_
+
     def align_points_to_map(
         self,
         points: np.ndarray,

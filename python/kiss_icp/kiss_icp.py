@@ -34,6 +34,7 @@ class KissICP:
     def __init__(self, config: KISSConfig):
         self.last_pose = np.eye(4)
         self.last_delta = np.eye(4)
+        self.last_fitness = 0.0
         self.config = config
         self.adaptive_threshold = get_threshold_estimator(self.config)
         self.preprocessor = get_preprocessor(self.config)
@@ -70,6 +71,7 @@ class KissICP:
         self.local_map.update(frame_downsample, new_pose)
         self.last_delta = np.linalg.inv(self.last_pose) @ new_pose
         self.last_pose = new_pose
+        self.last_fitness = self.registration.fitness
 
         # Return the (deskew) input raw scan (frame) and the points used for registration (source)
         return frame, source

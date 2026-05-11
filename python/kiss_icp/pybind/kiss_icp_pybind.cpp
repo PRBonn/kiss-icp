@@ -111,7 +111,8 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
                 Sophus::SE3d pose(T);
                 return self.GetHessian(points, voxel_map, pose, max_correspondence_distance);
             },
-            "points"_a, "voxel_map"_a, "pose"_a, "max_correspondence_distance"_a);
+            "points"_a, "voxel_map"_a, "pose"_a, "max_correspondence_distance"_a)
+        .def_readonly("fitness_", &Registration::fitness_);
 
     // AdaptiveThreshold bindings
     py::class_<AdaptiveThreshold> adaptive_threshold(m, "_AdaptiveThreshold", "Don't use this");

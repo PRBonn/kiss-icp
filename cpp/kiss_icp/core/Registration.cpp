@@ -252,6 +252,8 @@ Sophus::SE3d Registration::AlignPointsToMap(const std::vector<Eigen::Vector3d> &
         // Termination criteria
         if (dx.norm() < convergence_criterion_) break;
     }
+    const auto correspondences = DataAssociation(source, voxel_map, max_distance);
+    fitness_ = static_cast<double>(correspondences.size()) / static_cast<double>(source.size());
     // Spit the final transformation
     return T_icp * initial_guess;
 }
@@ -260,11 +262,11 @@ Sophus::SE3d Registration::AlignPointsToMap(const std::vector<Eigen::Vector3d> &
 Eigen::Matrix6d Registration::GetHessian(const std::vector<Eigen::Vector3d> &frame,
                                          const VoxelHashMap &voxel_map,
                                          const Sophus::SE3d &pose,
-                                         const double max_distance) {
+                                         const double max_correspondence_distance) {
     const std::vector<Eigen::Vector3d> frame_downsampled =
         VoxelDownsample(frame, voxel_map.voxel_size_ * 3.0);
     const double optimal_residual =
-        PointToPointResidual(frame_downsampled, pose, voxel_map, max_distance);
+        PointToPointResidual(frame_downsampled, pose, voxel_map, max_correspondence_distance);
 
     Eigen::Matrix<double, num_samples + 1, 6> residuals;
     residuals.row(num_samples) = Eigen::Matrix<double, 1, 6>::Constant(optimal_residual);
@@ -274,7 +276,7 @@ Eigen::Matrix6d Registration::GetHessian(const std::vector<Eigen::Vector3d> &fra
                 for (int i = r.cols().begin(); i < r.cols().end(); ++i) {
                     const Sophus::SE3d perturbed_pose = pose * se3_perturbations[d][i];
                     residuals(i, d) = PointToPointResidual(frame_downsampled, perturbed_pose,
-                                                           voxel_map, max_distance);
+                                                           voxel_map, max_correspondence_distance);
                 }
             }
         });

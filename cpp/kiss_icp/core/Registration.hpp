@@ -41,9 +41,10 @@ struct Registration {
     Eigen::Matrix<double, 6, 6> GetHessian(const std::vector<Eigen::Vector3d> &frame,
                                            const VoxelHashMap &voxel_map,
                                            const Sophus::SE3d &pose,
-                                           const double max_distance);
+                                           const double max_correspondence_distance);
     int max_num_iterations_;
     double convergence_criterion_;
     int max_num_threads_;
+    double fitness_;
 };
 }  // namespace kiss_icp
