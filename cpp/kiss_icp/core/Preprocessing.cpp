@@ -32,7 +32,9 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <algorithm>
+#include <cmath>
 #include <functional>
+#include <limits>
 #include <vector>
 
 namespace kiss_icp {
@@ -62,12 +64,13 @@ std::vector<Eigen::Vector3d> Preprocessor::Preprocess(const std::vector<Eigen::V
             const auto &[min, max] = std::minmax_element(timestamps.cbegin(), timestamps.cend());
             const double min_time = *min;
             const double max_time = *max;
-            if (max_time == min_time) {
+            const double time_range = max_time - min_time;
+            const double tolerance = std::numeric_limits<double>::epsilon() *
+                                     std::max(std::abs(min_time), std::abs(max_time));
+            if (time_range <= tolerance) {
                 return frame;
             }
-            const auto normalize = [&](const double t) {
-                return (t - min_time) / (max_time - min_time);
-            };
+            const auto normalize = [&](const double t) { return (t - min_time) / time_range; };
             const auto &omega = relative_motion.log();
             std::vector<Eigen::Vector3d> deskewed_frame(frame.size());
             tbb::parallel_for(

@@ -24,7 +24,9 @@
 
 #include <Eigen/Core>
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <regex>
@@ -111,15 +113,18 @@ inline auto NormalizeTimestamps(const std::vector<double> &timestamps) {
     const auto [min_it, max_it] = std::minmax_element(timestamps.cbegin(), timestamps.cend());
     const double min_timestamp = *min_it;
     const double max_timestamp = *max_it;
+    const double time_range = max_timestamp - min_timestamp;
+    const double tolerance = std::numeric_limits<double>::epsilon() *
+                             std::max(std::abs(min_timestamp), std::abs(max_timestamp));
 
     std::vector<double> timestamps_normalized(timestamps.size());
-    if (max_timestamp == min_timestamp) {
+    if (time_range <= tolerance) {
         std::fill(timestamps_normalized.begin(), timestamps_normalized.end(), 1.0);
         return timestamps_normalized;
     }
     std::transform(timestamps.cbegin(), timestamps.cend(), timestamps_normalized.begin(),
                    [&](const auto &timestamp) {
-                       return (timestamp - min_timestamp) / (max_timestamp - min_timestamp);
+                       return (timestamp - min_timestamp) / time_range;
                    });
     return timestamps_normalized;
 }
