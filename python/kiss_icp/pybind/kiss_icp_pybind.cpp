@@ -57,6 +57,7 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
              "max_points_per_voxel"_a)
         .def("_clear", &VoxelHashMap::Clear)
         .def("_empty", &VoxelHashMap::Empty)
+        .def("_size", &VoxelHashMap::size)
         .def("_update",
              py::overload_cast<const std::vector<Eigen::Vector3d> &, const Eigen::Vector3d &>(
                  &VoxelHashMap::Update),

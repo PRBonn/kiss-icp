@@ -253,7 +253,7 @@ Sophus::SE3d Registration::AlignPointsToMap(const std::vector<Eigen::Vector3d> &
         if (dx.norm() < convergence_criterion_) break;
     }
     const auto correspondences = DataAssociation(source, voxel_map, max_distance);
-    fitness_ = static_cast<double>(correspondences.size()) / static_cast<double>(source.size());
+    fitness_ = static_cast<double>(correspondences.size()) / static_cast<double>(voxel_map.size());
     // Spit the final transformation
     return T_icp * initial_guess;
 }

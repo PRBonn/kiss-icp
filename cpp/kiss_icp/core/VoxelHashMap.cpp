@@ -80,6 +80,15 @@ std::vector<Eigen::Vector3d> VoxelHashMap::Pointcloud() const {
     return points;
 }
 
+size_t VoxelHashMap::size() const {
+    size_t size = 0;
+    std::for_each(map_.cbegin(), map_.cend(), [&](const auto &map_element) {
+        const auto &voxel_points = map_element.second;
+        size += voxel_points.size();
+    });
+    return size;
+}
+
 void VoxelHashMap::Update(const std::vector<Eigen::Vector3d> &points,
                           const Eigen::Vector3d &origin) {
     AddPoints(points);
