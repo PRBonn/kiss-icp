@@ -22,8 +22,8 @@
 # SOFTWARE.
 import glob
 import os
-import struct
-import sys
+import open3d as o3d
+
 from pathlib import Path
 
 import numpy as np
@@ -46,15 +46,16 @@ class HeLiPRDataset:
         return len(self.scan_files)
 
     def __getitem__(self, idx):
-        import open3d as o3d
-
         file_path = self.scan_files[idx]
         pcd = o3d.t.io.read_point_cloud(file_path)
         points = pcd.point.positions.numpy()
+        if self.sequence_id == "Aeva":
+            return points, np.array([])
         try:
             timestamps = pcd.point.timestamps.numpy()
         except KeyError:
             timestamps = np.array([])
+
         return points, timestamps
 
     def load_poses(self, poses_file):
@@ -71,31 +72,3 @@ class HeLiPRDataset:
         poses[:, :3, 3] = xyz
 
         return poses
-
-    def get_data(self, idx: int):
-        file_path = self.scan_files[idx]
-        list_lines = []
-
-        # Special case, see https://github.com/minwoo0611/HeLiPR-File-Player/blob/e8d95e390454ece1415ae9deb51515f63730c10a/src/ROSThread.cpp#L632
-        if self.sequence_id == "Aeva" and int(Path(file_path).stem) <= 1691936557946849179:
-            self.intensity_channel = None
-            format_string = self.format_string_no_intensity
-        else:
-            format_string = self.format_string
-
-        chunk_size = struct.calcsize(f"={format_string}")
-        with open(file_path, "rb") as f:
-            binary = f.read()
-            offset = 0
-            while offset < len(binary) - chunk_size:
-                list_lines.append(struct.unpack_from(f"={format_string}", binary, offset))
-                offset += chunk_size
-        data = np.stack(list_lines)
-        return data
-
-    def read_timestamps(self, data: np.ndarray) -> np.ndarray:
-        time = data[:, self.time_channel]
-        return (time - time.min()) / (time.max() - time.min())
-
-    def read_point_cloud(self, data: np.ndarray) -> np.ndarray:
-        return data[:, :3]
