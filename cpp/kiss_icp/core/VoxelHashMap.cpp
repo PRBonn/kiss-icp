@@ -81,12 +81,8 @@ std::vector<Eigen::Vector3d> VoxelHashMap::Pointcloud() const {
 }
 
 size_t VoxelHashMap::size() const {
-    size_t size = 0;
-    std::for_each(map_.cbegin(), map_.cend(), [&](const auto &map_element) {
-        const auto &voxel_points = map_element.second;
-        size += voxel_points.size();
-    });
-    return size;
+    return std::accumulate(map_.cbegin(), map_.cend(), 0,
+                  [&](auto sum, const auto &map_element) { return sum + map_element.second.size(); });
 }
 
 void VoxelHashMap::Update(const std::vector<Eigen::Vector3d> &points,
