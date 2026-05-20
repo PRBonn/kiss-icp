@@ -82,12 +82,16 @@ public:
 
     const Sophus::SE3d &delta() const { return last_delta_; }
     Sophus::SE3d &delta() { return last_delta_; }
+
+    const Eigen::Matrix<double, 6, 6> &hessian() const { return last_hessian_; }
+    Eigen::Matrix<double, 6, 6> &hessian() { return last_hessian_; }
+
     void Reset();
 
 private:
     Sophus::SE3d last_pose_;
     Sophus::SE3d last_delta_;
-    Eigen::Matrix6d last_hessian_;
+    Eigen::Matrix<double, 6, 6> last_hessian_;
 
     // KISS-ICP pipeline modules
     KISSConfig config_;
