@@ -87,6 +87,7 @@ public:
 private:
     Sophus::SE3d last_pose_;
     Sophus::SE3d last_delta_;
+    Eigen::Matrix6d last_hessian_;
 
     // KISS-ICP pipeline modules
     KISSConfig config_;
