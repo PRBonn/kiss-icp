@@ -24,7 +24,7 @@
 
 #include <tbb/blocked_range.h>
 #include <tbb/blocked_range2d.h>
-#include <tbb/concurrent_vector.h>
+#include <tbb/enumerable_thread_specific.h>
 #include <tbb/global_control.h>
 #include <tbb/info.h>
 #include <tbb/parallel_for.h>
@@ -38,6 +38,7 @@
 #include <chrono>
 #include <execution>
 #include <iostream>
+#include <iterator>
 #include <numeric>
 #include <sophus/se3.hpp>
 #include <sophus/so3.hpp>
@@ -53,7 +54,7 @@ using Matrix3_6d = Eigen::Matrix<double, 3, 6>;
 using Vector6d = Eigen::Matrix<double, 6, 1>;
 }  // namespace Eigen
 
-using Correspondences = tbb::concurrent_vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>;
+using Correspondences = std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>;
 using LinearSystem = std::pair<Eigen::Matrix6d, Eigen::Vector6d>;
 
 namespace {
@@ -72,28 +73,23 @@ double PointToPointResidual(const std::vector<Eigen::Vector3d> &points,
                             const Sophus::SE3d &pose,
                             const kiss_icp::VoxelHashMap &voxel_map,
                             const double max_correspondance_distance) {
-    std::vector<Eigen::Vector3d> points_transformed(points.size());
-    std::transform(points.cbegin(), points.cend(), points_transformed.begin(),
-                   [&](const auto &point) { return pose * point; });
+    tbb::enumerable_thread_specific<std::vector<double>> local_residuals;
+    tbb::parallel_for(size_t{0}, points.size(), [&](size_t i) {
+        const auto &[_, distance] = voxel_map.GetClosestNeighbor(pose * points[i]);
+        if (distance < max_correspondance_distance) {
+            local_residuals.local().emplace_back(distance);
+        }
+    });
 
-    using points_iterator = std::vector<Eigen::Vector3d>::const_iterator;
-    tbb::concurrent_vector<double> residuals;
-    residuals.reserve(points.size());
-    tbb::parallel_for(
-        // Range
-        tbb::blocked_range<points_iterator>{points_transformed.cbegin(), points_transformed.cend()},
-        [&](const tbb::blocked_range<points_iterator> &r) {
-            std::for_each(r.begin(), r.end(), [&](const auto &point) {
-                const auto &[_, distance] = voxel_map.GetClosestNeighbor(point);
-                if (distance < max_correspondance_distance) {
-                    residuals.emplace_back(distance);
-                }
-            });
-        });
+    double sum_residual = 0.0;
+    size_t num_residuals = 0;
+    for (auto &local : local_residuals) {
+        sum_residual += std::reduce(local.cbegin(), local.cend(), 0.0);
+        num_residuals += local.size();
+    }
 
-    const double sum_residual = std::reduce(residuals.cbegin(), residuals.cend(), 0.0);
-    const double mean_residual = residuals.size() > 0
-                                     ? sum_residual / static_cast<double>(residuals.size())
+    const double mean_residual = num_residuals > 0
+                                     ? sum_residual / static_cast<double>(num_residuals)
                                      : max_correspondance_distance;
     return mean_residual;
 }
@@ -101,20 +97,20 @@ double PointToPointResidual(const std::vector<Eigen::Vector3d> &points,
 Correspondences DataAssociation(const std::vector<Eigen::Vector3d> &points,
                                 const kiss_icp::VoxelHashMap &voxel_map,
                                 const double max_correspondance_distance) {
-    using points_iterator = std::vector<Eigen::Vector3d>::const_iterator;
+    tbb::enumerable_thread_specific<Correspondences> local_correspondences;
+    tbb::parallel_for(size_t{0}, points.size(), [&](size_t i) {
+        const auto &[closest_neighbor, distance] = voxel_map.GetClosestNeighbor(points[i]);
+        if (distance < max_correspondance_distance) {
+            local_correspondences.local().emplace_back(points[i], closest_neighbor);
+        }
+    });
+
     Correspondences correspondences;
     correspondences.reserve(points.size());
-    tbb::parallel_for(
-        // Range
-        tbb::blocked_range<points_iterator>{points.cbegin(), points.cend()},
-        [&](const tbb::blocked_range<points_iterator> &r) {
-            std::for_each(r.begin(), r.end(), [&](const auto &point) {
-                const auto &[closest_neighbor, distance] = voxel_map.GetClosestNeighbor(point);
-                if (distance < max_correspondance_distance) {
-                    correspondences.emplace_back(point, closest_neighbor);
-                }
-            });
-        });
+    for (auto &local : local_correspondences) {
+        correspondences.insert(correspondences.end(), std::make_move_iterator(local.begin()),
+                               std::make_move_iterator(local.end()));
+    }
     return correspondences;
 }
 
@@ -270,16 +266,13 @@ Eigen::Matrix6d Registration::GetHessian(const std::vector<Eigen::Vector3d> &fra
 
     Eigen::Matrix<double, num_samples + 1, 6> residuals;
     residuals.row(num_samples) = Eigen::Matrix<double, 1, 6>::Constant(optimal_residual);
-    tbb::parallel_for(
-        tbb::blocked_range2d<int>{0, 6, 0, num_samples}, [&](const tbb::blocked_range2d<int> &r) {
-            for (int d = r.rows().begin(); d < r.rows().end(); ++d) {
-                for (int i = r.cols().begin(); i < r.cols().end(); ++i) {
-                    const Sophus::SE3d perturbed_pose = pose * se3_perturbations[d][i];
-                    residuals(i, d) = PointToPointResidual(frame_downsampled, perturbed_pose,
-                                                           voxel_map, max_correspondence_distance);
-                }
-            }
-        });
+    tbb::parallel_for(0, 6 * num_samples, [&](const int idx) {
+        const int dim = idx / num_samples;
+        const int n = idx % num_samples;
+        const Sophus::SE3d perturbed_pose = pose * se3_perturbations[dim][n];
+        residuals(n, dim) = PointToPointResidual(frame_downsampled, perturbed_pose, voxel_map,
+                                                 max_correspondence_distance);
+    });
 
     Eigen::Vector6d hessian;
     for (int d = 0; d < 6; ++d) {

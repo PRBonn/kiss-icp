@@ -57,16 +57,16 @@ std::tuple<Eigen::Vector3d, double> VoxelHashMap::GetClosestNeighbor(
             const auto &points = search.value();
             const Eigen::Vector3d &neighbor = *std::min_element(
                 points.cbegin(), points.cend(), [&](const auto &lhs, const auto &rhs) {
-                    return (lhs - query).norm() < (rhs - query).norm();
+                    return (lhs - query).squaredNorm() < (rhs - query).squaredNorm();
                 });
-            double distance = (neighbor - query).norm();
+            double distance = (neighbor - query).squaredNorm();
             if (distance < closest_distance) {
                 closest_neighbor = neighbor;
                 closest_distance = distance;
             }
         }
     });
-    return std::make_tuple(closest_neighbor, closest_distance);
+    return std::make_tuple(closest_neighbor, std::sqrt(closest_distance));
 }
 
 std::vector<Eigen::Vector3d> VoxelHashMap::Pointcloud() const {
@@ -81,8 +81,8 @@ std::vector<Eigen::Vector3d> VoxelHashMap::Pointcloud() const {
 }
 
 size_t VoxelHashMap::size() const {
-    return std::accumulate(map_.cbegin(), map_.cend(), 0,
-                  [&](auto sum, const auto &map_element) { return sum + map_element.second.size(); });
+    return std::transform_reduce(map_.cbegin(), map_.cend(), 0, std::plus<>(),
+                                 [](const auto &map_element) { return map_element.second.size(); });
 }
 
 void VoxelHashMap::Update(const std::vector<Eigen::Vector3d> &points,
