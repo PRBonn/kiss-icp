@@ -118,7 +118,7 @@ void VoxelHashMap::AddPoints(const std::vector<Eigen::Vector3d> &points) {
             std::vector<Eigen::Vector3d> voxel_points;
             voxel_points.reserve(max_points_per_voxel_);
             voxel_points.emplace_back(point);
-            map_.insert({voxel, std::move(voxel_points)});
+            map_.emplace(voxel, std::move(voxel_points));
         }
     });
 }
