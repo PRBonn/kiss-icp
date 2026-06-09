@@ -63,6 +63,13 @@ class KissICP:
             kernel=sigma,
         )
 
+        new_hessian = self.registration.get_hessian(
+            points=source,
+            voxel_map=self.local_map,
+            pose=new_pose,
+            max_correspondance_distance=3 * sigma,
+        )
+
         # Compute the difference between the prediction and the actual estimate
         model_deviation = np.linalg.inv(initial_guess) @ new_pose
 
