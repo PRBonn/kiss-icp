@@ -98,7 +98,7 @@ LinearSystem BuildLinearSystem(const Correspondences &correspondences, const dou
     };
 
     using correspondence_iterator = Correspondences::const_iterator;
-    const auto &[JTJ, JTr] = tbb::parallel_reduce(
+    auto [JTJ, JTr] = tbb::parallel_reduce(
         // Range
         tbb::blocked_range<correspondence_iterator>{correspondences.cbegin(),
                                                     correspondences.cend()},
