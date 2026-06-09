@@ -117,7 +117,7 @@ LinearSystem BuildLinearSystem(const Correspondences &correspondences, const dou
         // 2nd Lambda: Parallel reduction of the private Jacboians
         sum_linear_systems);
 
-    return {JTJ, JTr};
+    return {std::move(JTJ), std::move(JTr)};
 }
 }  // namespace
 

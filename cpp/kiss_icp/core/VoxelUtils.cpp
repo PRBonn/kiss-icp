@@ -10,7 +10,7 @@ std::vector<Eigen::Vector3d> VoxelDownsample(const std::vector<Eigen::Vector3d> 
     grid.reserve(frame.size());
     std::for_each(frame.cbegin(), frame.cend(), [&](const auto &point) {
         const auto voxel = PointToVoxel(point, voxel_size);
-        if (!grid.contains(voxel)) grid.insert({voxel, point});
+        if (!grid.contains(voxel)) grid.emplace(std::move(voxel), point);
     });
     std::vector<Eigen::Vector3d> frame_dowsampled;
     frame_dowsampled.reserve(grid.size());

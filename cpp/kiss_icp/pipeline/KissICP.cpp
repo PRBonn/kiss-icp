@@ -64,14 +64,14 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
 
     // Return the (deskew) input raw scan (preprocessed_frame) and the points used for registration
     // (source)
-    return {preprocessed_frame, source};
+    return {std::move(preprocessed_frame), std::move(source)};
 }
 
 KissICP::Vector3dVectorTuple KissICP::Voxelize(const std::vector<Eigen::Vector3d> &frame) const {
     const auto voxel_size = config_.voxel_size;
     const auto frame_downsample = kiss_icp::VoxelDownsample(frame, voxel_size * 0.5);
     const auto source = kiss_icp::VoxelDownsample(frame_downsample, voxel_size * 1.5);
-    return {source, frame_downsample};
+    return {std::move(source), std::move(frame_downsample)};
 }
 void KissICP::Reset() {
     last_pose_ = Sophus::SE3d();
