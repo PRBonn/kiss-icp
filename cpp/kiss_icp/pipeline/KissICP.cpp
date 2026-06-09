@@ -35,10 +35,10 @@ namespace kiss_icp::pipeline {
 KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vector3d> &frame,
                                                     const std::vector<double> &timestamps) {
     // Preprocess the input cloud
-    auto &preprocessed_frame = preprocessor_.Preprocess(frame, timestamps, last_delta_);
+    auto preprocessed_frame = preprocessor_.Preprocess(frame, timestamps, last_delta_);
 
     // Voxelize
-    auto &[source, frame_downsample] = Voxelize(preprocessed_frame);
+    auto [source, frame_downsample] = Voxelize(preprocessed_frame);
 
     // Get adaptive_threshold
     const double sigma = adaptive_threshold_.ComputeThreshold();
