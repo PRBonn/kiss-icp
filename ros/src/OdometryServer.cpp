@@ -226,13 +226,34 @@ void OdometryServer::PublishOdometry(const Sophus::SE3d &kiss_pose,
 void OdometryServer::PublishClouds(const std::vector<Eigen::Vector3d> &frame,
                                    const std::vector<Eigen::Vector3d> &keypoints,
                                    const std_msgs::msg::Header &header) {
-    const auto kiss_map = kiss_icp_->LocalMap();
-
+    // Publish current frame and keypoints (these use the sensor frame, so they are fine)
     frame_publisher_->publish(std::move(EigenToPointCloud2(frame, header)));
     kpoints_publisher_->publish(std::move(EigenToPointCloud2(keypoints, header)));
+
+    // Prepare header for the local map
     auto local_map_header = header;
     local_map_header.frame_id = lidar_odom_frame_;
-    map_publisher_->publish(std::move(EigenToPointCloud2(kiss_map, local_map_header)));
+
+    const auto kiss_map = kiss_icp_->LocalMap();
+    const auto cloud_frame_id = header.frame_id;
+    const auto egocentric_estimation = (base_frame_.empty() || base_frame_ == cloud_frame_id);
+
+    if (egocentric_estimation) {
+        // If no base_link offset is configured, publish raw
+        map_publisher_->publish(std::move(EigenToPointCloud2(kiss_map, local_map_header)));
+    } else {
+        // Transform the map points from the initial sensor frame to the initial base_link frame
+        const Sophus::SE3d cloud2base = LookupTransform(base_frame_, cloud_frame_id, tf2_buffer_);
+        
+        std::vector<Eigen::Vector3d> transformed_map;
+        transformed_map.reserve(kiss_map.size());
+        
+        for (const auto &pt : kiss_map) {
+            transformed_map.push_back(cloud2base * pt);
+        }
+        
+        map_publisher_->publish(std::move(EigenToPointCloud2(transformed_map, local_map_header)));
+    }
 }
 void OdometryServer::ResetService(
     [[maybe_unused]] const std::shared_ptr<std_srvs::srv::Empty::Request> request,
