@@ -58,10 +58,6 @@ using Correspondences = std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
 using LinearSystem = std::pair<Eigen::Matrix6d, Eigen::Vector6d>;
 
 namespace {
-auto duration_ms = [](auto start, auto end) {
-    return std::chrono::duration<double, std::milli>(end - start).count();
-};
-
 inline double square(double x) { return x * x; }
 
 void TransformPoints(const Sophus::SE3d &T, std::vector<Eigen::Vector3d> &points) {
