@@ -186,29 +186,29 @@ auto get_se3_perturbations_off_diagonal = []() {
     std::array<std::array<Sophus::SE3d, num_samples>, 6> perturbations;
     for (int i = 0; i < num_samples; ++i) {
         perturbations[0][i] = Sophus::SE3d(
-            Eigen::Matrix3d::Identity(), std::sqrt(2) * trans_perturb[i] *
+            Eigen::Matrix3d::Identity(), (1.0 / std::sqrt(2)) * trans_perturb[i] *
                                              (Eigen::Vector3d::UnitX() + Eigen::Vector3d::UnitY()));
 
         perturbations[1][i] = Sophus::SE3d(
-            Eigen::Matrix3d::Identity(), std::sqrt(2) * trans_perturb[i] *
+            Eigen::Matrix3d::Identity(), (1.0 / std::sqrt(2)) * trans_perturb[i] *
                                              (Eigen::Vector3d::UnitY() + Eigen::Vector3d::UnitZ()));
 
         perturbations[2][i] = Sophus::SE3d(
-            Eigen::Matrix3d::Identity(), std::sqrt(2) * trans_perturb[i] *
+            Eigen::Matrix3d::Identity(), (1.0 / std::sqrt(2)) * trans_perturb[i] *
                                              (Eigen::Vector3d::UnitX() + Eigen::Vector3d::UnitZ()));
 
         perturbations[3][i] =
-            Sophus::SE3d(Sophus::SO3d::exp(std::sqrt(2) * rot_perturb[i] *
+            Sophus::SE3d(Sophus::SO3d::exp((1.0 / std::sqrt(2)) * rot_perturb[i] *
                                            (Eigen::Vector3d::UnitX() + Eigen::Vector3d::UnitY())),
                          Eigen::Vector3d::Zero());
 
         perturbations[4][i] =
-            Sophus::SE3d(Sophus::SO3d::exp(std::sqrt(2) * rot_perturb[i] *
+            Sophus::SE3d(Sophus::SO3d::exp((1.0 / std::sqrt(2)) * rot_perturb[i] *
                                            (Eigen::Vector3d::UnitY() + Eigen::Vector3d::UnitZ())),
                          Eigen::Vector3d::Zero());
 
         perturbations[5][i] =
-            Sophus::SE3d(Sophus::SO3d::exp(std::sqrt(2) * rot_perturb[i] *
+            Sophus::SE3d(Sophus::SO3d::exp((1.0 / std::sqrt(2)) * rot_perturb[i] *
                                            (Eigen::Vector3d::UnitX() + Eigen::Vector3d::UnitZ())),
                          Eigen::Vector3d::Zero());
     }
