@@ -182,7 +182,41 @@ auto get_se3_perturbations = []() {
     return perturbations;
 };
 
+auto get_se3_perturbations_off_diagonal = []() {
+    std::array<std::array<Sophus::SE3d, num_samples>, 6> perturbations;
+    for (int i = 0; i < num_samples; ++i) {
+        perturbations[0][i] = Sophus::SE3d(
+            Eigen::Matrix3d::Identity(), std::sqrt(2) * trans_perturb[i] *
+                                             (Eigen::Vector3d::UnitX() + Eigen::Vector3d::UnitY()));
+
+        perturbations[1][i] = Sophus::SE3d(
+            Eigen::Matrix3d::Identity(), std::sqrt(2) * trans_perturb[i] *
+                                             (Eigen::Vector3d::UnitY() + Eigen::Vector3d::UnitZ()));
+
+        perturbations[2][i] = Sophus::SE3d(
+            Eigen::Matrix3d::Identity(), std::sqrt(2) * trans_perturb[i] *
+                                             (Eigen::Vector3d::UnitX() + Eigen::Vector3d::UnitZ()));
+
+        perturbations[3][i] =
+            Sophus::SE3d(Sophus::SO3d::exp(std::sqrt(2) * rot_perturb[i] *
+                                           (Eigen::Vector3d::UnitX() + Eigen::Vector3d::UnitY())),
+                         Eigen::Vector3d::Zero());
+
+        perturbations[4][i] =
+            Sophus::SE3d(Sophus::SO3d::exp(std::sqrt(2) * rot_perturb[i] *
+                                           (Eigen::Vector3d::UnitY() + Eigen::Vector3d::UnitZ())),
+                         Eigen::Vector3d::Zero());
+
+        perturbations[5][i] =
+            Sophus::SE3d(Sophus::SO3d::exp(std::sqrt(2) * rot_perturb[i] *
+                                           (Eigen::Vector3d::UnitX() + Eigen::Vector3d::UnitZ())),
+                         Eigen::Vector3d::Zero());
+    }
+    return perturbations;
+};
+
 const auto se3_perturbations = get_se3_perturbations();
+const auto se3_perturbations_off_diagonal = get_se3_perturbations_off_diagonal();
 
 Eigen::Matrix<double, 1, num_samples + 1> GetQuadraticSystem(
     const std::array<double, num_samples> &perturbations) {
@@ -270,11 +304,41 @@ Eigen::Matrix6d Registration::GetHessian(const std::vector<Eigen::Vector3d> &fra
                                                  max_correspondence_distance);
     });
 
-    Eigen::Vector6d hessian;
+    Eigen::Matrix6d hessian;
     for (int d = 0; d < 6; ++d) {
-        hessian(d) = std::clamp(static_cast<double>(N[d] * residuals.col(d)), 1e-6,
-                                std::numeric_limits<double>::max());
+        hessian(d, d) = std::clamp(static_cast<double>(N[d] * residuals.col(d)), 1e-6,
+                                   std::numeric_limits<double>::max());
     }
-    return hessian.asDiagonal();
+
+    Eigen::Matrix<double, num_samples + 1, 6> residuals_off_diagonal;
+    residuals_off_diagonal.row(num_samples) =
+        Eigen::Matrix<double, 1, 6>::Constant(optimal_residual);
+    tbb::parallel_for(0, 6 * num_samples, [&](const int idx) {
+        const int dim = idx / num_samples;
+        const int n = idx % num_samples;
+        const Sophus::SE3d perturbed_pose = pose * se3_perturbations_off_diagonal[dim][n];
+        residuals_off_diagonal(n, dim) = PointToPointResidual(
+            frame_downsampled, perturbed_pose, voxel_map, max_correspondence_distance);
+    });
+    hessian(1, 0) = std::clamp(static_cast<double>(N[0] * residuals_off_diagonal.col(0)), 1e-6,
+                               std::numeric_limits<double>::max());
+    hessian(0, 1) = hessian(1, 0);
+    hessian(2, 1) = std::clamp(static_cast<double>(N[1] * residuals_off_diagonal.col(1)), 1e-6,
+                               std::numeric_limits<double>::max());
+    hessian(1, 2) = hessian(2, 1);
+    hessian(2, 0) = std::clamp(static_cast<double>(N[2] * residuals_off_diagonal.col(2)), 1e-6,
+                               std::numeric_limits<double>::max());
+    hessian(0, 2) = hessian(2, 0);
+
+    hessian(4, 3) = std::clamp(static_cast<double>(N[3] * residuals_off_diagonal.col(3)), 1e-6,
+                               std::numeric_limits<double>::max());
+    hessian(3, 4) = hessian(4, 3);
+    hessian(5, 4) = std::clamp(static_cast<double>(N[4] * residuals_off_diagonal.col(4)), 1e-6,
+                               std::numeric_limits<double>::max());
+    hessian(4, 5) = hessian(5, 4);
+    hessian(5, 3) = std::clamp(static_cast<double>(N[5] * residuals_off_diagonal.col(5)), 1e-6,
+                               std::numeric_limits<double>::max());
+    hessian(3, 5) = hessian(5, 3);
+    return hessian;
 }
 }  // namespace kiss_icp
