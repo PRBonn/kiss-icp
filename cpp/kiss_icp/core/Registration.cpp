@@ -305,6 +305,7 @@ Eigen::Matrix6d Registration::GetHessian(const std::vector<Eigen::Vector3d> &fra
     });
 
     Eigen::Matrix6d hessian;
+    hessian.setZero();
     for (int d = 0; d < 6; ++d) {
         hessian(d, d) = std::clamp(static_cast<double>(N[d] * residuals.col(d)), 1e-6,
                                    std::numeric_limits<double>::max());
