@@ -25,3 +25,6 @@ add_library(kiss_icp_pipeline STATIC)
 target_sources(kiss_icp_pipeline PRIVATE KissICP.cpp)
 target_link_libraries(kiss_icp_pipeline PUBLIC kiss_icp_core)
 set_global_target_properties(kiss_icp_pipeline)
+
+add_executable(kiss_icp_cpp main.cpp dataloader.cpp)
+target_link_libraries(kiss_icp_cpp PUBLIC kiss_icp_pipeline)

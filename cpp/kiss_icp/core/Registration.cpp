@@ -52,6 +52,7 @@ namespace Eigen {
 using Matrix6d = Eigen::Matrix<double, 6, 6>;
 using Matrix3_6d = Eigen::Matrix<double, 3, 6>;
 using Vector6d = Eigen::Matrix<double, 6, 1>;
+using RowVector9d = Eigen::Matrix<double, 1, 9>;
 }  // namespace Eigen
 
 using Correspondences = std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>;
@@ -224,30 +225,35 @@ auto get_square_symm_3x3_from_vec6d = [](const Eigen::Vector6d &vec) {
 const auto se3_perturbations_trans = get_se3_perturbations_trans();
 const auto se3_perturbations_rot = get_se3_perturbations_rot();
 
-Eigen::Matrix<double, 6, num_samples * 6> GetQuadraticSystem(
+Eigen::Matrix<double, 9, num_samples * 6> GetQuadraticSystem(
     const std::array<double, num_samples> &perturbations) {
-    Eigen::Matrix<double, num_samples * 6, 6> A;
+    Eigen::Matrix<double, num_samples * 6, 9> A;
     for (int n = 0; n < num_samples; ++n) {
-        const double val = square(perturbations[n]);
-        A.row(n * num_samples) = Eigen::Matrix<double, 1, 6>{val, 0.0, 0.0, 0.0, 0.0, 0.0};
-        A.row(n * num_samples + 1) = Eigen::Matrix<double, 1, 6>{0.0, val, 0.0, 0.0, 0.0, 0.0};
-        A.row(n * num_samples + 2) = Eigen::Matrix<double, 1, 6>{0.0, 0.0, val, 0.0, 0.0, 0.0};
+        const double x = perturbations[n];
+        const double y = perturbations[n];
+        const double z = perturbations[n];
+        const double xy = perturbations[n] / std::sqrt(2.0);
+        const double yz = perturbations[n] / std::sqrt(2.0);
+        const double xz = perturbations[n] / std::sqrt(2.0);
+
+        A.row(n * num_samples) =
+            Eigen::RowVector9d{x, 0.0, 0.0, 0.5 * x * x, 0.0, 0.0, 0.0, 0.0, 0.0};
+        A.row(n * num_samples + 1) =
+            Eigen::RowVector9d{0.0, y, 0.0, 0.0, 0.5 * y * y, 0.0, 0.0, 0.0, 0.0};
+        A.row(n * num_samples + 2) =
+            Eigen::RowVector9d{0.0, 0.0, z, 0.0, 0.0, 0.5 * z * z, 0.0, 0.0, 0.0};
         A.row(n * num_samples + 3) =
-            Eigen::Matrix<double, 1, 6>{val / 2.0, val / 2.0, 0.0, val, 0.0, 0.0};
+            Eigen::RowVector9d{xy, xy, 0.0, 0.5 * xy * xy, 0.5 * xy * xy, 0.0, xy * xy, 0.0, 0.0};
         A.row(n * num_samples + 4) =
-            Eigen::Matrix<double, 1, 6>{0.0, val / 2.0, val / 2.0, 0.0, val, 0.0};
+            Eigen::RowVector9d{0.0, yz, yz, 0.0, 0.5 * yz * yz, 0.5 * yz * yz, 0.0, yz * yz, 0.0};
         A.row(n * num_samples + 5) =
-            Eigen::Matrix<double, 1, 6>{val / 2.0, 0.0, val / 2.0, 0.0, 0.0, val};
+            Eigen::RowVector9d{xz, 0.0, xz, 0.5 * xz * xz, 0.0, 0.5 * xz * xz, 0.0, 0.0, xz * xz};
     }
     return ((A.transpose() * A).inverse() * A.transpose());
 }
 
-const auto N_trans = GetQuadraticSystem(trans_perturb);
-const auto N_rot = GetQuadraticSystem(rot_perturb);
-
-// const std::array<Eigen::Matrix<double, 1, num_samples + 1>, 6> N{N_trans, N_trans, N_trans,
-//                                                                  N_rot,   N_rot,   N_rot};
-
+const Eigen::Matrix<double, 9, num_samples * 6> N_trans = GetQuadraticSystem(trans_perturb);
+const Eigen::Matrix<double, 9, num_samples * 6> N_rot = GetQuadraticSystem(rot_perturb);
 }  // namespace
 
 namespace kiss_icp {
@@ -312,9 +318,9 @@ Eigen::Matrix6d Registration::GetHessian(const std::vector<Eigen::Vector3d> &fra
         const int dim = idx / num_samples;
         const int n = idx % num_samples;
         const Sophus::SE3d perturbed_pose = pose * se3_perturbations_trans[dim][n];
-        residuals_trans(idx) = 2 * (PointToPointResidual(frame_downsampled, perturbed_pose, voxel_map,
-                                                   max_correspondence_distance) -
-                              optimal_residual);
+        residuals_trans(idx) = PointToPointResidual(frame_downsampled, perturbed_pose, voxel_map,
+                                                    max_correspondence_distance) -
+                               optimal_residual;
     });
 
     Eigen::Matrix<double, num_samples * 6, 1> residuals_rot;
@@ -322,16 +328,17 @@ Eigen::Matrix6d Registration::GetHessian(const std::vector<Eigen::Vector3d> &fra
         const int dim = idx / num_samples;
         const int n = idx % num_samples;
         const Sophus::SE3d perturbed_pose = pose * se3_perturbations_rot[dim][n];
-        residuals_rot(idx) = 2 * (PointToPointResidual(frame_downsampled, perturbed_pose, voxel_map,
-                                                   max_correspondence_distance) -
-                              optimal_residual);
+        residuals_rot(idx) = PointToPointResidual(frame_downsampled, perturbed_pose, voxel_map,
+                                                  max_correspondence_distance) -
+                             optimal_residual;
     });
 
-    Eigen::Matrix3d hessian_trans = get_square_symm_3x3_from_vec6d(N_trans * residuals_trans);
-    Eigen::Matrix3d hessian_rot = get_square_symm_3x3_from_vec6d(N_rot * residuals_rot);
+    const Eigen::Matrix3d hessian_trans =
+        get_square_symm_3x3_from_vec6d((N_trans * residuals_trans).tail<6>());
+    const Eigen::Matrix3d hessian_rot =
+        get_square_symm_3x3_from_vec6d((N_rot * residuals_rot).tail<6>());
 
-    Eigen::Matrix6d hessian;
-    hessian.setZero();
+    Eigen::Matrix6d hessian = Eigen::Matrix6d::Zero();
 
     const Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver_trans(hessian_trans);
     auto eigenvalues_trans = solver_trans.eigenvalues();

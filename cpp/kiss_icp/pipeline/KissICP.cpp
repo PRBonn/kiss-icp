@@ -38,7 +38,7 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
     auto preprocessed_frame = preprocessor_.Preprocess(frame, timestamps, last_delta_);
 
     // Voxelize
-    const auto& [source, frame_downsample] = Voxelize(preprocessed_frame);
+    const auto &[source, frame_downsample] = Voxelize(preprocessed_frame);
 
     // Get adaptive_threshold
     const double sigma = adaptive_threshold_.ComputeThreshold();
