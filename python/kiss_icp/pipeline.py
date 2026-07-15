@@ -99,7 +99,6 @@ class OdometryPipeline:
             raw_frame, timestamps = self._dataset[idx]
             start_time = time.perf_counter_ns()
             source, keypoints = self.odometry.register_frame(raw_frame, timestamps)
-
             self.poses[idx - self._first] = self.odometry.last_pose
             self.times[idx - self._first] = time.perf_counter_ns() - start_time
 
