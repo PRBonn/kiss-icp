@@ -21,6 +21,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 #pragma once
+#include <Eigen/Core>
+#include <memory>
+#include <sophus/se3.hpp>
+#include <string>
+#include <vector>
 
 // KISS-ICP
 #include "kiss_icp/pipeline/KissICP.hpp"
@@ -31,7 +36,6 @@
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <std_msgs/msg/header.hpp>
 #include <std_srvs/srv/empty.hpp>
-#include <string>
 #include <tf2_ros/buffer.hpp>
 #include <tf2_ros/transform_broadcaster.hpp>
 #include <tf2_ros/transform_listener.hpp>
@@ -53,7 +57,9 @@ private:
     void RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msg);
 
     /// Stream the estimated pose to ROS
-    void PublishOdometry(const Sophus::SE3d &kiss_pose, const std_msgs::msg::Header &header);
+    void PublishOdometry(const Sophus::SE3d &kiss_pose,
+                         const Eigen::Matrix<double, 6, 6> &kiss_hessian,
+                         const std_msgs::msg::Header &header);
 
     /// Stream the debugging point clouds for visualization (if required)
     void PublishClouds(const std::vector<Eigen::Vector3d> &frame,
@@ -89,10 +95,6 @@ private:
     /// Global/map coordinate frame.
     std::string lidar_odom_frame_{"odom_lidar"};
     std::string base_frame_{};
-
-    /// Covariance diagonal
-    double position_covariance_;
-    double orientation_covariance_;
 };
 
 }  // namespace kiss_icp_ros

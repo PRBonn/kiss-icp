@@ -10,8 +10,6 @@ kiss_icp_node:
     # lidar_odom_frame: "odom_lidar"
     # publish_odom_tf: True
     # invert_odom_tf: True
-    # position_covariance: 0.1
-    # orientation_covariance: 0.1
 
     ####    Core KISS-ICP parameters    ####
 
