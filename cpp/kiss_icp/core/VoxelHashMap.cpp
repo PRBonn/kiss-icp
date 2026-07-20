@@ -82,7 +82,7 @@ std::vector<Eigen::Vector3d> VoxelHashMap::Pointcloud() const {
 }
 
 size_t VoxelHashMap::size() const {
-    return std::transform_reduce(map_.cbegin(), map_.cend(), 0, std::plus<size_t>(),
+    return std::transform_reduce(map_.cbegin(), map_.cend(), size_t{0}, std::plus<size_t>(),
                                  [](const auto &map_element) { return map_element.second.size(); });
 }
 
