@@ -25,6 +25,7 @@
 #include <Eigen/Core>
 #include <algorithm>
 #include <array>
+#include <numeric>
 #include <sophus/se3.hpp>
 #include <vector>
 
