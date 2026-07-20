@@ -55,18 +55,31 @@ using RowVector9d = Eigen::Matrix<double, 1, 9>;
 using Correspondences = std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>;
 using LinearSystem = std::pair<Eigen::Matrix6d, Eigen::Vector6d>;
 
+constexpr int num_samples = 6;
+
+constexpr std::array<double, num_samples> lin_perturb_val{-0.1, -0.06, -0.02, 0.02, 0.06, 0.1};
+constexpr std::array<double, num_samples> ang_perturb_val{-0.01, -0.006, -0.002,
+                                                          0.002, 0.006,  0.01};
+using LinearSystemUncertainty = Eigen::Matrix<double, 9, num_samples * 6>;
+
 namespace {
 inline double square(double x) { return x * x; }
+
+auto to_square_symettric = [](const Eigen::Vector6d &vec) {
+    Eigen::Matrix3d mat;
+    mat << vec(0), vec(3), vec(5), vec(3), vec(1), vec(4), vec(5), vec(4), vec(2);
+    return mat;
+};
 
 void TransformPoints(const Sophus::SE3d &T, std::vector<Eigen::Vector3d> &points) {
     std::transform(points.cbegin(), points.cend(), points.begin(),
                    [&](const auto &point) { return T * point; });
 }
 
-double PointToPointResidual(const std::vector<Eigen::Vector3d> &points,
-                            const Sophus::SE3d &pose,
-                            const kiss_icp::VoxelHashMap &voxel_map,
-                            const double max_correspondance_distance) {
+double GetIcpResidual(const std::vector<Eigen::Vector3d> &points,
+                      const Sophus::SE3d &pose,
+                      const kiss_icp::VoxelHashMap &voxel_map,
+                      const double max_correspondance_distance) {
     tbb::enumerable_thread_specific<std::vector<double>> local_residuals;
     tbb::parallel_for(size_t{0}, points.size(), [&](size_t i) {
         const auto &[_, distance] = voxel_map.GetClosestNeighbor(pose * points[i]);
@@ -77,7 +90,7 @@ double PointToPointResidual(const std::vector<Eigen::Vector3d> &points,
 
     double sum_residual = 0.0;
     size_t num_residuals = 0;
-    for (auto &local : local_residuals) {
+    for (const auto &local : local_residuals) {
         sum_residual += std::reduce(local.cbegin(), local.cend(), 0.0);
         num_residuals += local.size();
     }
@@ -151,78 +164,47 @@ LinearSystem BuildLinearSystem(const Correspondences &correspondences, const dou
     return {std::move(JTJ), std::move(JTr)};
 }
 
-constexpr int num_samples = 6;
-
-constexpr std::array<double, num_samples> trans_perturb{-0.1, -0.06, -0.02, 0.02, 0.06, 0.1};
-constexpr std::array<double, num_samples> rot_perturb{-0.01, -0.006, -0.002, 0.002, 0.006, 0.01};
-
-auto get_se3_perturbations_trans = []() {
-    std::array<std::array<Sophus::SE3d, 6>, num_samples> perturbations;
+auto get_lin_perturbations_se3 = []() {
+    const Eigen::Matrix3d I = Eigen::Matrix3d::Identity();
+    const Eigen::Vector3d ux = Eigen::Vector3d::UnitX();
+    const Eigen::Vector3d uy = Eigen::Vector3d::UnitY();
+    const Eigen::Vector3d uz = Eigen::Vector3d::UnitZ();
+    std::array<std::array<Sophus::SE3d, 6>, num_samples> samples;
     for (int i = 0; i < num_samples; ++i) {
-        perturbations[i][0] =
-            Sophus::SE3d(Eigen::Matrix3d::Identity(), trans_perturb[i] * Eigen::Vector3d::UnitX());
-
-        perturbations[i][1] =
-            Sophus::SE3d(Eigen::Matrix3d::Identity(), trans_perturb[i] * Eigen::Vector3d::UnitY());
-
-        perturbations[i][2] =
-            Sophus::SE3d(Eigen::Matrix3d::Identity(), trans_perturb[i] * Eigen::Vector3d::UnitZ());
-
-        perturbations[i][3] = Sophus::SE3d(
-            Eigen::Matrix3d::Identity(), (1.0 / std::sqrt(2)) * trans_perturb[i] *
-                                             (Eigen::Vector3d::UnitX() + Eigen::Vector3d::UnitY()));
-
-        perturbations[i][4] = Sophus::SE3d(
-            Eigen::Matrix3d::Identity(), (1.0 / std::sqrt(2)) * trans_perturb[i] *
-                                             (Eigen::Vector3d::UnitY() + Eigen::Vector3d::UnitZ()));
-
-        perturbations[i][5] = Sophus::SE3d(
-            Eigen::Matrix3d::Identity(), (1.0 / std::sqrt(2)) * trans_perturb[i] *
-                                             (Eigen::Vector3d::UnitX() + Eigen::Vector3d::UnitZ()));
+        samples[i][0] = Sophus::SE3d(I, lin_perturb_val[i] * ux);
+        samples[i][1] = Sophus::SE3d(I, lin_perturb_val[i] * uy);
+        samples[i][2] = Sophus::SE3d(I, lin_perturb_val[i] * uz);
+        samples[i][3] = Sophus::SE3d(I, (1.0 / std::sqrt(2)) * lin_perturb_val[i] * (ux + uy));
+        samples[i][4] = Sophus::SE3d(I, (1.0 / std::sqrt(2)) * lin_perturb_val[i] * (uy + uz));
+        samples[i][5] = Sophus::SE3d(I, (1.0 / std::sqrt(2)) * lin_perturb_val[i] * (ux + uz));
     }
-    return perturbations;
+    return samples;
 };
 
-auto get_se3_perturbations_rot = []() {
-    std::array<std::array<Sophus::SE3d, 6>, num_samples> perturbations;
+auto get_ang_perturbations_se3 = []() {
+    const Eigen::Vector3d zeros = Eigen::Vector3d::Zero();
+    const Eigen::Vector3d ux = Eigen::Vector3d::UnitX();
+    const Eigen::Vector3d uy = Eigen::Vector3d::UnitY();
+    const Eigen::Vector3d uz = Eigen::Vector3d::UnitZ();
+    std::array<std::array<Sophus::SE3d, 6>, num_samples> samples;
     for (int i = 0; i < num_samples; ++i) {
-        perturbations[i][0] =
-            Sophus::SE3d(Sophus::SO3d::rotX(rot_perturb[i]), Eigen::Vector3d::Zero());
-
-        perturbations[i][1] =
-            Sophus::SE3d(Sophus::SO3d::rotY(rot_perturb[i]), Eigen::Vector3d::Zero());
-
-        perturbations[i][2] =
-            Sophus::SE3d(Sophus::SO3d::rotZ(rot_perturb[i]), Eigen::Vector3d::Zero());
-
-        perturbations[i][3] =
-            Sophus::SE3d(Sophus::SO3d::exp((1.0 / std::sqrt(2)) * rot_perturb[i] *
-                                           (Eigen::Vector3d::UnitX() + Eigen::Vector3d::UnitY())),
-                         Eigen::Vector3d::Zero());
-
-        perturbations[i][4] =
-            Sophus::SE3d(Sophus::SO3d::exp((1.0 / std::sqrt(2)) * rot_perturb[i] *
-                                           (Eigen::Vector3d::UnitY() + Eigen::Vector3d::UnitZ())),
-                         Eigen::Vector3d::Zero());
-
-        perturbations[i][5] =
-            Sophus::SE3d(Sophus::SO3d::exp((1.0 / std::sqrt(2)) * rot_perturb[i] *
-                                           (Eigen::Vector3d::UnitX() + Eigen::Vector3d::UnitZ())),
-                         Eigen::Vector3d::Zero());
+        samples[i][0] = Sophus::SE3d(Sophus::SO3d::rotX(ang_perturb_val[i]), zeros);
+        samples[i][1] = Sophus::SE3d(Sophus::SO3d::rotY(ang_perturb_val[i]), zeros);
+        samples[i][2] = Sophus::SE3d(Sophus::SO3d::rotZ(ang_perturb_val[i]), zeros);
+        samples[i][3] = Sophus::SE3d(
+            Sophus::SO3d::exp((1.0 / std::sqrt(2)) * ang_perturb_val[i] * (ux + uy)), zeros);
+        samples[i][4] = Sophus::SE3d(
+            Sophus::SO3d::exp((1.0 / std::sqrt(2)) * ang_perturb_val[i] * (uy + uz)), zeros);
+        samples[i][5] = Sophus::SE3d(
+            Sophus::SO3d::exp((1.0 / std::sqrt(2)) * ang_perturb_val[i] * (ux + uz)), zeros);
     }
-    return perturbations;
+    return samples;
 };
 
-auto get_square_symm_3x3_from_vec6d = [](const Eigen::Vector6d &vec) {
-    Eigen::Matrix3d mat;
-    mat << vec(0), vec(3), vec(5), vec(3), vec(1), vec(4), vec(5), vec(4), vec(2);
-    return mat;
-};
+const auto lin_perturbations_se3 = get_lin_perturbations_se3();
+const auto ang_perturbations_se3 = get_ang_perturbations_se3();
 
-const auto se3_perturbations_trans = get_se3_perturbations_trans();
-const auto se3_perturbations_rot = get_se3_perturbations_rot();
-
-Eigen::Matrix<double, 9, num_samples * 6> GetQuadraticSystem(
+LinearSystemUncertainty BuildLinearSystemUncertainty(
     const std::array<double, num_samples> &perturbations) {
     Eigen::Matrix<double, num_samples * 6, 9> A;
     for (int n = 0; n < num_samples; ++n) {
@@ -249,8 +231,8 @@ Eigen::Matrix<double, 9, num_samples * 6> GetQuadraticSystem(
     return ((A.transpose() * A).inverse() * A.transpose());
 }
 
-const Eigen::Matrix<double, 9, num_samples * 6> N_trans = GetQuadraticSystem(trans_perturb);
-const Eigen::Matrix<double, 9, num_samples * 6> N_rot = GetQuadraticSystem(rot_perturb);
+const LinearSystemUncertainty N_lin = BuildLinearSystemUncertainty(lin_perturb_val);
+const LinearSystemUncertainty N_ang = BuildLinearSystemUncertainty(ang_perturb_val);
 }  // namespace
 
 namespace kiss_icp {
@@ -307,57 +289,52 @@ Eigen::Matrix6d Registration::GetHessian(const std::vector<Eigen::Vector3d> &fra
                                          const double max_correspondence_distance) {
     const std::vector<Eigen::Vector3d> frame_downsampled =
         VoxelDownsample(frame, voxel_map.voxel_size_ * 3.0);
-    const double optimal_residual =
-        PointToPointResidual(frame_downsampled, pose, voxel_map, max_correspondence_distance);
+    const double ref_residual =
+        GetIcpResidual(frame_downsampled, pose, voxel_map, max_correspondence_distance);
 
-    Eigen::Matrix<double, num_samples * 6, 1> residuals_trans;
+    Eigen::Matrix<double, num_samples * 6, 1> residuals_lin;
     tbb::parallel_for(0, 6 * num_samples, [&](const int idx) {
         const int dim = idx / num_samples;
         const int n = idx % num_samples;
-        const Sophus::SE3d perturbed_pose = pose * se3_perturbations_trans[dim][n];
-        residuals_trans(idx) = PointToPointResidual(frame_downsampled, perturbed_pose, voxel_map,
-                                                    max_correspondence_distance) -
-                               optimal_residual;
+        const Sophus::SE3d new_pose = pose * lin_perturbations_se3[dim][n];
+        residuals_lin(idx) =
+            GetIcpResidual(frame_downsampled, new_pose, voxel_map, max_correspondence_distance) -
+            ref_residual;
     });
 
-    Eigen::Matrix<double, num_samples * 6, 1> residuals_rot;
+    Eigen::Matrix<double, num_samples * 6, 1> residuals_ang;
     tbb::parallel_for(0, 6 * num_samples, [&](const int idx) {
         const int dim = idx / num_samples;
         const int n = idx % num_samples;
-        const Sophus::SE3d perturbed_pose = pose * se3_perturbations_rot[dim][n];
-        residuals_rot(idx) = PointToPointResidual(frame_downsampled, perturbed_pose, voxel_map,
-                                                  max_correspondence_distance) -
-                             optimal_residual;
+        const Sophus::SE3d new_pose = pose * ang_perturbations_se3[dim][n];
+        residuals_ang(idx) =
+            GetIcpResidual(frame_downsampled, new_pose, voxel_map, max_correspondence_distance) -
+            ref_residual;
     });
 
-    const Eigen::Matrix3d hessian_trans =
-        get_square_symm_3x3_from_vec6d((N_trans * residuals_trans).tail<6>());
-    const Eigen::Matrix3d hessian_rot =
-        get_square_symm_3x3_from_vec6d((N_rot * residuals_rot).tail<6>());
+    const Eigen::Matrix3d hessian_lin = to_square_symettric((N_lin * residuals_lin).tail<6>());
+    const Eigen::Matrix3d hessian_ang = to_square_symettric((N_ang * residuals_ang).tail<6>());
+
+    const Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver_lin(hessian_lin);
+    auto eigvals_lin = solver_lin.eigenvalues();
+    const auto eigvecs_lin = solver_lin.eigenvectors();
+    for (int i = 0; i < 3; ++i) {
+        if (eigvals_lin(i) < 1e-3) {
+            eigvals_lin(i) = 1e-3;
+        }
+    }
+    const Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver_ang(hessian_ang);
+    auto eigvals_ang = solver_ang.eigenvalues();
+    const auto eigvecs_ang = solver_ang.eigenvectors();
+    for (int i = 0; i < 3; ++i) {
+        if (eigvals_ang(i) < 1e-3) {
+            eigvals_ang(i) = 1e-3;
+        }
+    }
 
     Eigen::Matrix6d hessian = Eigen::Matrix6d::Zero();
-
-    const Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver_trans(hessian_trans);
-    auto eigenvalues_trans = solver_trans.eigenvalues();
-    for (int i = 0; i < 3; ++i) {
-        if (eigenvalues_trans(i) < 1e-3) {
-            eigenvalues_trans(i) = 1e-3;
-        }
-    }
-    const auto eigenvectors_trans = solver_trans.eigenvectors();
-    hessian.block<3, 3>(0, 0) =
-        eigenvectors_trans * eigenvalues_trans.asDiagonal() * eigenvectors_trans.transpose();
-
-    const Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver_rot(hessian_rot);
-    auto eigenvalues_rot = solver_rot.eigenvalues();
-    for (int i = 0; i < 3; ++i) {
-        if (eigenvalues_rot(i) < 1e-3) {
-            eigenvalues_rot(i) = 1e-3;
-        }
-    }
-    const auto eigenvectors_rot = solver_rot.eigenvectors();
-    hessian.block<3, 3>(3, 3) =
-        eigenvectors_rot * eigenvalues_rot.asDiagonal() * eigenvectors_rot.transpose();
+    hessian.block<3, 3>(0, 0) = eigvecs_lin * eigvals_lin.asDiagonal() * eigvecs_lin.transpose();
+    hessian.block<3, 3>(3, 3) = eigvecs_ang * eigvals_ang.asDiagonal() * eigvecs_ang.transpose();
 
     return hessian;
 }
