@@ -57,9 +57,6 @@ def generate_launch_description():
     publish_odom_tf = LaunchConfiguration("publish_odom_tf", default=True)
     invert_odom_tf = LaunchConfiguration("invert_odom_tf", default=True)
 
-    position_covariance = LaunchConfiguration("position_covariance", default=0.1)
-    orientation_covariance = LaunchConfiguration("orientation_covariance", default=0.1)
-
     config_file = LaunchConfiguration("config_file", default=default_config_file)
 
     # KISS-ICP node
@@ -81,8 +78,6 @@ def generate_launch_description():
                 # ROS CLI arguments
                 "publish_debug_clouds": visualize,
                 "use_sim_time": use_sim_time,
-                "position_covariance": position_covariance,
-                "orientation_covariance": orientation_covariance,
             },
             config_file,
         ],

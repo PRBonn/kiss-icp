@@ -48,6 +48,9 @@ class VoxelHashMap:
     def empty(self):
         return self._internal_map._empty()
 
+    def size(self):
+        return self._internal_map._size()
+
     def update(self, points: np.ndarray, pose: np.ndarray = np.eye(4)):
         """Add points to the inernal map representaion.
 

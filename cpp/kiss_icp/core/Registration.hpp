@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2022 Ignacio Vizzo, Tiziano Guadagnino, Benedikt Mersch, Cyrill
+// Copyright (c) 2026 Saurabh Gupta, Ignacio Vizzo, Tiziano Guadagnino, Benedikt Mersch, Cyrill
 // Stachniss.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -38,9 +38,13 @@ struct Registration {
                                   const Sophus::SE3d &initial_guess,
                                   const double max_correspondence_distance,
                                   const double kernel_scale);
-
+    Eigen::Matrix<double, 6, 6> GetHessian(const std::vector<Eigen::Vector3d> &frame,
+                                           const VoxelHashMap &voxel_map,
+                                           const Sophus::SE3d &pose,
+                                           const double max_correspondence_distance);
     int max_num_iterations_;
     double convergence_criterion_;
     int max_num_threads_;
+    double fitness_;
 };
 }  // namespace kiss_icp

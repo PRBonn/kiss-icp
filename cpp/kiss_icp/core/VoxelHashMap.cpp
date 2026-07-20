@@ -25,6 +25,7 @@
 #include <Eigen/Core>
 #include <algorithm>
 #include <array>
+#include <numeric>
 #include <sophus/se3.hpp>
 #include <vector>
 
@@ -57,16 +58,16 @@ std::tuple<Eigen::Vector3d, double> VoxelHashMap::GetClosestNeighbor(
             const auto &points = search.value();
             const Eigen::Vector3d &neighbor = *std::min_element(
                 points.cbegin(), points.cend(), [&](const auto &lhs, const auto &rhs) {
-                    return (lhs - query).norm() < (rhs - query).norm();
+                    return (lhs - query).squaredNorm() < (rhs - query).squaredNorm();
                 });
-            double distance = (neighbor - query).norm();
+            double distance = (neighbor - query).squaredNorm();
             if (distance < closest_distance) {
                 closest_neighbor = neighbor;
                 closest_distance = distance;
             }
         }
     });
-    return std::make_tuple(closest_neighbor, closest_distance);
+    return std::make_tuple(closest_neighbor, std::sqrt(closest_distance));
 }
 
 std::vector<Eigen::Vector3d> VoxelHashMap::Pointcloud() const {
@@ -78,6 +79,11 @@ std::vector<Eigen::Vector3d> VoxelHashMap::Pointcloud() const {
     });
     points.shrink_to_fit();
     return points;
+}
+
+size_t VoxelHashMap::size() const {
+    return std::transform_reduce(map_.cbegin(), map_.cend(), size_t{0}, std::plus<size_t>(),
+                                 [](const auto &map_element) { return map_element.second.size(); });
 }
 
 void VoxelHashMap::Update(const std::vector<Eigen::Vector3d> &points,
@@ -113,7 +119,7 @@ void VoxelHashMap::AddPoints(const std::vector<Eigen::Vector3d> &points) {
             std::vector<Eigen::Vector3d> voxel_points;
             voxel_points.reserve(max_points_per_voxel_);
             voxel_points.emplace_back(point);
-            map_.insert({voxel, std::move(voxel_points)});
+            map_.emplace(voxel, std::move(voxel_points));
         }
     });
 }

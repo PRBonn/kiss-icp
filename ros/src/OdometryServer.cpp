@@ -122,10 +122,6 @@ void OdometryServer::initializeParameters(kiss_icp::pipeline::KISSConfig &config
     RCLCPP_INFO(this->get_logger(), "\tInvert odometry transform: %d", invert_odom_tf_);
     publish_debug_clouds_ = declare_parameter<bool>("publish_debug_clouds", publish_debug_clouds_);
     RCLCPP_INFO(this->get_logger(), "\tPublish debug clouds: %d", publish_debug_clouds_);
-    position_covariance_ = declare_parameter<double>("position_covariance", 0.1);
-    RCLCPP_INFO(this->get_logger(), "\tPosition covariance: %.2f", position_covariance_);
-    orientation_covariance_ = declare_parameter<double>("orientation_covariance", 0.1);
-    RCLCPP_INFO(this->get_logger(), "\tOrientation covariance: %.2f", orientation_covariance_);
 
     config.max_range = declare_parameter<double>("data.max_range", config.max_range);
     RCLCPP_INFO(this->get_logger(), "\tMax range: %.2f", config.max_range);
@@ -170,9 +166,10 @@ void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSha
 
     // Extract the last KISS-ICP pose, ego-centric to the LiDAR
     const Sophus::SE3d kiss_pose = kiss_icp_->pose();
+    const Eigen::Matrix<double, 6, 6> &kiss_hessian = kiss_icp_->hessian();
 
     // Spit the current estimated pose to ROS msgs handling the desired target frame
-    PublishOdometry(kiss_pose, msg->header);
+    PublishOdometry(kiss_pose, kiss_hessian, msg->header);
     // Publishing these clouds is a bit costly, so do it only if we are debugging
     if (publish_debug_clouds_) {
         PublishClouds(frame, keypoints, msg->header);
@@ -180,6 +177,7 @@ void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSha
 }
 
 void OdometryServer::PublishOdometry(const Sophus::SE3d &kiss_pose,
+                                     const Eigen::Matrix<double, 6, 6> &kiss_hessian,
                                      const std_msgs::msg::Header &header) {
     // If necessary, transform the ego-centric pose to the specified base_link/base_footprint frame
     const auto cloud_frame_id = header.frame_id;
@@ -190,6 +188,9 @@ void OdometryServer::PublishOdometry(const Sophus::SE3d &kiss_pose,
         const Sophus::SE3d cloud2base = LookupTransform(base_frame_, cloud_frame_id, tf2_buffer_);
         return cloud2base * kiss_pose * cloud2base.inverse();
     }();
+
+    const auto position_covariance = kiss_hessian.block<3, 3>(0, 0).inverse();
+    const auto orientation_covariance = kiss_hessian.block<3, 3>(3, 3).inverse();
 
     // Broadcast the tf ---
     if (publish_odom_tf_) {
@@ -214,12 +215,24 @@ void OdometryServer::PublishOdometry(const Sophus::SE3d &kiss_pose,
     odom_msg.child_frame_id = moving_frame;
     odom_msg.pose.pose = tf2::sophusToPose(pose);
     odom_msg.pose.covariance.fill(0.0);
-    odom_msg.pose.covariance[0] = position_covariance_;
-    odom_msg.pose.covariance[7] = position_covariance_;
-    odom_msg.pose.covariance[14] = position_covariance_;
-    odom_msg.pose.covariance[21] = orientation_covariance_;
-    odom_msg.pose.covariance[28] = orientation_covariance_;
-    odom_msg.pose.covariance[35] = orientation_covariance_;
+    odom_msg.pose.covariance[0] = position_covariance(0, 0);
+    odom_msg.pose.covariance[1] = position_covariance(0, 1);
+    odom_msg.pose.covariance[2] = position_covariance(0, 2);
+    odom_msg.pose.covariance[6] = position_covariance(1, 0);
+    odom_msg.pose.covariance[7] = position_covariance(1, 1);
+    odom_msg.pose.covariance[8] = position_covariance(1, 2);
+    odom_msg.pose.covariance[12] = position_covariance(2, 0);
+    odom_msg.pose.covariance[13] = position_covariance(2, 1);
+    odom_msg.pose.covariance[14] = position_covariance(2, 2);
+    odom_msg.pose.covariance[21] = orientation_covariance(0, 0);
+    odom_msg.pose.covariance[22] = orientation_covariance(0, 1);
+    odom_msg.pose.covariance[23] = orientation_covariance(0, 2);
+    odom_msg.pose.covariance[27] = orientation_covariance(1, 0);
+    odom_msg.pose.covariance[28] = orientation_covariance(1, 1);
+    odom_msg.pose.covariance[29] = orientation_covariance(1, 2);
+    odom_msg.pose.covariance[33] = orientation_covariance(2, 0);
+    odom_msg.pose.covariance[34] = orientation_covariance(2, 1);
+    odom_msg.pose.covariance[35] = orientation_covariance(2, 2);
     odom_publisher_->publish(std::move(odom_msg));
 }
 

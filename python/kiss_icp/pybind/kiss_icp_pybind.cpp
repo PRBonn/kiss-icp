@@ -57,6 +57,7 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
              "max_points_per_voxel"_a)
         .def("_clear", &VoxelHashMap::Clear)
         .def("_empty", &VoxelHashMap::Empty)
+        .def("_size", &VoxelHashMap::size)
         .def("_update",
              py::overload_cast<const std::vector<Eigen::Vector3d> &, const Eigen::Vector3d &>(
                  &VoxelHashMap::Update),
@@ -97,13 +98,22 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
                const VoxelHashMap &voxel_map, const Eigen::Matrix4d &T_guess,
                double max_correspondence_distance, double kernel) {
                 Sophus::SE3d initial_guess(T_guess);
-                return self
-                    .AlignPointsToMap(points, voxel_map, initial_guess, max_correspondence_distance,
-                                      kernel)
-                    .matrix();
+                auto pose = self.AlignPointsToMap(points, voxel_map, initial_guess,
+                                                  max_correspondence_distance, kernel);
+                return pose.matrix();
             },
             "points"_a, "voxel_map"_a, "initial_guess"_a, "max_correspondance_distance"_a,
-            "kernel"_a);
+            "kernel"_a)
+        .def(
+            "_get_hessian",
+            [](Registration &self, const std::vector<Eigen::Vector3d> &points,
+               const VoxelHashMap &voxel_map, const Eigen::Matrix4d &T,
+               double max_correspondence_distance) {
+                Sophus::SE3d pose(T);
+                return self.GetHessian(points, voxel_map, pose, max_correspondence_distance);
+            },
+            "points"_a, "voxel_map"_a, "pose"_a, "max_correspondence_distance"_a)
+        .def_readonly("fitness_", &Registration::fitness_);
 
     // AdaptiveThreshold bindings
     py::class_<AdaptiveThreshold> adaptive_threshold(m, "_AdaptiveThreshold", "Don't use this");

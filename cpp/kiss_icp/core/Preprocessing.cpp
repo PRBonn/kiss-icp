@@ -23,7 +23,6 @@
 #include "Preprocessing.hpp"
 
 #include <tbb/blocked_range.h>
-#include <tbb/concurrent_vector.h>
 #include <tbb/global_control.h>
 #include <tbb/info.h>
 #include <tbb/parallel_for.h>
@@ -32,7 +31,6 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <algorithm>
-#include <functional>
 #include <vector>
 
 namespace kiss_icp {
