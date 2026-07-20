@@ -23,7 +23,6 @@
 #pragma once
 
 #include <Eigen/Core>
-#include <functional>
 #include <sophus/se3.hpp>
 #include <vector>
 

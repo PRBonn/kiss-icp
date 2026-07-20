@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2022 Ignacio Vizzo, Tiziano Guadagnino, Benedikt Mersch, Cyrill
+// Copyright (c) 2026 Saurabh Gupta, Ignacio Vizzo, Tiziano Guadagnino, Benedikt Mersch, Cyrill
 // Stachniss.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -339,25 +339,23 @@ Eigen::Matrix6d Registration::GetHessian(const std::vector<Eigen::Vector3d> &fra
 
     const Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver_trans(hessian_trans);
     auto eigenvalues_trans = solver_trans.eigenvalues();
-    const auto eigenvectors_trans = solver_trans.eigenvectors();
     for (int i = 0; i < 3; ++i) {
         if (eigenvalues_trans(i) < 1e-3) {
-            std::cout << "trans eigenvalue too small: " << eigenvectors_trans(i) << std::endl;
             eigenvalues_trans(i) = 1e-3;
         }
     }
+    const auto eigenvectors_trans = solver_trans.eigenvectors();
     hessian.block<3, 3>(0, 0) =
         eigenvectors_trans * eigenvalues_trans.asDiagonal() * eigenvectors_trans.transpose();
 
     const Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver_rot(hessian_rot);
     auto eigenvalues_rot = solver_rot.eigenvalues();
-    const auto eigenvectors_rot = solver_rot.eigenvectors();
     for (int i = 0; i < 3; ++i) {
         if (eigenvalues_rot(i) < 1e-3) {
-            std::cout << "rot eigenvalue too small: " << eigenvectors_rot(i) << std::endl;
             eigenvalues_rot(i) = 1e-3;
         }
     }
+    const auto eigenvectors_rot = solver_rot.eigenvectors();
     hessian.block<3, 3>(3, 3) =
         eigenvectors_rot * eigenvalues_rot.asDiagonal() * eigenvectors_rot.transpose();
 
