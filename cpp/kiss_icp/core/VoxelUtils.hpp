@@ -43,11 +43,9 @@ inline Eigen::Vector3d VoxelCenter(const Voxel &voxel, const double voxel_size) 
            Eigen::Vector3d::Constant(voxel_size * 0.5);
 }
 
-/// Voxelize a point cloud keeping the original coordinates
+// Voxelize a point cloud keeping the original coordinates
 std::vector<Eigen::Vector3d> VoxelDownsample(const std::vector<Eigen::Vector3d> &frame,
                                              const double voxel_size);
-
-}  // namespace kiss_icp
 
 struct VoxelHash {
     std::size_t operator()(const kiss_icp::Voxel &voxel) const {
@@ -55,3 +53,4 @@ struct VoxelHash {
         return (vec[0] * 73856093 ^ vec[1] * 19349669 ^ vec[2] * 83492791);
     }
 };
+}  // namespace kiss_icp
