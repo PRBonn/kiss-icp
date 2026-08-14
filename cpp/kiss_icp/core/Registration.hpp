@@ -1,6 +1,7 @@
 // MIT License
 //
-// Copyright (c) 2026 Saurabh Gupta, Ignacio Vizzo, Tiziano Guadagnino, Benedikt Mersch, Cyrill
+// Modified work Copyright (c) 2026 Saurabh Gupta
+// Copyright (c) 2023 Ignacio Vizzo, Tiziano Guadagnino, Benedikt Mersch, Cyrill
 // Stachniss.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy

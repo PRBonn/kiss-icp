@@ -52,12 +52,10 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
 
     // Map representation
     py::class_<VoxelHashMap> internal_map(m, "_VoxelHashMap", "Don't use this");
-    internal_map
-        .def(py::init<double, double, int>(), "voxel_size"_a, "max_distance"_a,
-             "max_points_per_voxel"_a)
+    internal_map.def(py::init<double, double>(), "voxel_size"_a, "max_distance"_a)
         .def("_clear", &VoxelHashMap::Clear)
         .def("_empty", &VoxelHashMap::Empty)
-        .def("_size", &VoxelHashMap::size)
+        .def("_size", &VoxelHashMap::Size)
         .def("_update",
              py::overload_cast<const std::vector<Eigen::Vector3d> &, const Eigen::Vector3d &>(
                  &VoxelHashMap::Update),
@@ -66,7 +64,7 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
             "_update",
             [](VoxelHashMap &self, const std::vector<Eigen::Vector3d> &points,
                const Eigen::Matrix4d &T) {
-                Sophus::SE3d pose(T);
+                const Sophus::SE3d pose(T);
                 self.Update(points, pose);
             },
             "points"_a, "pose"_a)
@@ -82,7 +80,7 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
             "_preprocess",
             [](Preprocessor &self, const std::vector<Eigen::Vector3d> &points,
                const std::vector<double> &timestamps, const Eigen::Matrix4d &relative_motion) {
-                Sophus::SE3d motion(relative_motion);
+                const Sophus::SE3d motion(relative_motion);
                 return self.Preprocess(points, timestamps, motion);
             },
             "points"_a, "timestamps"_a, "relative_motion"_a);
@@ -97,7 +95,7 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
             [](Registration &self, const std::vector<Eigen::Vector3d> &points,
                const VoxelHashMap &voxel_map, const Eigen::Matrix4d &T_guess,
                double max_correspondence_distance, double kernel) {
-                Sophus::SE3d initial_guess(T_guess);
+                const Sophus::SE3d initial_guess(T_guess);
                 auto pose = self.AlignPointsToMap(points, voxel_map, initial_guess,
                                                   max_correspondence_distance, kernel);
                 return pose.matrix();
@@ -109,7 +107,7 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
             [](Registration &self, const std::vector<Eigen::Vector3d> &points,
                const VoxelHashMap &voxel_map, const Eigen::Matrix4d &T,
                double max_correspondence_distance) {
-                Sophus::SE3d pose(T);
+                const Sophus::SE3d pose(T);
                 return self.GetHessian(points, voxel_map, pose, max_correspondence_distance);
             },
             "points"_a, "voxel_map"_a, "pose"_a, "max_correspondence_distance"_a)
@@ -124,7 +122,7 @@ PYBIND11_MODULE(kiss_icp_pybind, m) {
         .def(
             "_update_model_deviation",
             [](AdaptiveThreshold &self, const Eigen::Matrix4d &T) {
-                Sophus::SE3d model_deviation(T);
+                const Sophus::SE3d model_deviation(T);
                 self.UpdateModelDeviation(model_deviation);
             },
             "model_deviation"_a);
