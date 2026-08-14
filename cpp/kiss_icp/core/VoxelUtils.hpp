@@ -36,15 +36,21 @@ inline Voxel PointToVoxel(const Eigen::Vector3d &point, const double voxel_size)
                  static_cast<int>(std::floor(point.z() / voxel_size)));
 }
 
+inline Eigen::Vector3d VoxelCenter(const Voxel &voxel, const double voxel_size) {
+    return Eigen::Vector3d(static_cast<double>(voxel.x()) * voxel_size,
+                           static_cast<double>(voxel.y()) * voxel_size,
+                           static_cast<double>(voxel.z()) * voxel_size) +
+           Eigen::Vector3d::Constant(voxel_size * 0.5);
+}
+
 /// Voxelize a point cloud keeping the original coordinates
 std::vector<Eigen::Vector3d> VoxelDownsample(const std::vector<Eigen::Vector3d> &frame,
                                              const double voxel_size);
 
 }  // namespace kiss_icp
 
-template <>
-struct std::hash<kiss_icp::Voxel> {
-    inline std::size_t operator()(const kiss_icp::Voxel &voxel) const {
+struct VoxelHash {
+    std::size_t operator()(const kiss_icp::Voxel &voxel) const {
         const uint32_t *vec = reinterpret_cast<const uint32_t *>(voxel.data());
         return (vec[0] * 73856093 ^ vec[1] * 19349669 ^ vec[2] * 83492791);
     }

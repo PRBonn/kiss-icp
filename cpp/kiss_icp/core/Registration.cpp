@@ -1,6 +1,7 @@
 // MIT License
 //
-// Copyright (c) 2026 Saurabh Gupta, Ignacio Vizzo, Tiziano Guadagnino, Benedikt Mersch, Cyrill
+// Modified work Copyright (c) 2026 Saurabh Gupta
+// Copyright (c) 2023 Ignacio Vizzo, Tiziano Guadagnino, Benedikt Mersch, Cyrill
 // Stachniss.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -28,17 +29,15 @@
 #include <tbb/info.h>
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_reduce.h>
-#include <tbb/task_arena.h>
 
 #include <Eigen/Core>
 #include <Eigen/Eigenvalues>
-#include <algorithm>
 #include <array>
 #include <iostream>
-#include <iterator>
 #include <numeric>
 #include <sophus/se3.hpp>
 #include <sophus/so3.hpp>
+#include <thread>
 #include <tuple>
 #include <vector>
 
@@ -55,8 +54,9 @@ using RowVector9d = Eigen::Matrix<double, 1, 9>;
 using Correspondences = std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>;
 using LinearSystem = std::pair<Eigen::Matrix6d, Eigen::Vector6d>;
 
-constexpr int num_samples = 6;
+constexpr int TBB_BLOCK_SIZE = 32;
 
+constexpr int num_samples = 6;
 constexpr std::array<double, num_samples> lin_perturb_val{-0.1, -0.06, -0.02, 0.02, 0.06, 0.1};
 constexpr std::array<double, num_samples> ang_perturb_val{-0.01, -0.006, -0.002,
                                                           0.002, 0.006,  0.01};
@@ -72,27 +72,39 @@ auto to_square_symettric = [](const Eigen::Vector6d &vec) {
 };
 
 void TransformPoints(const Sophus::SE3d &T, std::vector<Eigen::Vector3d> &points) {
-    std::transform(points.cbegin(), points.cend(), points.begin(),
-                   [&](const auto &point) { return T * point; });
+    const Eigen::Matrix3d R = T.rotationMatrix();
+    const Eigen::Vector3d t = T.translation();
+    for (auto &point : points) {
+        point = R * point + t;
+    }
 }
 
 double GetIcpResidual(const std::vector<Eigen::Vector3d> &points,
                       const Sophus::SE3d &pose,
                       const kiss_icp::VoxelHashMap &voxel_map,
                       const double max_correspondance_distance) {
-    tbb::enumerable_thread_specific<std::vector<double>> local_residuals;
+    tbb::enumerable_thread_specific<double> threadwise_sum_residuals;
+    tbb::enumerable_thread_specific<size_t> threadwise_num_residuals;
+    const Eigen::Matrix3d R = pose.rotationMatrix();
+    const Eigen::Vector3d t = pose.translation();
     tbb::parallel_for(size_t{0}, points.size(), [&](size_t i) {
-        const auto &[_, distance] = voxel_map.GetClosestNeighbor(pose * points[i]);
-        if (distance < max_correspondance_distance) {
-            local_residuals.local().emplace_back(distance);
+        const auto transformed_point = R * points[i] + t;
+        const auto closest_neighbor =
+            voxel_map.GetClosestNeighbor(transformed_point, max_correspondance_distance);
+        if (closest_neighbor) {
+            const double residual = (transformed_point - *closest_neighbor).norm();
+            threadwise_sum_residuals.local() += residual;
+            threadwise_num_residuals.local() += 1;
         }
     });
 
     double sum_residual = 0.0;
     size_t num_residuals = 0;
-    for (const auto &local : local_residuals) {
-        sum_residual += std::reduce(local.cbegin(), local.cend(), 0.0);
-        num_residuals += local.size();
+    for (const auto &local : threadwise_sum_residuals) {
+        sum_residual += local;
+    }
+    for (const auto &local : threadwise_num_residuals) {
+        num_residuals += local;
     }
 
     const double mean_residual = num_residuals > 0
@@ -106,9 +118,10 @@ Correspondences DataAssociation(const std::vector<Eigen::Vector3d> &points,
                                 const double max_correspondance_distance) {
     tbb::enumerable_thread_specific<Correspondences> local_correspondences;
     tbb::parallel_for(size_t{0}, points.size(), [&](size_t i) {
-        const auto &[closest_neighbor, distance] = voxel_map.GetClosestNeighbor(points[i]);
-        if (distance < max_correspondance_distance) {
-            local_correspondences.local().emplace_back(points[i], closest_neighbor);
+        const auto closest_neighbor =
+            voxel_map.GetClosestNeighbor(points[i], max_correspondance_distance);
+        if (closest_neighbor) {
+            local_correspondences.local().emplace_back(points[i], *closest_neighbor);
         }
     });
 
@@ -138,14 +151,14 @@ LinearSystem BuildLinearSystem(const Correspondences &correspondences, const dou
     };
 
     auto GM_weight = [&](const double &residual2) {
-        return square(kernel_scale) / square(kernel_scale + residual2);
+        return square(kernel_scale / (kernel_scale + residual2));
     };
 
     using correspondence_iterator = Correspondences::const_iterator;
     auto [JTJ, JTr] = tbb::parallel_reduce(
         // Range
         tbb::blocked_range<correspondence_iterator>{correspondences.cbegin(),
-                                                    correspondences.cend()},
+                                                    correspondences.cend(), TBB_BLOCK_SIZE},
         // Identity
         LinearSystem(Eigen::Matrix6d::Zero(), Eigen::Vector6d::Zero()),
         // 1st Lambda: Parallel computation
@@ -242,7 +255,7 @@ Registration::Registration(int max_num_iteration, double convergence_criterion, 
       convergence_criterion_(convergence_criterion),
       // Only manipulate the number of threads if the user specifies something greater than 0
       max_num_threads_(max_num_threads > 0 ? max_num_threads
-                                           : tbb::this_task_arena::max_concurrency()) {
+                                           : std::thread::hardware_concurrency()) {
     // This global variable requires static duration storage to be able to manipulate the max
     // concurrency from TBB across the entire class
     static const auto tbb_control_settings = tbb::global_control(
@@ -277,7 +290,7 @@ Sophus::SE3d Registration::AlignPointsToMap(const std::vector<Eigen::Vector3d> &
         if (dx.norm() < convergence_criterion_) break;
     }
     const auto correspondences = DataAssociation(source, voxel_map, max_distance);
-    fitness_ = static_cast<double>(correspondences.size()) / static_cast<double>(voxel_map.size());
+    fitness_ = static_cast<double>(correspondences.size()) / static_cast<double>(voxel_map.Size());
     // Spit the final transformation
     return T_icp * initial_guess;
 }
