@@ -118,14 +118,14 @@ inline auto NormalizeTimestamps(const std::vector<double> &timestamps) {
                              std::max(std::abs(min_timestamp), std::abs(max_timestamp));
 
     std::vector<double> timestamps_normalized(timestamps.size());
-    if (time_range <= tolerance) {
+    // Comparison is negated on purpose: a non-finite range must also skip deskewing
+    if (!(time_range > tolerance)) {
+        // Map every point to the end of the sweep, which deskews to the identity
         std::fill(timestamps_normalized.begin(), timestamps_normalized.end(), 1.0);
         return timestamps_normalized;
     }
     std::transform(timestamps.cbegin(), timestamps.cend(), timestamps_normalized.begin(),
-                   [&](const auto &timestamp) {
-                       return (timestamp - min_timestamp) / time_range;
-                   });
+                   [&](const auto &timestamp) { return (timestamp - min_timestamp) / time_range; });
     return timestamps_normalized;
 }
 

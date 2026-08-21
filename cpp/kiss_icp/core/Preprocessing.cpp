@@ -67,7 +67,8 @@ std::vector<Eigen::Vector3d> Preprocessor::Preprocess(const std::vector<Eigen::V
             const double time_range = max_time - min_time;
             const double tolerance = std::numeric_limits<double>::epsilon() *
                                      std::max(std::abs(min_time), std::abs(max_time));
-            if (time_range <= tolerance) {
+            // Comparison is negated on purpose: a non-finite range must also skip deskewing
+            if (!(time_range > tolerance)) {
                 return frame;
             }
             const auto normalize = [&](const double t) { return (t - min_time) / time_range; };
