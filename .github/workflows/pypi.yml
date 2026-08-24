@@ -18,6 +18,8 @@ jobs:
         run: pipx run build --sdist ${{github.workspace}}/python/
       - name: Move sdist to dist
         run: mkdir -p dist && mv ${{github.workspace}}/python/dist/*.tar.gz dist/
+      - name: Build wheel from sdist
+        run: python -m pip wheel --no-deps --wheel-dir sdist-wheel dist/*.tar.gz
 
       - uses: actions/upload-artifact@v4
         with:
