@@ -24,7 +24,9 @@
 
 #include <Eigen/Core>
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <regex>
@@ -111,12 +113,22 @@ inline auto NormalizeTimestamps(const std::vector<double> &timestamps) {
     const auto [min_it, max_it] = std::minmax_element(timestamps.cbegin(), timestamps.cend());
     const double min_timestamp = *min_it;
     const double max_timestamp = *max_it;
+    const double time_range = max_timestamp - min_timestamp;
+    const double scale = std::max(std::abs(min_timestamp), std::abs(max_timestamp));
+    // Four ULPs of headroom, floored at the smallest normal so the relative term cannot underflow
+    // to zero for timestamps at the origin
+    const double tolerance = std::max(std::numeric_limits<double>::min(),
+                                      4.0 * std::numeric_limits<double>::epsilon() * scale);
 
     std::vector<double> timestamps_normalized(timestamps.size());
+    // Comparison is negated on purpose: a non-finite range must also skip deskewing
+    if (!(time_range > tolerance)) {
+        // Map every point to the end of the sweep, which deskews to the identity
+        std::fill(timestamps_normalized.begin(), timestamps_normalized.end(), 1.0);
+        return timestamps_normalized;
+    }
     std::transform(timestamps.cbegin(), timestamps.cend(), timestamps_normalized.begin(),
-                   [&](const auto &timestamp) {
-                       return (timestamp - min_timestamp) / (max_timestamp - min_timestamp);
-                   });
+                   [&](const auto &timestamp) { return (timestamp - min_timestamp) / time_range; });
     return timestamps_normalized;
 }
 
