@@ -39,8 +39,18 @@ RELATIVE_MOTION = np.array(
 )
 
 
+# Smallest positive subnormal double, the finest time range representable next to zero
+DENORMAL_MIN = np.nextafter(0.0, np.inf)
+
+
 def _deskewing_preprocessor() -> Preprocessor:
     return Preprocessor(max_range=100.0, min_range=0.0, deskew=True, max_num_threads=1)
+
+
+def _advanced_by_ulps(value: float, ulps: int) -> float:
+    for _ in range(ulps):
+        value = np.nextafter(value, np.inf)
+    return value
 
 
 @pytest.mark.parametrize("timestamp", [0.0, 1.0, 1.7e9])
@@ -53,11 +63,27 @@ def test_deskew_is_a_noop_when_all_timestamps_are_equal(timestamp):
     np.testing.assert_allclose(frame, FRAME)
 
 
+@pytest.mark.parametrize("ulps", [1, 2, 4])
 @pytest.mark.parametrize("timestamp", [1.0, 1.7e9])
-def test_deskew_is_a_noop_when_timestamps_differ_by_one_ulp(timestamp):
-    """A time range below the floating point resolution of the timestamps is not a real range."""
+def test_deskew_is_a_noop_when_timestamps_differ_by_a_few_ulps(timestamp, ulps):
+    """A time range at the floating point resolution of the timestamps is representation noise.
+
+    Normalization stretches it across the whole [0, 1] interval, so without headroom in the
+    tolerance a spread of a couple of ULPs applies the full motion correction.
+    """
     timestamps = np.full(len(FRAME), timestamp)
-    timestamps[-1] = np.nextafter(timestamp, np.inf)
+    timestamps[-1] = _advanced_by_ulps(timestamp, ulps)
+
+    frame = _deskewing_preprocessor().preprocess(FRAME, timestamps, RELATIVE_MOTION)
+
+    np.testing.assert_allclose(frame, FRAME)
+
+
+@pytest.mark.parametrize("subnormals", [1, 8])
+def test_deskew_is_a_noop_for_a_subnormal_time_range_at_the_origin(subnormals):
+    """Next to zero a purely relative tolerance underflows to zero and stops guarding anything."""
+    timestamps = np.zeros(len(FRAME))
+    timestamps[-1] = subnormals * DENORMAL_MIN
 
     frame = _deskewing_preprocessor().preprocess(FRAME, timestamps, RELATIVE_MOTION)
 

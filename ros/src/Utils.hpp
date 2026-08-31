@@ -114,8 +114,11 @@ inline auto NormalizeTimestamps(const std::vector<double> &timestamps) {
     const double min_timestamp = *min_it;
     const double max_timestamp = *max_it;
     const double time_range = max_timestamp - min_timestamp;
-    const double tolerance = std::numeric_limits<double>::epsilon() *
-                             std::max(std::abs(min_timestamp), std::abs(max_timestamp));
+    const double scale = std::max(std::abs(min_timestamp), std::abs(max_timestamp));
+    // Four ULPs of headroom, floored at the smallest normal so the relative term cannot underflow
+    // to zero for timestamps at the origin
+    const double tolerance = std::max(std::numeric_limits<double>::min(),
+                                      4.0 * std::numeric_limits<double>::epsilon() * scale);
 
     std::vector<double> timestamps_normalized(timestamps.size());
     // Comparison is negated on purpose: a non-finite range must also skip deskewing

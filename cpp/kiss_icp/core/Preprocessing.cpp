@@ -65,8 +65,11 @@ std::vector<Eigen::Vector3d> Preprocessor::Preprocess(const std::vector<Eigen::V
             const double min_time = *min;
             const double max_time = *max;
             const double time_range = max_time - min_time;
-            const double tolerance = std::numeric_limits<double>::epsilon() *
-                                     std::max(std::abs(min_time), std::abs(max_time));
+            const double scale = std::max(std::abs(min_time), std::abs(max_time));
+            // Four ULPs of headroom, floored at the smallest normal so the relative term cannot
+            // underflow to zero for timestamps at the origin
+            const double tolerance = std::max(std::numeric_limits<double>::min(),
+                                              4.0 * std::numeric_limits<double>::epsilon() * scale);
             // Comparison is negated on purpose: a non-finite range must also skip deskewing
             if (!(time_range > tolerance)) {
                 return frame;
