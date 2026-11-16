@@ -17,6 +17,7 @@ kiss_icp_node:
 
     data:
       deskew: True
+      sparse_lidar: False # Skip the second downsampling pass for registration
       max_range: 100.0
       min_range: 0.0
 

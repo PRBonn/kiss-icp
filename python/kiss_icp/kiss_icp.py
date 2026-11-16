@@ -76,5 +76,9 @@ class KissICP:
 
     def voxelize(self, iframe):
         frame_downsample = voxel_down_sample(iframe, self.config.mapping.voxel_size * 0.5)
-        source = voxel_down_sample(frame_downsample, self.config.mapping.voxel_size * 1.5)
+        source = (
+            frame_downsample
+            if self.config.data.sparse_lidar
+            else voxel_down_sample(frame_downsample, self.config.mapping.voxel_size * 1.5)
+        )
         return source, frame_downsample

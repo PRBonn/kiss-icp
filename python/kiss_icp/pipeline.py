@@ -46,6 +46,7 @@ class OdometryPipeline:
         visualize: bool = False,
         n_scans: int = -1,
         jump: int = 0,
+        sparse_lidar: Optional[bool] = None,
     ):
         self._dataset = dataset
         self._n_scans = (
@@ -57,6 +58,8 @@ class OdometryPipeline:
 
         # Config and output dir
         self.config = load_config(config)
+        if sparse_lidar is not None:
+            self.config.data.sparse_lidar = sparse_lidar
         self.results_dir = None
 
         # Pipeline

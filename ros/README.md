@@ -39,6 +39,18 @@ ros2 launch kiss_icp odometry.launch.py topic:=<topic_name> visualize:=false
 
 The parameters for the KISS-ICP algorithm itself are written in a yaml configuration file. They are meant to be set before launching the node. An **example** yaml file is given in config/config.yaml. The file parsed by default is located in the share directory of the kiss_icp package (in your workspace that would be `install/kiss_icp/share/kiss_icp/config/config.yaml`), but any file path can be provided with the `config_file` launch argument, e.g.: `ros2 launch kiss_icp odometry.launch.py config_file:=/path/to/my/config_file.yaml`.
 
+For sparse LiDAR scans, set `data.sparse_lidar: true` in that file:
+
+```yaml
+kiss_icp_node:
+  ros__parameters:
+    data:
+      sparse_lidar: true
+```
+
+This skips the second downsampling pass, keeping more points for registration. The first pass and
+the points used to update the map stay the same. It is disabled by default and may increase runtime.
+
 The ROS-related parameters can be set via command-line when launching the node:
 * `base_frame`
 * `lidar_odom_frame`

@@ -51,6 +51,9 @@ struct KISSConfig {
 
     // Motion compensation
     bool deskew = true;
+
+    // Skip the second downsampling pass for sparse scans
+    bool sparse_lidar = false;
 };
 
 class KissICP {
