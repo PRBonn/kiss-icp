@@ -133,6 +133,8 @@ void OdometryServer::initializeParameters(kiss_icp::pipeline::KISSConfig &config
     RCLCPP_INFO(this->get_logger(), "\tMin range: %.2f", config.min_range);
     config.deskew = declare_parameter<bool>("data.deskew", config.deskew);
     RCLCPP_INFO(this->get_logger(), "\tDeskew: %d", config.deskew);
+    config.sparse_lidar = declare_parameter<bool>("data.sparse_lidar", config.sparse_lidar);
+    RCLCPP_INFO(this->get_logger(), "\tSparse LiDAR: %d", config.sparse_lidar);
     config.voxel_size = declare_parameter<double>("mapping.voxel_size", config.max_range / 100.0);
     RCLCPP_INFO(this->get_logger(), "\tVoxel size: %.2f", config.voxel_size);
     config.max_points_per_voxel =

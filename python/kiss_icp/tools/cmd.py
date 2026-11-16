@@ -198,6 +198,13 @@ def kiss_icp_pipeline(
         callback=version_callback,
         is_eager=True,
     ),
+    sparse_lidar: Optional[bool] = typer.Option(
+        None,
+        "--sparse-lidar/--no-sparse-lidar",
+        show_default=False,
+        help="[Optional] Skip the second downsampling step for sparse LiDAR scans",
+        rich_help_panel="Additional Options",
+    ),
 ):
     # Attempt to guess some common file extensions to avoid using the --dataloader flag
     if not dataloader:
@@ -228,6 +235,7 @@ def kiss_icp_pipeline(
         visualize=visualize,
         n_scans=n_scans,
         jump=jump,
+        sparse_lidar=sparse_lidar,
     ).run().print()
 
 

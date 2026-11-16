@@ -29,6 +29,7 @@ class DataConfig(BaseModel):
     max_range: float = 100.0
     min_range: float = 0.0
     deskew: bool = True
+    sparse_lidar: bool = False
 
 
 class MappingConfig(BaseModel):

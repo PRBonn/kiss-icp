@@ -5,6 +5,7 @@ out_dir: "results"
 
 data:
   deskew: True
+  sparse_lidar: False # skip the second downsampling step for sparse scans
   max_range: 100.0
   min_range: 0.0
 
